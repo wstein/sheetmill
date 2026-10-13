@@ -6,7 +6,7 @@
   chrome.append(label,details,links);document.body.prepend(chrome);
   let state=null,connected=false;
   const selected=location.pathname.split('/')[1];
-  let seen=0;
+  let seen=Number(document.currentScript?.dataset.published||0);
   function render(){
     const sheet=state?.sheets.find(s=>s.id===selected);
     label.textContent=!connected?'Disconnected — freshness unknown':state?.error?'Preview failed':sheet?`${sheet.status}${sheet.stale?' — last-valid preview':''}`:'SheetMill Studio — read-only';
@@ -21,7 +21,7 @@
     try{
       const response=await fetch('/studio/state',{cache:'no-store'});if(!response.ok)throw Error('State unavailable');
       const next=await response.json();if(state&&next.version<state.version)return;state=next;render();
-      if(connected&&next.published>seen){const had=seen>0;seen=next.published;if(had)location.reload()}
+      if(connected&&next.published>seen){seen=next.published;location.reload()}
     }catch{connected=false;render()}
   }
   let events;
