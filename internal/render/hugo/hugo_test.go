@@ -540,7 +540,7 @@ func TestHugoIntegrationBasePath(t *testing.T) {
 		if name == "a/index.html" && !bytes.Contains(html, []byte(`href="https://github.com/wstein/sheetmill/edit/main/examples/sheets/a.md"`)) {
 			t.Error("built sheet lacks GitHub edit link")
 		}
-		if name == "index.html" && bytes.Contains(html, []byte("Edit this page on GitHub")) {
+		if name == "index.html" && bytes.Contains(html, []byte(`class="edit-link"`)) {
 			t.Error("home page guessed a sheet edit destination")
 		}
 		for _, bad := range []string{`href="/assets`, `src="/brand`, `href="/a/"`, `href="/"`} {
@@ -583,5 +583,23 @@ func TestGitHubEditLinksAreSeparateFromProvenance(t *testing.T) {
 		if p, ds := Render([]Sheet{s}, Options{EditBaseURL: base}); len(ds) == 0 || len(p.Files) > 0 {
 			t.Fatal("invalid edit base accepted", base)
 		}
+	}
+}
+
+func TestCompactProvenance(t *testing.T) {
+	s := sheet(t, "test", "Content.")
+	s.Document.Metadata["source"] = map[string]any{"license": "EUPL-1.2", "attribution": "Contributors <safe>", "repository": "https://github.com/example/project", "custom": map[string]any{"retained": true}}
+	p, ds := Render([]Sheet{s}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	b := body(t, p, "test")
+	for _, want := range []string{`<dl class="source-facts">`, `<dt>Attribution</dt><dd>Contributors &lt;safe&gt;</dd>`, `<dt>License</dt><dd>EUPL-1.2</dd>`, `<details class="source-details"><summary>Full source metadata</summary>`, `&#34;retained&#34;: true`} {
+		if !strings.Contains(b, want) {
+			t.Errorf("missing %q", want)
+		}
+	}
+	if strings.Contains(b, `<details class="source-details" open`) {
+		t.Fatal("metadata must start collapsed")
 	}
 }

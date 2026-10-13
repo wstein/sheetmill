@@ -174,7 +174,17 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			if e != nil {
 				errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
 			} else {
-				fmt.Fprintf(&b, `<aside class="provenance"><h2>Source &amp; license</h2><pre>%s</pre><p>Source attribution is preserved. Import does not grant redistribution rights.</p></aside>`, esc(string(disclosure)))
+				b.WriteString(`<aside class="provenance"><h2>Source &amp; license</h2>`)
+				if fields, ok := source.(map[string]any); ok {
+					b.WriteString(`<dl class="source-facts">`)
+					for _, field := range []struct{ key, label string }{{"attribution", "Attribution"}, {"license", "License"}} {
+						if value, ok := fields[field.key].(string); ok && value != "" {
+							fmt.Fprintf(&b, `<dt>%s</dt><dd>%s</dd>`, field.label, esc(value))
+						}
+					}
+					b.WriteString(`</dl>`)
+				}
+				fmt.Fprintf(&b, `<details class="source-details"><summary>Full source metadata</summary><pre>%s</pre></details><p>Source attribution is preserved. Import does not grant redistribution rights.</p></aside>`, esc(string(disclosure)))
 			}
 		}
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
