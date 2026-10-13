@@ -170,3 +170,31 @@ func TestHugoEditBaseFlag(t *testing.T) {
 		t.Fatal("CLI omitted authored sheet edit link")
 	}
 }
+
+func TestHugoBuildNestedSelection(t *testing.T) {
+	dir := tempDir(t)
+	os.Mkdir(filepath.Join(dir, "format"), 0700)
+	os.WriteFile(filepath.Join(dir, "cli.md"), []byte("---\ntitle: CLI\n---\n## S\n### C\n[Format](format/gfm-plus.md#ids) [Policy](../AGENTS.md)\n"), 0600)
+	os.WriteFile(filepath.Join(dir, "format", "gfm-plus.md"), []byte("---\ntitle: Format\n---\n## S\n### IDs {#ids}\n[Back](../cli.md)\n"), 0600)
+	site := filepath.Join(dir, "site")
+	var out, errout bytes.Buffer
+	code := Run([]string{"build", "hugo", dir, filepath.Join(dir, "format"), "--out", site, "--source-base-url", "https://github.com/o/r/blob/main/docs/"}, &out, &errout)
+	if code != 0 || errout.Len() != 0 {
+		t.Fatal(code, errout.String())
+	}
+	cli, _ := os.ReadFile(filepath.Join(site, "data", "sheets", "cli.json"))
+	format, _ := os.ReadFile(filepath.Join(site, "data", "sheets", "gfm-plus.json"))
+	for _, want := range []string{`href=\"/gfm-plus/#ref-ids\"`, `href=\"https://github.com/o/r/blob/main/AGENTS.md\"`} {
+		if !bytes.Contains(cli, []byte(want)) {
+			t.Error(want, string(cli))
+		}
+	}
+	if !bytes.Contains(format, []byte(`href=\"/cli/\"`)) {
+		t.Error(string(format))
+	}
+	for _, b := range [][]byte{cli, format} {
+		if bytes.Contains(b, []byte(dir)) {
+			t.Fatal("host path in output")
+		}
+	}
+}
