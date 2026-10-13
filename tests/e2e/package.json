@@ -2,7 +2,15 @@
   "name": "sheetmill-e2e",
   "private": true,
   "type": "module",
-  "engines": { "node": "24.21.0" },
-  "scripts": { "test": "playwright test", "test:harness": "node --test harness.test.mjs" },
-  "devDependencies": { "@playwright/test": "1.64.0" }
+  "engines": {
+    "node": "24.21.0"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:harness": "node --test harness.test.mjs",
+    "test:studio": "playwright test --config studio.config.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0"
+  }
 }
