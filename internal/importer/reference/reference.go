@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/wstein/sheetmill/internal/diagnostic"
@@ -109,6 +110,8 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 		archived = append(archived, map[string]any{"line": span.Start.Line, "text": x.text})
 		if x.heading {
 			warn("IMP108", "unsupported heading attribute "+x.text+" removed and archived", span)
+		} else if x.keys {
+			warn("IMP110", "standalone {.shortcuts} removed; its card is marked .keys", span)
 		} else {
 			warn("IMP109", "standalone attribute line "+x.text+" removed and archived", span)
 		}
@@ -247,9 +250,11 @@ type removal struct {
 	start, end int
 	text       string
 	heading    bool
+	keys       bool // {.shortcuts} mapped to .keys on the enclosing card
 }
 
 var (
+	structural      = regexp.MustCompile(`^ {0,3}(##|###)[ \t]`)
 	headingGroup    = regexp.MustCompile(`^( {0,3})(#{1,6})([ \t]+.*?)[ \t]*(\{[.#][^{}]*\})[ \t]*$`)
 	standaloneGroup = regexp.MustCompile(`^[ \t]*\{[.#][^{}]*\}[ \t]*$`)
 	fenceOpen       = regexp.MustCompile(`^ {0,3}(` + "`" + `{3,}|~{3,})`)
@@ -260,7 +265,8 @@ var (
 // shadow blanks removed bytes with spaces (offsets intact); clean trims them.
 func rewriteAttributes(body []byte) (shadow, clean []byte, removed []removal) {
 	shadow = append([]byte(nil), body...)
-	var out strings.Builder
+	var lines []string
+	card, keyCards := -1, map[int]bool{}
 	fence := ""
 	for start := 0; start < len(body); {
 		end := len(body)
@@ -278,10 +284,21 @@ func rewriteAttributes(body []byte) (shadow, clean []byte, removed []removal) {
 		case fenceOpen.MatchString(line):
 			fence = fenceOpen.FindStringSubmatch(line)[1]
 		case standaloneGroup.MatchString(line):
-			removed = append(removed, removal{start, start + len(line), strings.TrimSpace(line), false})
+			text := strings.TrimSpace(line)
+			keys := card >= 0 && slices.Contains(strings.Fields(text[1:len(text)-1]), ".shortcuts")
+			if keys {
+				keyCards[card] = true
+			}
+			removed = append(removed, removal{start, start + len(line), text, false, keys})
 			blank(shadow, start, start+len(line))
 			changed = true
 		default:
+			if h := structural.FindStringSubmatch(line); h != nil {
+				card = -1
+				if h[1] == "###" {
+					card = len(lines)
+				}
+			}
 			m := headingGroup.FindStringSubmatchIndex(line)
 			if m == nil || escaped(line, m[8]) {
 				break
@@ -294,7 +311,7 @@ func rewriteAttributes(body []byte) (shadow, clean []byte, removed []removal) {
 					continue
 				}
 				at := m[8] + strings.Index(group, token)
-				removed = append(removed, removal{start + at, start + at + len(token), token, true})
+				removed = append(removed, removal{start + at, start + at + len(token), token, true, false})
 			}
 			if len(kept) == len(strings.Fields(group[1:len(group)-1])) {
 				break
@@ -315,16 +332,36 @@ func rewriteAttributes(body []byte) (shadow, clean []byte, removed []removal) {
 		if changed {
 			text = strings.TrimRight(text, " \t")
 		}
-		out.WriteString(text)
 		if cr {
-			out.WriteByte('\r')
+			text += "\r"
 		}
-		if end < len(body) {
-			out.WriteByte('\n')
-		}
+		lines = append(lines, text)
 		start = end + 1
 	}
-	return shadow, []byte(out.String()), removed
+	for i := range keyCards {
+		lines[i] = withKeys(lines[i])
+	}
+	clean = []byte(strings.Join(lines, "\n"))
+	if len(body) > 0 && body[len(body)-1] == '\n' {
+		clean = append(clean, '\n')
+	}
+	return shadow, clean, removed
+}
+
+// withKeys adds .keys to a card heading line, inside its group when it has one.
+func withKeys(line string) string {
+	text, cr := strings.CutSuffix(line, "\r")
+	if m := headingGroup.FindStringSubmatchIndex(text); m != nil && !escaped(text, m[8]) {
+		if !slices.Contains(strings.Fields(text[m[8]+1:m[9]-1]), ".keys") {
+			text = text[:m[9]-1] + " .keys" + text[m[9]-1:]
+		}
+	} else {
+		text += " {.keys}"
+	}
+	if cr {
+		text += "\r"
+	}
+	return text
 }
 
 func blank(b []byte, from, to int) {

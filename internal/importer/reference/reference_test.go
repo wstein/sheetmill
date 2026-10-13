@@ -272,7 +272,7 @@ func TestLegacyMapping(t *testing.T) {
 		t.Fatal(first)
 	}
 	body := string(r.Markdown[bytes.Index(r.Markdown, []byte("## Basics")):])
-	for _, want := range []string{"## Basics {.cols-2}\n", "### Keys {.col-span-2}\n", "#### Sub\n", "{.keep-in-code}", "### Plain {.row-span-2 .tip}\n"} {
+	for _, want := range []string{"## Basics {.cols-2}\n", "### Keys {.col-span-2 .keys}\n", "#### Sub\n", "{.keep-in-code}", "### Plain {.row-span-2 .tip}\n"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("missing %q in %s", want, body)
 		}
@@ -289,11 +289,11 @@ func TestLegacyMapping(t *testing.T) {
 			t.Error(f)
 		}
 	}
-	if codes["IMP105"] != 1 || codes["IMP106"] != 1 || codes["IMP107"] != 1 || codes["IMP108"] != 2 || codes["IMP109"] != 2 {
+	if codes["IMP105"] != 1 || codes["IMP106"] != 1 || codes["IMP107"] != 1 || codes["IMP108"] != 2 || codes["IMP109"] != 1 || codes["IMP110"] != 1 {
 		t.Fatal(codes, r.Report.Findings)
 	}
 	for _, f := range r.Report.Findings {
-		if f.Code == "IMP109" && f.Span.Start.Line != 12 && f.Span.Start.Line != 15 {
+		if (f.Code == "IMP109" && f.Span.Start.Line != 15) || (f.Code == "IMP110" && f.Span.Start.Line != 12) {
 			t.Error("findings must point at original lines", f)
 		}
 	}
@@ -310,5 +310,15 @@ func TestLegacyMappingKeepsExplicitFields(t *testing.T) {
 	}
 	if _, ok := d.Metadata["tags"]; ok {
 		t.Fatal("a non-array tags value must be archived, not kept", d.Metadata)
+	}
+}
+
+func TestShortcutsOutsideCardIsArchived(t *testing.T) {
+	r, ds := Convert([]byte("---\ntitle: T\n---\n## S\n| K | A |\n| - | - |\n| `x` | y |\n{.shortcuts}\n### Card\nText.\n"), provenance())
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	if strings.Contains(string(r.Markdown), ".keys") || len(r.Report.Findings) != 1 || r.Report.Findings[0].Code != "IMP109" {
+		t.Fatal("section content has no card to mark", string(r.Markdown), r.Report.Findings)
 	}
 }
