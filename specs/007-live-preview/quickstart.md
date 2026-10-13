@@ -90,5 +90,6 @@ diagnostics, repair, reconnect and latest-save behavior. This command belongs to
 journeys; traces are disabled. The same installed-tool prerequisites apply.
 Use `SHEETMILL_HUGO=/absolute/path/to/hugo go test -race ./internal/studio` for
 Go security/lifecycle/integration tests described in [serve.md](contracts/serve.md).
-SC-002/SC-003 performance and SC-006 five-author usability remain unmeasured;
-T049 is deliberately unchecked.
+SC-002/SC-003 have opt-in automated reference-workload checks; see
+`npm run test:performance` and `docs/studio-verification.md` for measured evidence.
+SC-006 five-author usability remains pending, so T049 stays unchecked overall.
