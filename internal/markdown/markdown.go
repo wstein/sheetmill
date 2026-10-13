@@ -319,7 +319,11 @@ func (cv converter) node(n ast.Node) model.Node {
 		props["title"] = string(x.Title)
 	case *ast.AutoLink:
 		out.Text = string(x.Label(cv.body))
-		props["destination"] = string(x.URL(cv.body))
+		destination := string(x.URL(cv.body))
+		if x.AutoLinkType == ast.AutoLinkEmail && !strings.HasPrefix(strings.ToLower(destination), "mailto:") {
+			destination = "mailto:" + destination
+		}
+		props["destination"] = destination
 		end = start + len(out.Text)
 	case *ast.Emphasis:
 		props["level"] = x.Level

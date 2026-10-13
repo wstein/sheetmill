@@ -945,7 +945,7 @@
                   },
                   "text": "user@example.com",
                   "properties": {
-                    "destination": "user@example.com"
+                    "destination": "mailto:user@example.com"
                   }
                 },
                 {
