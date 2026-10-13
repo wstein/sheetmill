@@ -6,7 +6,7 @@
 | `smill check <file-or-directory>...` | Validate selected Markdown; no success output |
 | `smill inspect <file>` | Validate one file and print canonical JSON |
 | `smill import reference <file> [options]` | [Controlled conversion](imports.md), dry-run and loss reports |
-| `smill build hugo <file-or-directory>... --out <new-project> [--title <name>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
+| `smill build hugo <file-or-directory>... --out <new-project> [--title <name>] [--base-path </path/>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
 
 Cobra v1.10.2 parses commands and flags. `--help` works at every command level;
 import/build flags may precede or follow the positional input. Check/inspect
@@ -40,7 +40,7 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `ATTR001`, `ATTR002` | Unsupported/malformed attribute; duplicate/conflict |
 | `ID001` | Duplicate explicit/reserved ID |
 | `IO001`, `IO002`, `IO003` | Input access/selection; stdout failure; output creation/write |
-| `REN001`, `REN002`, `REN003` | Unsupported IR; unsafe URL; invalid/ambiguous route |
+| `REN001`, `REN002`, `REN003` | Unsupported IR; unsafe URL; invalid/ambiguous route or base path |
 | `REN101`, `REN102`, `REN103` | Inert raw HTML; images retained as unfetched links; unresolved internal link (warnings) |
 | `IMP001`–`IMP104` | See [import diagnostic codes](imports.md) |
 
