@@ -4,6 +4,10 @@ import { mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+export function toolEnvironment(cache, base=process.env) {
+  return {...base,GOPROXY:'off',GOSUMDB:'off',GOTOOLCHAIN:'local',GOENV:'off',GOFLAGS:'',GOWORK:'off',GOCACHE:base.GOCACHE||cache};
+}
+
 export function validateVersions(v) {
   const checks = {
     node: v.node === '24.21.0', playwright: v.playwright === '1.64.0',
@@ -44,7 +48,7 @@ export function run(executable, args, { cwd, env = process.env, timeoutMs = 15_0
     const timer=setTimeout(()=>stop('command deadline exceeded'),timeoutMs);
     child.on('close',(code,termination)=>{
       clearTimeout(timer);clearTimeout(killTimer);signal?.removeEventListener('abort',abort);
-      const record={ executable, args:[...args], code, termination, stdout:redact(stdout.toString()), stderr:redact(stderr.toString()), reason:reason||spawnError?.message };
+      const record={ executable, args:[...args], environment:{GOPROXY:env.GOPROXY,GOSUMDB:env.GOSUMDB,GOTOOLCHAIN:env.GOTOOLCHAIN}, code, termination, stdout:redact(stdout.toString()), stderr:redact(stderr.toString()), reason:reason||spawnError?.message };
       try { onRecord(record); } catch (err) { reject(err);return; }
       if (reason||spawnError||code!==0) reject(Error(`${reason||spawnError?.message||`exit ${code}`}: ${record.stderr}`));
       else resolve(record);
@@ -75,13 +79,28 @@ export class OwnedWorkspace {
   }
 }
 
+const interruptOwners = new Set();
+const interruptHandlers = new Map();
+let interrupting = false;
+
 export function registerInterruptCleanup(owner) {
-  const handlers=new Map();
-  for (const signal of ['SIGINT','SIGTERM']) {
-    const handler=()=>{owner.close().finally(()=>process.exit(signal==='SIGINT'?130:143));};
-    handlers.set(signal,handler);process.once(signal,handler);
+  interruptOwners.add(owner);
+  if (!interruptHandlers.size) for (const signal of ['SIGINT','SIGTERM']) {
+    const handler=()=>{
+      if(interrupting)return;
+      interrupting=true;
+      // Snapshot every owner before close() disposers remove registrations.
+      Promise.allSettled([...interruptOwners].map(resource=>resource.close()))
+        .then(()=>process.exit(signal==='SIGINT'?130:143));
+    };
+    interruptHandlers.set(signal,handler);process.once(signal,handler);
   }
-  const remove=()=>{for(const [s,h] of handlers)process.removeListener(s,h);};
-  owner.defer(remove);
-  return remove;
+  const remove=()=>{
+    interruptOwners.delete(owner);
+    if(!interruptOwners.size) {
+      for(const [signal,handler] of interruptHandlers)process.removeListener(signal,handler);
+      interruptHandlers.clear();
+    }
+  };
+  owner.defer(remove);return remove;
 }

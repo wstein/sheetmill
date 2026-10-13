@@ -5,7 +5,7 @@ import { appendFileSync } from 'node:fs';
 import { join, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { OwnedWorkspace, registerInterruptCleanup, validateVersions } from './process.mjs';
+import { OwnedWorkspace, registerInterruptCleanup, validateVersions, toolEnvironment } from './process.mjs';
 import { loadCorpus } from './corpus.mjs';
 import { readSite, compareSites, serveSite } from './site.mjs';
 import { guardNetwork } from './network.mjs';
@@ -28,7 +28,8 @@ export const test=base.extend({
     const directory=await evidence(),log=join(directory,'tools.jsonl'),records=[];
     await writeFile(log,'');
     const owner=await OwnedWorkspace.create();registerInterruptCleanup(owner);
-    const exec=(executable,args,options={})=>owner.run(executable,args,{...options,onRecord:recordTo(log,records)});
+    const env=toolEnvironment(join(owner.root,'go-cache'));
+    const exec=(executable,args,options={})=>owner.run(executable,args,{env,...options,onRecord:recordTo(log,records)});
     try {
       const hugo=process.env.SHEETMILL_HUGO;
       if(!hugo||!isAbsolute(hugo))throw Error('SHEETMILL_HUGO must name an absolute installed Hugo 0.167.0 executable');
@@ -36,7 +37,6 @@ export const test=base.extend({
       const hv=(await exec(hugo,['version'])).stdout;
       const pkg=JSON.parse(await readFile(new URL('../node_modules/@playwright/test/package.json',import.meta.url),'utf8'));
       validateVersions({node:process.versions.node,playwright:pkg.version,chromium:browser.version(),go,hugo:hv});
-      const env={...process.env,GOPROXY:'off',GOSUMDB:'off',GOTOOLCHAIN:'local',GOCACHE:process.env.GOCACHE||join(owner.root,'go-cache')};
       const smill=join(owner.root,'smill');
       await exec('go',['build','-trimpath','-o',smill,'./cmd/smill'],{cwd:root,env,timeoutMs:120_000});
       const version=await exec(smill,['version'],{env});expect(version.stdout).toBe('smill dev\n');
