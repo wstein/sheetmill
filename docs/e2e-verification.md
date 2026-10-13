@@ -95,7 +95,10 @@ separate evidence from author-local checks.
 ## US2: additional inputs (2026-10-13)
 
 T042–T046 add independently authored BundleDock and WorkHarbor references at
-verified immutable source revisions. The default `smill` suite passed all 6
+verified immutable source revisions. WorkHarbor follows the user-selected
+`workharbor-nxt` bootstrap: its sheet makes no implemented `whr` CLI claim.
+After that source choice, helper/default tests and both all-corpus runs were
+repeated successfully. The default `smill` suite passed all 6
 checks; the explicit `SHEETMILL_E2E_CORPUS=all` suite passed all 12 checks twice
 from fresh owned roots. All 15 helpers passed, along with Go race tests, vet,
 module verification, formatting and diff checks. Both sibling executables were
