@@ -6,6 +6,7 @@ docs/agent-guide.md
 docs/cli.md
 docs/diagnostics.md
 docs/format/gfm-plus.md
+docs/format/navi-profile.md
 docs/format/compatibility.md
 docs/hugo.md
 docs/studio-security.md
