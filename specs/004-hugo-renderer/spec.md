@@ -32,7 +32,9 @@ Depends on: accepted core/Reference import (001–003)
 - FR-007: Provide responsive layout, progressive local search, visible keyboard focus,
   semantic navigation, code copy, dark mode and print-friendly CSS.
 - FR-008: Use original embedded templates/styles/scripts and local licensed brand/font
-  assets; no remote themes, CDN, tool downloads, snippet execution or deployment.
+  assets; no remote themes, CDN, snippet execution or deployment; `smill` and the renderer never
+  download tools. CI may install the pinned, checksum-verified Hugo for the integration
+  test, and never uploads site artifacts.
 - FR-009: User explicitly authorizes brand exports, implementation and local site
   generation on 2026-10-13. Merge/release/deploy and Typst/navi remain separately gated.
 
