@@ -39,6 +39,14 @@ func Parse(src []byte) (*model.Document, []diagnostic.Diagnostic) {
 	if len(ds) > 0 {
 		return nil, ds
 	}
+	return ParseDecoded(src, fm)
+}
+
+// ParseDecoded parses the body of src using already decoded frontmatter. The
+// caller is responsible for validating fm.Metadata; spans index src.
+func ParseDecoded(src []byte, fm frontmatter.Result) (*model.Document, []diagnostic.Diagnostic) {
+	source := diagnostic.NewSource(src)
+	var ds []diagnostic.Diagnostic
 	d := &model.Document{Schema: 1, Metadata: fm.Metadata, Source: string(fm.Body), Preamble: []model.Node{}, Sections: []model.Section{}}
 	root := goldmark.New(goldmark.WithExtensions(extension.GFM)).Parser().Parse(text.NewReader(fm.Body))
 	cv := converter{fm.Body, fm.BodyOffset, source}
