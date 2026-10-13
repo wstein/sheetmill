@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -223,6 +224,13 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 					class += " " + c
 				}
 				fmt.Fprintf(&b, `<article class="%s" id="ref-%s"><h3>%s <a class="permalink" href="#ref-%s" aria-label="Permalink to %s">#</a></h3>`, esc(class), esc(card.ID), r.heading(card.Heading), esc(card.ID), esc(card.Title))
+				// Card kinds carry a visible text label, never colour alone.
+				for _, kind := range []string{"warning", "tip", "note"} {
+					if slices.Contains(card.Classes, kind) {
+						fmt.Fprintf(&b, `<p class="card-kind">%s</p>`, strings.ToUpper(kind[:1])+kind[1:])
+						break
+					}
+				}
 				r.nodes(&b, card.Content, false)
 				b.WriteString(`</article>`)
 				index = append(index, entry{card.Title, title, section.Title, plain(card.Content), base + s.ID + "/#ref-" + card.ID})
