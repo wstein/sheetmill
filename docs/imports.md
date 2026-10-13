@@ -45,6 +45,9 @@ unknown data survive, with the following legacy behavior archived under
 | `IMP102` | `background`, `class`, `layout`, `theme` archived as inert data (warning) |
 | `IMP103` | Raw HTML retained as inert data, future rendering needs sanitization (warning) |
 | `IMP104` | Hexo-style `{% ... %}` directive retained as inert text (warning) |
+| `IMP105` | `intro` mapped to `description` unless one is set; original archived (warning) |
+| `IMP106` | First usable `categories` entry mapped to `category` unless set; list archived (warning) |
+| `IMP107` | Invalid `tags` (non-array, null or empty entries) dropped; original archived (warning) |
 | Core diagnostic codes | Unsupported structural attrs/YAML/GFM+ contract errors |
 
 Code blocks/code spans are excluded from directive scanning. This is an explicit

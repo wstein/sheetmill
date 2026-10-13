@@ -14,6 +14,7 @@ import (
 	"github.com/wstein/sheetmill/internal/frontmatter"
 	"github.com/wstein/sheetmill/internal/markdown"
 	"github.com/wstein/sheetmill/internal/model"
+	"github.com/wstein/sheetmill/internal/validate"
 )
 
 type Provenance struct {
@@ -83,20 +84,26 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 	if len(src) > markdown.MaxSourceBytes {
 		return fail("SRC002", "source exceeds 8 MiB")
 	}
-	fm, ds := frontmatter.Parse(src)
+	fm, ds := frontmatter.Decode(src)
 	if len(ds) > 0 {
 		return failed(ds)
 	}
 	if _, ok := fm.Metadata["source"]; ok {
 		return fail("IMP002", "existing source provenance must not be overwritten; select the original external file")
 	}
-	// Reject unsupported body constructs using ORIGINAL source locations.
-	parsed, ds := markdown.Parse(src)
+	r := Result{Report: Report{Schema: 1, Format: "fechin-reference", Provenance: p, SourceSHA256: hash(src), Findings: []Finding{}}}
+	original := map[string]any{}
+	warn := func(code, msg string, span diagnostic.Span) {
+		r.Report.Findings = append(r.Report.Findings, Finding{Severity: "warning", Code: code, Message: msg, Span: span})
+	}
+	mapLegacyMetadata(fm, original, warn)
+	if ds := validate.Metadata(fm.Metadata, fm.Locations); len(ds) > 0 {
+		return failed(ds)
+	}
+	parsed, ds := markdown.ParseDecoded(src, fm)
 	if len(ds) > 0 {
 		return failed(ds)
 	}
-	r := Result{Report: Report{Schema: 1, Format: "fechin-reference", Provenance: p, SourceSHA256: hash(src), Findings: []Finding{}}}
-	original := map[string]any{}
 	for _, key := range []string{"plugins", "background", "class", "layout", "theme"} {
 		if v, ok := fm.Metadata[key]; ok {
 			original[key] = v
@@ -106,7 +113,7 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 				code = "IMP101"
 				msg = "legacy plugins archived and disabled; no plugin behavior is imported"
 			}
-			r.Report.Findings = append(r.Report.Findings, Finding{Severity: "warning", Code: code, Message: msg, Span: fm.Locations[key]})
+			warn(code, msg, fm.Locations[key])
 		}
 	}
 
@@ -160,4 +167,60 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 	}
 	r.Report.ConvertedSHA256 = hash(r.Markdown)
 	return r, nil
+}
+
+// mapLegacyMetadata maps Reference fields onto SheetMill ones. Every original
+// value is archived, so nothing is lost; explicit SheetMill fields win.
+func mapLegacyMetadata(fm frontmatter.Result, original map[string]any, warn func(string, string, diagnostic.Span)) {
+	m := fm.Metadata
+	if v, ok := m["intro"].(string); ok {
+		original["intro"] = v
+		delete(m, "intro")
+		if _, exists := m["description"]; !exists && strings.TrimSpace(v) != "" {
+			m["description"] = strings.TrimSpace(v)
+			warn("IMP105", "intro mapped to description and archived", fm.Locations["intro"])
+		} else {
+			warn("IMP105", "intro archived; description is already set", fm.Locations["intro"])
+		}
+	}
+	if v, ok := m["categories"]; ok {
+		original["categories"] = v
+		delete(m, "categories")
+		first := ""
+		switch x := v.(type) {
+		case string:
+			first = x
+		case []any:
+			for _, c := range x {
+				if c, ok := c.(string); ok && strings.TrimSpace(c) != "" {
+					first = c
+					break
+				}
+			}
+		}
+		if _, exists := m["category"]; !exists && strings.TrimSpace(first) != "" {
+			m["category"] = strings.TrimSpace(first)
+			warn("IMP106", "first of categories mapped to category; all archived", fm.Locations["categories"])
+		} else {
+			warn("IMP106", "categories archived; no usable category or category already set", fm.Locations["categories"])
+		}
+	}
+	if v, ok := m["tags"]; ok {
+		list, isList := v.([]any)
+		var tags []any
+		for _, t := range list {
+			if t, ok := t.(string); ok && strings.TrimSpace(t) != "" {
+				tags = append(tags, t)
+			}
+		}
+		if !isList || len(tags) != len(list) {
+			original["tags"] = v
+			if len(tags) > 0 {
+				m["tags"] = tags
+			} else {
+				delete(m, "tags")
+			}
+			warn("IMP107", "invalid tags dropped; original tags archived", fm.Locations["tags"])
+		}
+	}
 }
