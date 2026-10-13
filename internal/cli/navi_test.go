@@ -73,3 +73,20 @@ func TestNaviRootNamesCardsRelatively(t *testing.T) {
 		t.Fatal(code, errout.String())
 	}
 }
+
+func TestNaviStrictFailsOnWarnings(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "a.md")
+	os.WriteFile(input, []byte("---\ntitle: A\nlicense: x\n---\n## S\n\n### Good {.navi #g}\n\n```bash\necho hi\n```\n\n### Bad {.navi #b}\n\n```bash\necho 'oops\n```\n"), 0600)
+	var out, errout bytes.Buffer
+	strictOut := filepath.Join(dir, "strict")
+	if code := Run([]string{"build", "navi", input, "--strict", "--out", strictOut}, &out, &errout); code != 1 || !strings.Contains(errout.String(), "--strict") {
+		t.Fatal(code, errout.String())
+	}
+	if _, err := os.Stat(strictOut); !os.IsNotExist(err) {
+		t.Fatal("strict failure created output", err)
+	}
+	if code := Run([]string{"build", "navi", input, "--out", filepath.Join(dir, "lenient")}, &out, &errout); code != 0 {
+		t.Fatal(code, errout.String())
+	}
+}
