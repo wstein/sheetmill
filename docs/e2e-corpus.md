@@ -49,8 +49,9 @@ from BundleDock's independently implemented volume interface.
 
 ## Actual verification
 
-The results below were established before the WorkHarbor repository clarification;
-the revised bootstrap sheet is being revalidated before final handoff.
+After the user selected `workharbor-nxt`, helper/default and all-corpus tests
+were rerun; the revised bootstrap corpus passed twice from fresh owned roots.
+Go regression checks cover the unchanged compiler/harness implementation.
 
 On 2026-10-13, from `/private/tmp/sheetmill-corpus-20261013`, using Node
 24.21.0, Playwright 1.64.0 / Chromium 156.0.8078.4, Go 1.27.2 and Hugo 0.167.0:
@@ -80,7 +81,7 @@ requests. The source inputs contain 20 cards across three sheets.
 
 Baseline three-sheet snapshots contain 16 public files; sorted relative filename
 + NUL + bytes + NUL SHA-256 is
-`pending regenerated corpus digest`.
+`f68a14e750b1831a8008aadfdfac915f18ddf71e7eb64b2ca6d19a48b53334ef`.
 Temporary inert variants deliberately differ and are compared with their own
 independent second build. Original source hashes:
 
@@ -88,7 +89,7 @@ independent second build. Original source hashes:
 | --- | --- |
 | `smill.md` | `4d3228787a9570ac1cdb85207e458f590c70255c57b3680006d4e9ff99310f27` |
 | `bdock.md` | `e83ebcf1513616527a5f65c1292ea36ed3c383dd7ba2d4f3e3a9cbce8aaebaaf` |
-| `whr.md` | `pending regenerated source hash` |
+| `whr.md` | `3a0cd9ed975b82230568f6cf3da2b381d44a3507727d9a7de20beeec8595fe52` |
 
 Local evidence is retained under `.local/e2e/runs/`. Author-local results are not
 hosted Linux CI results. CI now runs both default and all-corpus suites, without
@@ -98,8 +99,15 @@ separate workflow; merging these example files would include them in its library
 
 ## Review
 
-The initial review of the prior WorkHarbor source choice closed a P3 stale-contract
-finding. The user's subsequent repository clarification changed the WorkHarbor
-sheet to `workharbor-nxt`; the final source content, oracle and updated evidence
-are undergoing a fresh Sol review. The earlier review comment on PR #11 is
-superseded for the WorkHarbor input and will be followed by a final summary.
+Sol independently reviewed the implementation and BundleDock source inventory,
+passing 15 helper tests, default 6 browser cases, all-corpus 12 browser cases,
+Go tests/vet and diff checks. A P3 stale-contract finding was fixed and re-reviewed
+through `6f0e48f09fba1dbc3722111078455c9532c41929`; all findings closed.
+
+After the user selected `workharbor-nxt`, Sol freshly reviewed
+`8f6f40bdd1edcc280749dfde829cdd4601f83e17` against its immutable source snapshot:
+no source-content or oracle findings. Its independent fresh-snapshot all-corpus
+run passed 12/12 and matched the revised baseline digest/source hashes above.
+This supersedes the earlier WorkHarbor source choice; no implemented `whr` CLI
+or BundleDock integration is claimed. Final evidence reconciliation is reviewed
+separately, and the final review summary is recorded on PR #11.
