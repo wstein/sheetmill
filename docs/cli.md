@@ -6,13 +6,14 @@
 | `smill check <file-or-directory>...` | Validate selected Markdown; no success output |
 | `smill inspect <file>` | Validate one file and print canonical JSON |
 | `smill import reference <file> [options]` | [Controlled conversion](imports.md), dry-run and loss reports |
+| `smill serve [file-or-directory] [--open] [--port 0..65535] [--hugo /absolute/path]` | Authenticated read-only local live preview through installed Hugo 0.167.0 |
 | `smill build hugo <file-or-directory>... --out <new-project> [--title <name>] [--base-path </path/>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
 
 Cobra v1.10.2 parses commands and flags. `--help` works at every command level;
 import/build flags may precede or follow the positional input. Check/inspect
 have no content options. There is no recursive or stdin mode.
 Directories are scanned only one level, in sorted order, for lowercase `.md` files.
-Subdirectories and other extensions are ignored; an empty selection is an error.
+Subdirectories and other extensions are ignored; an empty batch selection is an error.
 Duplicate explicitly selected paths are checked once. Selected files must be
 regular files. Symlinks in selected paths or `.md` directory entries are rejected,
 including ancestor symlinks. On macOS use `/private/tmp` instead of `/tmp` for
@@ -56,3 +57,40 @@ The [one-sheet E2E harness](../tests/e2e/README.md) also invokes a temporary bui
 this actual entry point, then pinned Hugo and Chromium. It validates both desktop
 and mobile reader behavior, no-JavaScript navigation and inert source variants.
 The temporary executable is verification output, never a distribution artifact.
+
+
+## Local saved-file preview
+
+```sh
+smill serve ./sheets --hugo /absolute/path/to/hugo
+smill serve ./sheets/editor.md --open --port 0
+```
+
+`serve` defaults to the current directory and port 0 (available IPv4 loopback
+port). It requires installed Hugo 0.167.0, resolved from the absolute `--hugo`
+option or PATH; it downloads nothing. The selection is read-only and direct,
+nonrecursive, with retained `os.Root` handles. Empty directories can start a
+session and receive new direct `.md` files. A single-file selection never exposes
+its siblings. Do not use symlinked source paths; `/private/tmp` is appropriate on
+macOS. Source limits: 100 files, 8 MiB each and 32 MiB aggregate.
+
+Stdout prints selected scope and one private bootstrap address. Open it once to
+receive an HttpOnly SameSite=Strict session cookie, then use the clean root URL
+in that browser. Do not share the bootstrap address. `--open` launches the fixed
+platform browser opener after readiness; failure leaves the printed address and
+running session available. Different ports keep distinct cookies.
+
+Save from an external editor. Pending saves, invalid diagnostics, retained
+last-valid output, removed references, publisher failures and disconnected state
+are visible in trusted Studio chrome. Valid peers remain independently usable.
+A new session has its own source/publishing lifecycle; same-port restart requires
+the new bootstrap address. No browser editor, command runner or project-write API
+exists. See [tested security boundary](studio-security.md).
+
+Unlike batch validation's source-invalid exit 1, invalid source during `serve`
+starts/keeps a diagnostic session. Usage/selection/tool/port/startup failures exit
+2; normal interruption exits 0 after cleanup; runtime infrastructure failure exits
+2. `STU001` diagnoses unavailable/unstable/oversized selected input in the UI;
+`STU002` reports CLI session setup/runtime/cleanup failures on stderr. Compiler
+and renderer diagnostic codes/spans remain unchanged. Browser state contains
+source-relative names, never the host selection path or session credentials.
