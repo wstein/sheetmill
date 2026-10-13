@@ -61,3 +61,33 @@ checks actual repeated output, and publishes no site artifacts. This work makes 
 full compatibility, dependency vulnerability scan or cross-browser guarantee.
 
 No merge, deployment, release, PDF/navi build or generated-site publication occurred.
+
+## Post-merge hardening — 2026-10-13
+
+Branch `codex/004-hardening`, tasks T011–T014 of `specs/004-hugo-renderer/tasks.md`,
+after the review fixes merged to `main` (REN103, verbatim code search text, fatal
+assembly errors, empty-label fallback, system dark mode). Same toolchain as above:
+Go 1.27.2, Hugo 0.167.0 extended (Homebrew), macOS arm64.
+
+- `SHEETMILL_HUGO=/opt/homebrew/bin/hugo go test -race -count=1 ./...` passed,
+  including the integration test, which builds the fixture twice with actual Hugo
+  and now asserts `href="#missing"` (REN103 kept as written), unlabeled image and
+  link fallbacks and `href="#"`. A deliberately wrong expectation made it fail.
+- `go vet ./...`, `go mod verify`, `gofmt -l .` (empty) and `git diff --check`
+  passed.
+- T011 and T012 tests were checked by temporary mutation or by injected failure;
+  T013 was observed failing before the fix.
+- Demo exported by directory and by reversed explicit file order, then built with
+  `--clock 2000-01-01T00:00:00Z --noBuildLock --quiet` and a separate cache outside
+  the project. Digest method as above:
+  - project (23 files): `06b177004f08856f5f0ee879aef366ebfcce3afb78e86bb26af3e491bb1543ab`
+  - public (15 files): `1a46ea86a6bba14e0c5d3cbc193b7643519341ed0b3082a62258931ef96fc263`
+
+  Both orders produced identical bytes. The public digest differs from the PR #3
+  value because the merged fixes changed CSS, search text and link output. The demo
+  sheets emit no warnings.
+
+No browser re-check was performed for this change set; the earlier visual evidence
+predates the dark-mode fallback and label changes. These are the author's checks;
+independent review is still required. Outputs stayed in a local scratch directory;
+nothing was published.

@@ -25,5 +25,5 @@ behavior fixes stay within the authorized 004 scope.
   exit status 2 and that no pre-existing path is modified (FR-003).
 - [x] T013 Keep a bare `[x](#)` link as `href="#"`; `url.String()` currently drops
   the empty fragment and renders `href=""`.
-- [ ] T014 Run the Hugo integration test with `SHEETMILL_HUGO` on the REN103 and
+- [x] T014 Run the Hugo integration test with `SHEETMILL_HUGO` on the REN103 and
   empty-label fixtures and record the evidence in docs/hugo-verification.md.
