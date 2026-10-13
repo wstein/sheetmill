@@ -56,7 +56,10 @@ inside inline code/emphasis are ordinary content. The structural `title` exclude
 the attribute group and decodes punctuation escapes; `heading` retains original
 inline nodes for source fidelity. An escaped opening brace remains literal text;
 only an unescaped trailing group defines attributes.
-Nested content headings do not interpret attributes.
+Nested content headings do not interpret attributes. Attribute groups anywhere
+else fail with `ATTR003` instead of silently becoming text: a line holding only a
+group (for example `{.marker-none}` after a list or table) or a group ending
+any other heading. Escape the brace (`\{.x}`) or use a code span to show one.
 
 | Attribute | Meaning |
 | --- | --- |
