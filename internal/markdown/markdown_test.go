@@ -307,3 +307,16 @@ func TestSectionColumns(t *testing.T) {
 		}
 	}
 }
+
+func TestKeysCardClass(t *testing.T) {
+	d, ds := Parse([]byte("---\ntitle: Test\n---\n## S\n### Keys {.keys .col-span-2}\n| Key | Action |\n| --- | --- |\n| `Ctrl+C` | Copy |\n"))
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	if got := d.Sections[0].Cards[0].Classes; len(got) != 1 || got[0] != "keys" {
+		t.Fatal(got)
+	}
+	if _, ds := Parse([]byte("---\ntitle: Test\n---\n## S {.keys}\n")); len(ds) == 0 || ds[0].Code != "ATTR001" {
+		t.Fatal("sections do not accept .keys", ds)
+	}
+}

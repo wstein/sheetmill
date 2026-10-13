@@ -304,7 +304,7 @@ func heading(h *ast.Heading, body []byte, cv converter, span diagnostic.Span) (s
 			} else {
 				a.Layout.Rows = v
 			}
-		case token == ".navi" || token == ".note" || token == ".tip" || token == ".warning":
+		case token == ".navi" || token == ".note" || token == ".tip" || token == ".warning" || token == ".keys":
 			a.Classes = append(a.Classes, token[1:])
 		case token == ".wrap":
 			a.Compatibility = append(a.Compatibility, token[1:])

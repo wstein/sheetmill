@@ -68,6 +68,7 @@ any other heading. Escape the brace (`\{.x}`) or use a code span to show one.
 | `{.col-span-N}` | Card web-layout hint, decimal `N` from 1 through 12 |
 | `{.row-span-N}` | Card web-layout hint, decimal `N` from 1 through 12 |
 | `{.note}`, `{.tip}`, `{.warning}` | SheetMill semantic card classes |
+| `{.keys}` | Key table card: inline code in a table's first column renders as keys (`Ctrl+C` shows two keys) |
 | `{.navi}` | Reserved SheetMill annotation; no runnable/safety guarantee or export |
 | `{.wrap}` | Inert legacy compatibility hint; does not change semantic content |
 
