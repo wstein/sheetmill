@@ -25,7 +25,21 @@ type Result struct {
 
 var yamlLine = regexp.MustCompile(`line (\d+)`)
 
+// Parse decodes the frontmatter and validates known metadata fields.
 func Parse(b []byte) (Result, []diagnostic.Diagnostic) {
+	r, ds := Decode(b)
+	if len(ds) == 0 {
+		ds = validate.Metadata(r.Metadata, r.Locations)
+	}
+	if len(ds) > 0 {
+		return Result{}, ds
+	}
+	return r, nil
+}
+
+// Decode enforces the YAML and delimiter contract without validating known
+// fields, so import adapters can repair legacy values before validation.
+func Decode(b []byte) (Result, []diagnostic.Diagnostic) {
 	s := diagnostic.NewSource(b)
 	bad := func(code, msg string, start, end int) (Result, []diagnostic.Diagnostic) {
 		return Result{}, []diagnostic.Diagnostic{s.Error(code, msg, start, end)}
@@ -159,9 +173,6 @@ func Parse(b []byte) (Result, []diagnostic.Diagnostic) {
 		return nil
 	}
 	metadata, _ := value(root.Content[0], "", 0).(map[string]any)
-	if len(ds) == 0 {
-		ds = validate.Metadata(metadata, locations)
-	}
 	if len(ds) > 0 {
 		return Result{}, ds
 	}
