@@ -48,7 +48,8 @@ with provenance and deterministic loss reports. It never overwrites an existing 
 
 Read the [source format](docs/format/gfm-plus.md), [compatibility boundary](docs/format/compatibility.md),
 [architecture](docs/architecture.md), and [three branding proposals](docs/brand-options.md).
-The palette is still undecided. See [rated recommendations](docs/recommendations.md).
+The selected direction is Editorial Stack with coral/periwinkle colors; see the
+[brand guide and SVG candidates](assets/BRAND.md). Final geometry awaits visual approval. See [rated recommendations](docs/recommendations.md).
 
 ## Development
 

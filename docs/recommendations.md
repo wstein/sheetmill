@@ -12,7 +12,7 @@ They are judgments, not measured adoption or guarantees.
 | TLDR adapter after the core/importer settles | 8.5/10 | Focused CLI examples; preserve placeholders and check content attribution separately |
 | Navi importer after typed command metadata is designed | 7.5/10 | Valuable, but dynamic suggestions and shell semantics add substantial safety work |
 | Broad automatic multi-ecosystem import now | 4/10 | Ambiguous recognition and conversion loss would widen the milestone too far |
-| Indigo & Amber branding exploration | 9/10 | Distinct from sibling teal/navy; promising measured text contrast, human selection still required |
+| Editorial Stack with coral/periwinkle | 9/10 | User-selected direction; use dark accent tokens for ordinary text and review SVG candidates before locking geometry |
 
 Recommended next implementation after review: design a narrow TLDR adapter or
 select the first renderer based on the desired user output. Do not start either

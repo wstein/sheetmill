@@ -1,10 +1,12 @@
-# Branding exploration — no selection
+# Branding exploration — historical proposals
 
 Three proposed directions were compared against sibling brand guides on 2026-10-13.
 BundleDock uses stacked shipping packages; WorkHarbor uses an anchor; CrewBook uses
 a star/book. All share navy/teal, geometric marks and outlined Bricolage Grotesque
 plus IBM Plex Sans. SheetMill should share precision without duplicating a mark.
-No sibling artwork or font files have been copied and no SheetMill logo is adopted.
+These proposals preceded the user’s 2026-10-13 selection of the Editorial Stack
+with coral/periwinkle colors. See [current brand guide](../assets/BRAND.md).
+No sibling artwork was copied; final SVG geometry is pending visual approval.
 
 | Concept | Palette | Mark proposal | Assessment | Rating |
 | --- | --- | --- | --- | --- |
@@ -13,7 +15,7 @@ No sibling artwork or font files have been copied and no SheetMill logo is adopt
 | C — Plum & Lime | Deep `#35243F`, plum `#7C4B84`, orchid `#D1A7D7`, lime `#C1D966`, cream `#FBF8F1` | Three output ribbons through a reference grid | Most distinctive; grid/ribbons need simplification at favicon size | 8.5/10 |
 
 Ratings are design judgments, not measured user preference. Recommendation B does
-not select the final palette; a human choice and actual candidate previews follow.
+not select the final palette; it is superseded by the selected direction in the current brand guide.
 
 ## Measured text contrast
 
