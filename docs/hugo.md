@@ -36,6 +36,8 @@ plugins or linked resources are executed/fetched. Allowed links are relative,
 HTTP, HTTPS and mailto; unsafe URLs fail with source spans (`REN002`). Selected
 basename links such as `editor.md#select` become local page/card URLs. Recognized
 structural IDs are namespaced with `ref-`, distinct from layout IDs `app-`.
+Internal links that name no selected sheet, or a fragment that matches no section
+or card ID of the target sheet, are kept as written and reported with `REN103`.
 
 The library includes responsive ordered cards, GFM tables/tasks/code, local search,
 code copy, an explicit dark-mode control, visible keyboard focus and print CSS.

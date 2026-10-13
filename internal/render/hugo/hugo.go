@@ -113,14 +113,19 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	var pages []page
 	var index []entry
 	var errors []Issue
+	// Anchors of every selected sheet, so cross-sheet fragments can be resolved.
+	anchors := map[string]map[string]bool{}
 	for _, s := range sheets {
-		r := renderer{routes: routes, anchors: map[string]bool{}}
+		anchors[s.ID] = map[string]bool{}
 		for _, section := range s.Document.Sections {
-			r.anchors[section.ID] = true
+			anchors[s.ID][section.ID] = true
 			for _, card := range section.Cards {
-				r.anchors[card.ID] = true
+				anchors[s.ID][card.ID] = true
 			}
 		}
+	}
+	for _, s := range sheets {
+		r := renderer{self: s.ID, routes: routes, anchors: anchors}
 		title, _ := s.Document.Metadata["title"].(string)
 		var b strings.Builder
 		r.nodes(&b, s.Document.Preamble, false)
@@ -202,7 +207,8 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 type renderer struct {
 	inLink           bool
 	routes           map[string]string
-	anchors          map[string]bool
+	self             string
+	anchors          map[string]map[string]bool
 	errors, warnings []diagnostic.Diagnostic
 }
 
@@ -372,14 +378,23 @@ func (r *renderer) url(n model.Node, destination string) string {
 		return ""
 	}
 	if u.Scheme == "" {
-		if u.Path == "" && r.anchors[u.Fragment] {
-			u.Fragment = "ref-" + u.Fragment
+		// Internal links resolve to a selected sheet and a section or card ID.
+		// Anything else is kept as written and reported, never silently broken.
+		target, routed := r.self, u.Path == ""
+		if id, ok := r.routes[path.Clean(u.Path)]; ok && !routed {
+			u.Path, target, routed = "/"+id+"/", id, true
 		}
-		if id, ok := r.routes[path.Clean(u.Path)]; ok {
-			u.Path = "/" + id + "/"
-			if u.Fragment != "" {
-				u.Fragment = "ref-" + u.Fragment
-			}
+		unresolved := func(message string) {
+			r.warnings = append(r.warnings, diagnostic.Diagnostic{Code: "REN103", Message: message + destination, Span: n.Span})
+		}
+		switch {
+		case !routed && n.Kind != "Image": // images already report REN102
+			unresolved("link target is not a selected sheet: ")
+		case !routed || u.Fragment == "":
+		case r.anchors[target][u.Fragment]:
+			u.Fragment = "ref-" + u.Fragment
+		default:
+			unresolved("link fragment matches no section or card: ")
 		}
 	}
 	return u.String()
