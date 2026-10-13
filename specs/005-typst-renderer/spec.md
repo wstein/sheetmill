@@ -27,3 +27,7 @@ performed under the current milestone.
 ## Open decisions
 
 Pagination rules, PDF accessibility targets and licensed font selection.
+
+## Authorization prerequisite
+
+Measurable acceptance criteria are required before this feature can be authorized.

@@ -27,3 +27,13 @@ performed under the current milestone.
 ## Open decisions
 
 Supported shells, escaping, typed parameter schema and runnable-card safety rules.
+
+## Safety requirements to close before authorization
+
+These must be specified and accepted before any implementation authorization; this
+feature remains specification only.
+
+- Exported commands are never executed during build or test.
+- Negative scenarios cover parameter and shell-escaping (quotes, metacharacters,
+  substitutions, newlines) for every supported shell.
+- Unknown source metadata is diagnosed or preserved, never silently dropped.
