@@ -50,3 +50,4 @@
 .card.note{border-top-color:var(--link)}.card.tip{border-top-color:var(--peri)}.card.warning{border-top-color:var(--accent);background:var(--wash)}.card.warning .card-kind{color:var(--accent)}
 /* Search matches are marked without changing the result text. */
 #app-results mark{background:var(--wash);color:inherit;border-radius:2px;padding:0 1px}
+.library-item .library-license,.result-license{font-size:12px;color:var(--muted);margin:0 0 10px}

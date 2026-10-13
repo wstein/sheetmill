@@ -992,3 +992,19 @@ func TestSearchEntriesCarryTagsAndCategory(t *testing.T) {
 		}
 	}
 }
+
+func TestLicenseInSearchAndLibrary(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### C\nText.\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	if !strings.Contains(string(p.Files["static/search.json"]), `"license": "EXAMPLE"`) {
+		t.Fatal(string(p.Files["static/search.json"]))
+	}
+	if !strings.Contains(string(p.Files["data/library.json"]), `"license": "EXAMPLE"`) {
+		t.Fatal(string(p.Files["data/library.json"]))
+	}
+	if !strings.Contains(string(p.Files["layouts/home.html"]), "library-license") {
+		t.Fatal("home cards must show the license")
+	}
+}
