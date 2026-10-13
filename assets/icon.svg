@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="title description">
 <title id="title">SheetMill</title>
 <desc id="description">Three staggered reference sheets in coral, pale coral and periwinkle.</desc>
-<!-- Original SheetMill artwork: EUPL-1.2. Font outlines: Bricolage Grotesque, SIL OFL-1.1; see licenses/. Candidate geometry awaiting visual approval. -->
+<!-- Original SheetMill artwork: EUPL-1.2. Font outlines: Bricolage Grotesque and IBM Plex Sans, SIL OFL-1.1; see licenses/. Implemented master geometry; review record in README.md. -->
 <rect x="21" y="19" width="34" height="38" rx="4" fill="#7C8CFF"/>
 <rect x="15" y="14" width="34" height="38" rx="4" fill="#FDF0EE"/>
 <rect x="9" y="9" width="34" height="38" rx="4" fill="#EA877F"/>

@@ -21,3 +21,7 @@
 
 # Source fixtures, fuzz regression seeds, golden snapshots and Spec Kit
 # project files are deliberately tracked.
+
+# Python tool caches
+__pycache__/
+*.pyc
