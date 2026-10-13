@@ -90,3 +90,48 @@ func TestHugoAmbiguousBasenameNamesEveryPath(t *testing.T) {
 		t.Fatal(code, errout.String())
 	}
 }
+
+func TestWriteProjectMidWriteFailure(t *testing.T) {
+	dir := tempDir(t)
+	sibling := filepath.Join(dir, "keep.md")
+	os.WriteFile(sibling, []byte("unchanged\n"), 0600)
+	destination := filepath.Join(dir, "project")
+	// "a" is written as a file first, so creating directory "a" for "a/b" fails.
+	err := writeProject(destination, map[string][]byte{"a": []byte("first"), "a/b": []byte("second"), "z": []byte("never")})
+	if err == nil || !strings.Contains(err.Error(), "partial project may remain") {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(sibling); string(b) != "unchanged\n" {
+		t.Fatal("pre-existing path modified")
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 2 {
+		t.Fatal("wrote outside the new project", entries)
+	}
+	if b, _ := os.ReadFile(filepath.Join(destination, "a")); string(b) != "first" {
+		t.Fatal("expected the partial project to remain for inspection")
+	}
+	if _, err := os.Stat(filepath.Join(destination, "z")); !os.IsNotExist(err) {
+		t.Fatal("writing continued after the failure")
+	}
+}
+
+func TestHugoBuildReportsMidWriteFailure(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "sheet.md")
+	os.WriteFile(input, []byte("---\ntitle: Sheet\n---\n## S\n### C\nText.\n"), 0600)
+	destination := filepath.Join(dir, "project")
+	defer func(previous func(string, map[string][]byte) error) { writeFiles = previous }(writeFiles)
+	writeFiles = func(destination string, files map[string][]byte) error {
+		files["a"], files["a/b"] = []byte("x"), []byte("y")
+		return writeProject(destination, files)
+	}
+	var out, errout bytes.Buffer
+	code := Run([]string{"build", "hugo", input, "--out", destination}, &out, &errout)
+	if code != 2 || !strings.Contains(errout.String(), destination+":1:1: IO003: partial project may remain") || out.Len() != 0 {
+		t.Fatal(code, errout.String(), out.String())
+	}
+	if b, _ := os.ReadFile(input); !strings.HasPrefix(string(b), "---\ntitle: Sheet") {
+		t.Fatal("input modified")
+	}
+}

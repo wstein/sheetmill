@@ -87,7 +87,7 @@ func runHugo(args []string, destination, title string, out, errout io.Writer) in
 		return 1
 	}
 	report(project.Warnings, " (warning)")
-	if err := writeProject(destination, project.Files); err != nil {
+	if err := writeFiles(destination, project.Files); err != nil {
 		fmt.Fprintf(errout, "%s:1:1: IO003: %v\n", destination, err)
 		return 2
 	}
@@ -118,6 +118,10 @@ func sheetID(name string) string {
 	}
 	return b.String()
 }
+
+// writeFiles lets tests inject a failure into the real writer.
+var writeFiles = writeProject
+
 func writeProject(destination string, files map[string][]byte) error {
 	if destination == "" {
 		return fmt.Errorf("output must be a new directory")
