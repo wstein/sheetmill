@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -118,7 +119,7 @@ func TestHugoIntegration(t *testing.T) {
 	if err != nil || !pinnedVersion(string(v)) {
 		t.Fatalf("need Hugo %s: %s %v", Version, v, err)
 	}
-	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### Literal {#literal}\n```sh\necho '<tag>'\n```\n\n{{< unsafe >}}\n")}, Options{})
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### Literal {#literal}\n```sh\necho '<tag>'\n```\n\n{{< unsafe >}}\n\n[gone](#missing) ![](diagram.png) [](https://example.com) [top](#)\n")}, Options{})
 	if len(ds) > 0 {
 		t.Fatal(ds)
 	}
@@ -157,8 +158,9 @@ func TestHugoIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 		html := string(snapshot[filepath.Join("test", "index.html")])
-		if !strings.Contains(html, `id="ref-literal"`) || !strings.Contains(html, "&lt;tag&gt;") || !strings.Contains(html, "{{&lt; unsafe &gt;}}") {
-			t.Fatalf("missing built semantics: %s", html)
+		built := []string{`id="ref-literal"`, "&lt;tag&gt;", "{{&lt; unsafe &gt;}}", `href="#missing"`, `>diagram.png</a>`, `>https://example.com</a>`, `href="#"`}
+		if missing := slices.DeleteFunc(slices.Clone(built), func(want string) bool { return strings.Contains(html, want) }); len(missing) > 0 {
+			t.Fatalf("missing built semantics %q: %s", missing, html)
 		}
 		snapshots = append(snapshots, snapshot)
 	}
