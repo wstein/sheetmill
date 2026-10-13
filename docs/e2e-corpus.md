@@ -22,31 +22,35 @@ Inspected `cmd/bdock/root.go`, `cmd/bdock/tools.go`, `README.md` and `LICENSE`.
 The example's source-default image is explicitly not a publication receipt. No
 bundle image was pulled, no volume was initialized and no catalog was upgraded.
 
-WorkHarbor source: [wstein/workharbor at 5d6a8a423ec509383e1cf169bdea0a76d58ecd92](https://github.com/wstein/workharbor/tree/5d6a8a423ec509383e1cf169bdea0a76d58ecd92).
-Inspected `internal/cli/root.go`, `internal/cli/commands.go`, `cmd/whr/main.go`,
-`cmd/whr/tools.go` and `LICENSE`.
+WorkHarbor source: [wstein/workharbor-nxt at 916add9a7c46dc2d8d9166a01947be9495789cc5](https://github.com/wstein/workharbor-nxt/tree/916add9a7c46dc2d8d9166a01947be9495789cc5).
+The user explicitly selected this repository. Inspected immutable `README.md`,
+`Makefile`, `scripts/select_feature.py`, `examples/workspace/README.md` and `LICENSE`
+from the local checkout's committed revision, rather than its mutable worktree.
 
-The similarly named local checkout points to `wstein/workharbor-nxt` at
-`916add9a7c46dc2d8d9166a01947be9495789cc5`. Its README explicitly describes a
-bootstrap with product implementation pending, and it has no implemented `whr`
-command tree. This sheet therefore documents the existing `wstein/workharbor`
-implementation. No sibling checkout was modified and no sibling CLI was run.
+This revision is a project bootstrap with implementation pending and **no `whr`
+product CLI**. The sheet is titled **WorkHarbor bootstrap** and documents verified
+contributor workflows. Its corpus ID/filename `whr` is an input identity, not an
+executable availability claim. The separate `wstein/workharbor` command tree is
+not used as evidence for this user-selected source.
 
 | Displayed command | Verified contract |
 | --- | --- |
-| `whr ls`, `whr ls --all`, `whr --json ls` | Unfinished/all task selection; global JSON API-envelope output |
-| `whr --help`, `whr run --help` | Cobra help without API initialization |
-| `whr version --json` | Binary's version passthrough, no API configuration |
-| `whr logs 'my-repo#42' -f --since 100` | Exactly one task; follow/reconnect; event-ID offset |
-| `whr run <issue-url> --agent demo/builder` | Exactly one issue URL; required workspace/role agent |
-| `whr inbox`, `whr approve --help`, `whr reject --help` | List decisions; help for decision actions; review approval requires shown SHA |
+| `git clone https://github.com/wstein/workharbor-nxt.git workharbor` | README's repository identity and checkout directory |
+| `cd workharbor` | Enter the selected checkout |
+| `make check` | Runs `python3 -I -B scripts/check_ci.py` through configurable `PYTHON` |
+| `python3 scripts/select_feature.py 001-workspace-lifecycle` | Requires an existing direct feature with `spec.md`; writes ignored local selection |
+| `make test` | Python unittest discovery under `tests/` |
 
-Names/URLs in the task example are illustrative, not configured accounts.
-`whr tools build` is mentioned to distinguish its interface, not offered as a
-BundleDock alias. Source flags, argument validation and behavior were read
-statically; no command was tested against a live supervisor.
+No source example was executed: no repository clone from the displayed snippet,
+feature selection, sibling test/check, workspace creation or container activation.
+Static inspection of an owned source snapshot is separate from running a sheet's
+workflow. Cross-reference text distinguishes proposed optional bundle concepts
+from BundleDock's independently implemented volume interface.
 
 ## Actual verification
+
+The results below were established before the WorkHarbor repository clarification;
+the revised bootstrap sheet is being revalidated before final handoff.
 
 On 2026-10-13, from `/private/tmp/sheetmill-corpus-20261013`, using Node
 24.21.0, Playwright 1.64.0 / Chromium 156.0.8078.4, Go 1.27.2 and Hugo 0.167.0:
@@ -76,7 +80,7 @@ requests. The source inputs contain 20 cards across three sheets.
 
 Baseline three-sheet snapshots contain 16 public files; sorted relative filename
 + NUL + bytes + NUL SHA-256 is
-`1c8580d5cc449e01b1ef71ac66137040a933e80947be16188bd74492f4814e0c`.
+`pending regenerated corpus digest`.
 Temporary inert variants deliberately differ and are compared with their own
 independent second build. Original source hashes:
 
@@ -84,7 +88,7 @@ independent second build. Original source hashes:
 | --- | --- |
 | `smill.md` | `4d3228787a9570ac1cdb85207e458f590c70255c57b3680006d4e9ff99310f27` |
 | `bdock.md` | `e83ebcf1513616527a5f65c1292ea36ed3c383dd7ba2d4f3e3a9cbce8aaebaaf` |
-| `whr.md` | `fcf3d7a600e09ab7faefde476ddf993d1ae5c9425736c77977ad536031543adc` |
+| `whr.md` | `pending regenerated source hash` |
 
 Local evidence is retained under `.local/e2e/runs/`. Author-local results are not
 hosted Linux CI results. CI now runs both default and all-corpus suites, without
@@ -94,15 +98,8 @@ separate workflow; merging these example files would include them in its library
 
 ## Review
 
-Sol independently reviewed the implementation and pinned source inventories,
-passing 15 helper tests, default 6 browser cases, all-corpus 12 browser cases,
-Go tests/vet and diff checks. Independent output matched the documented 16-file
-digest and all source hashes. No functional, provenance or CI-boundary findings.
-
-A P3 documentation finding identified stale corpus-stage wording in the E2E
-contract/data model. Focused commits reconciled default/all selection, cross-card
-links, required permalink oracles and precise validation timing. Sol re-reviewed
-`6f0e48f09fba1dbc3722111078455c9532c41929`: all findings closed, no remaining
-findings. The final wording-only correction required no runtime test rerun.
-The final review summary is also posted on PR #11; subsequent evidence-only
-updates do not change the tested implementation.
+The initial review of the prior WorkHarbor source choice closed a P3 stale-contract
+finding. The user's subsequent repository clarification changed the WorkHarbor
+sheet to `workharbor-nxt`; the final source content, oracle and updated evidence
+are undergoing a fresh Sol review. The earlier review comment on PR #11 is
+superseded for the WorkHarbor input and will be followed by a final summary.

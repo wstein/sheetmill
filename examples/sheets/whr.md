@@ -1,61 +1,53 @@
 ---
-title: WorkHarbor CLI
+title: WorkHarbor bootstrap
 category: reference
-tags: [workharbor, whr, agents]
+tags: [workharbor, whr, bootstrap]
 source:
-  repository: https://github.com/wstein/workharbor
-  revision: 5d6a8a423ec509383e1cf169bdea0a76d58ecd92
-  path: internal/cli/commands.go
+  repository: https://github.com/wstein/workharbor-nxt
+  revision: 916add9a7c46dc2d8d9166a01947be9495789cc5
+  path: README.md
   license: EUPL-1.2
   attribution: SheetMill contributors
-  note: Independently authored from the implemented whr CLI, not the workharbor-nxt bootstrap; examples are inert.
+  note: Independently authored for the user-selected bootstrap repository; no whr product CLI is implemented at this revision. Examples are inert.
 ---
-WorkHarbor supervises agent tasks and exposes human decisions through `whr`. These references describe a pinned implementation; SheetMill starts no agent, service or account session.
+This reference documents the WorkHarbor bootstrap repository. At the pinned revision it is a Spec Kit project, not a working platform, and it has no implemented `whr` product CLI. SheetMill displays the development workflow without executing it.
 
-## Inspect the work {#inspection}
-### List WorkHarbor tasks {.col-span-2 #list-tasks}
+## Repository workflow {#workflow}
+### Start the WorkHarbor checkout {.col-span-2 #start-checkout}
 ```sh
-whr ls
-whr ls --all
-whr --json ls
+git clone https://github.com/wstein/workharbor-nxt.git workharbor
+cd workharbor
+make check
 ```
 
-The default list contains unfinished tasks; `--all` includes finished tasks. `--json` selects the API envelope instead of the text table. These commands require your configured supervisor when actually run.
+The repository requires Git, Make, Python 3.11+ and Bash. Repository checks validate development scaffolding; passing them does not provision a workspace or start a supervisor.
 
-### Discover CLI help {#discover-help}
+### Select the lifecycle feature {#select-feature}
 ```sh
-whr --help
-whr run --help
-whr version --json
+python3 scripts/select_feature.py 001-workspace-lifecycle
 ```
 
-Help and version do not need the API configuration. The source defines `--config` for an explicit configuration path; otherwise it uses `WHR_CONFIG` or the default home configuration.
+Select an existing direct `specs/` directory containing `spec.md`. The script writes ignored checkout-local `.specify/feature.json`; it does not implement the selected feature.
 
-### Follow task events {#follow-events}
+### Run repository tests {#repository-tests}
 ```sh
-whr logs 'my-repo#42' -f --since 100
+make test
 ```
 
-`-f` follows events and reconnects; `--since` starts after the specified event ID. A task reference may be a full ID, a unique ID prefix or an issue such as `my-repo#42`. Ambiguous references need disambiguation.
+The target runs Python unittest discovery under `tests/`. `make check` uses the repository's isolated check wrapper. These are contributor operations, not a `whr` command interface.
 
-## Tasks and decisions {#decisions}
-### Start an issue task {.col-span-2 #start-task}
-```sh
-whr run https://github.com/example/project/issues/42 --agent demo/builder
-```
+## Design boundaries {#boundaries}
+### Distinguish plans from a product {.col-span-2 #implementation-status}
+The README describes workspace lifecycle implementation as pending. Phoenix/Elixir/LiveView, a Go agent and initial SQLite metadata storage are architectural choices, not evidence of an installed platform.
 
-Supply one issue URL and the required `--agent <workspace>/<role>`. Replace the illustrative project and agent with your configured identities before use. Running this command creates work; it is only displayed here.
+Do not borrow `whr` commands from the separate `wstein/workharbor` repository for this source revision. The corpus ID and filename `whr` identify this reference input; they do not claim a working executable.
 
-### Inspect pending decisions {#pending-decisions}
-```sh
-whr inbox
-whr approve --help
-whr reject --help
-```
+### Inspect the workspace example {#workspace-example}
+The `examples/workspace` directory is a layout example, not a provisionable fixture. A real workspace needs its own project repository and reviewed image pins; the example intentionally supplies no fake digest.
 
-The inbox lists open decisions. Approval takes a decision reference; review approvals also need the exact commit shown through `--sha`. Rejection accepts an optional `--reason`. Reading this sheet grants no approval.
+Read the repository's guidance before adding real project submodules. SheetMill does not create repositories, fetch projects or activate containers from this sheet.
 
-### Keep tool setup separate {#tool-boundary}
-WorkHarbor's `whr tools build` and BundleDock's OCI tooling are separate interfaces. Do not substitute one command tree for the other.
+### Keep tool bundles independent {#tool-boundary}
+WorkHarbor's proposed workspace configuration keeps optional bundles separate from language images. No implemented BundleDock integration is claimed by this bootstrap.
 
-See [BundleDock volume options](bdock.md#volume-help) for its Docker-backed tool-volume command. SheetMill verifies this link while treating both products' snippets as inert content.
+See [BundleDock volume options](bdock.md#volume-help) for the independently implemented Docker tool-volume interface. This reference link connects the concepts without running either project's workflow.

@@ -82,29 +82,29 @@
     "input": "examples/sheets/whr.md",
     "product": {
       "name": "WorkHarbor",
-      "revision": "5d6a8a423ec509383e1cf169bdea0a76d58ecd92"
+      "revision": "916add9a7c46dc2d8d9166a01947be9495789cc5"
     },
-    "title": "WorkHarbor CLI",
+    "title": "WorkHarbor bootstrap",
     "search": {
-      "query": "List WorkHarbor tasks",
-      "card": "list-tasks",
-      "label": "WorkHarbor CLI \u00b7 List WorkHarbor tasks"
+      "query": "Start the WorkHarbor checkout",
+      "card": "start-checkout",
+      "label": "WorkHarbor bootstrap \u00b7 Start the WorkHarbor checkout"
     },
     "cards": [
-      "list-tasks",
-      "discover-help",
-      "follow-events",
-      "start-task",
-      "pending-decisions",
+      "start-checkout",
+      "select-feature",
+      "repository-tests",
+      "implementation-status",
+      "workspace-example",
       "tool-boundary"
     ],
     "copy": {
-      "card": "list-tasks",
-      "text": "whr ls\nwhr ls --all\nwhr --json ls\n"
+      "card": "start-checkout",
+      "text": "git clone https://github.com/wstein/workharbor-nxt.git workharbor\ncd workharbor\nmake check\n"
     },
     "permalink": {
-      "card": "pending-decisions",
-      "label": "Permalink to Inspect pending decisions"
+      "card": "implementation-status",
+      "label": "Permalink to Distinguish plans from a product"
     },
     "attribution": {
       "license": "EUPL-1.2",
