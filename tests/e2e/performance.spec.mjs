@@ -40,8 +40,9 @@ test('T049 reference-machine automated acceptance',async({page,context,studio,to
     }
     const git=promisify(execFile);
     report.source={revision:(await git('git',['rev-parse','HEAD'],{cwd:root,timeout:5000})).stdout.trim()};
-    await git('git',['diff','--exit-code','HEAD','--','cmd','internal','assets','go.mod','go.sum','tests/e2e'],{cwd:root,timeout:5000});
-    report.source.runtimeAndHarnessClean=true;
+    await git('git',['diff','--quiet','HEAD','--','cmd','internal','assets','go.mod','go.sum','tests/e2e',':!tests/e2e/README.md'],{cwd:root,timeout:5000});
+    report.source.trackedRuntimeAndHarnessClean=true;
+    report.source.executableSHA256=createHash('sha256').update(await readFile(tools.smill)).digest('hex');
     const names=(await readdir(studio.directory)).filter(n=>n.endsWith('.md')).sort();expect(names).toHaveLength(100);
     const digest=createHash('sha256');
     for(const name of names){const bytes=await readFile(join(studio.directory,name));expect(bytes.length).toBe(8192);digest.update(name+'\0').update(bytes).update('\0')}
