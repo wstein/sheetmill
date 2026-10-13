@@ -61,12 +61,12 @@ bootstrap at `916add9a7c46dc2d8d9166a01947be9495789cc5`, with no implemented
 Both complete independently generated public trees matched for every static
 journey. The 16-file three-sheet baseline digest (sorted relative name + NUL +
 bytes + NUL) is
-`a8036801c2b4a0b366e72de69ce67ce80d05e31de0ac803473dcad082e406ac2`.
+`d38cda02a71ff1a40f2dff4cbb20a0ae658acea7758dbb1fa5aefd44488d4288`.
 Source SHA-256:
 
 | Input | SHA-256 |
 | --- | --- |
-| `smill.md` | `6810e55182bf8131d267218acfb1cac6270b29f11bf4dab307d6b68a73b85135` |
+| `smill.md` | `d9adfd7bde775b0bb3efd8b93829187b9cbf4558c1dd0241f44fc327f962c810` |
 | `bdock.md` | `a8e1acb788a491bf01a6f5f4dce3e0e85e6540965c588396f3b30d7a653e093f` |
 | `whr.md` | `3a0cd9ed975b82230568f6cf3da2b381d44a3507727d9a7de20beeec8595fe52` |
 
