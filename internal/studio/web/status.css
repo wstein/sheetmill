@@ -1,0 +1,3 @@
+/* SPDX-License-Identifier: EUPL-1.2 */
+#studio-status{position:relative;z-index:10;padding:1rem;border:2px solid #e56b6f;background:#f7f8fc;color:#2c3140;font:14px system-ui;overflow-wrap:anywhere}
+#studio-status nav{display:flex;gap:1rem;flex-wrap:wrap}#studio-status p{margin:.4rem 0}#studio-status div{max-height:12rem;overflow:auto}
