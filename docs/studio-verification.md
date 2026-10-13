@@ -97,10 +97,94 @@ identities and no uploads. Documentation and final evidence receive a separate
 review before PR handoff. Hosted Linux results are reported in PR checks separately
 from author-local and independent-review results.
 
-## Deliberately unmeasured
+## T049 automated reference-machine verification
 
-T049 remains unchecked: no SC-002/SC-003 latency/startup percentile, 100-sheet
-performance claim or five-author usability exercise. The 100-sequence correctness
-tests do not establish those performance/usability targets. No Safari/Firefox,
-Windows process-lifecycle or hostile same-user/OS-compromise protection is claimed.
-See [security boundary](studio-security.md).
+T049's automated SC-002/SC-003 checks are implemented separately from the original
+MVP/runtime evidence above. Run them explicitly after pinned tool provisioning:
+
+```sh
+cd tests/e2e
+SHEETMILL_HUGO=/absolute/path/to/hugo npm run test:performance
+```
+
+Use the pinned Node on PATH and an otherwise idle workstation. This opt-in test
+has one desktop Chromium worker, zero retries, and no authenticated traces,
+screenshots or video. Ordinary CI runs the evaluator unit tests, while timing
+acceptance runs explicitly on a documented reference machine. No setup download,
+source command execution or deployment occurs during the measurements.
+
+Automated checks use a fixed workload of 100 independently authored synthetic
+sheets, each exactly 8192 UTF-8 bytes (800 KiB total), three cards and a bounded
+paragraph structure. Commands are inert display text. This measures the stated
+reference workload, not every possible 100 KiB document or paragraph-dense IR.
+
+Each of 20 starts launches a fresh real smill process on a new ephemeral port.
+Timing starts immediately before spawn and ends at an authenticated, rendered
+current card with enabled search. The prebuilt development executable, browser
+launch, input generation and stop of the previous process are outside the timer;
+initial compilation, bootstrap, navigation and browser readiness are included.
+OS caches are not flushed. No warm-up sample or outlier is discarded.
+
+Each of 100 edits is a closed external write of the fixed-size source. A monotonic
+Node clock measures from writeFile completion to the browser's animation-frame
+predicate seeing the new card, current status, no diagnostics and enabled search.
+This includes watcher, compiler, Hugo, state delivery and browser reload/readiness;
+protocol/predicate overhead is retained. At least 95 edits must be <=1000 ms and
+19 starts <=3000 ms. Raw samples, nearest-rank p50/p95/max and exact passing counts
+are retained in local JSON. Missing/invalid samples cannot pass.
+
+The 100 rapid-save sequences alternate valid and invalid final revisions. They
+verify newest visible content or last-valid content plus the final source-positioned
+diagnostic. One sequence explicitly disconnects, checks unknown freshness and
+reconnects. Invalid states must be labeled last-valid, never current. This adds
+measurement evidence alongside the existing first-state and reconnect race tests.
+
+The readiness check requires the edited paragraph to intersect the viewport with
+visible layout, the expected card text, current status, no diagnostics and enabled
+search. It then allows two animation frames for a paint opportunity. This is an
+end-to-end browser readiness measurement with protocol overhead, not a physical
+pixel/paint timestamp. Fresh origins avoid same-port browser reconnect artifacts.
+
+Each run uses its own ignored `.local/e2e/performance/run-*/` directory. The JSON
+report records the Git revision, measured executable SHA-256, clean tracked runtime
+and harness check, workload digest, hardware, pinned tools, every ordered timing
+sample and every sequence result. It contains no hostname, source paths, cookies
+or bootstrap URLs. Failed and partial runs fail acceptance and retain evidence.
+
+### Reference result
+
+Measured at `2026-10-13T21:59:50.012Z` to `2026-10-13T22:02:08.386Z` on an Apple M2 Pro,
+12 logical CPUs, 16 GiB RAM, macOS ARM64 (Darwin 27.0.0). Tools:
+Go 1.27.2, Hugo 0.167.0, Node 24.21.0, Playwright 1.64.0 and Chromium
+156.0.8078.4. Runtime code is unchanged from main `620f617`; the measured harness
+revision is `00629d721db2ef58562206ab1893693cdc8f53fa` with clean tracked runtime/harness inputs.
+The executable/workload hashes and every raw sample are in the
+[sanitized report](measurements/studio-t049-reference.json).
+
+| Measurement | Required | Actual | p50 | p95 | Maximum |
+| --- | --- | --- | --- | --- | --- |
+| Saved edit visible | 95/100 ≤1000 ms | 100/100 passed | 586.74 ms | 663.11 ms | 708.41 ms |
+| Usable startup | 19/20 ≤3000 ms | 20/20 passed | 332.92 ms | 366.62 ms | 640.58 ms |
+| Latest-save content/diagnostics | 100/100 correct | 100/100 passed | — | — | — |
+| Five-author usability | 4/5 within five minutes | Pending; no participants tested | — | — | — |
+
+Percentiles use the nearest-rank method; thresholds use the full unrounded samples.
+Conclusions apply only to the documented 100 × 8 KiB reference workload,
+not all inputs up to 100 KiB or arbitrarily large semantic IR. The 100 KiB bound
+is the SC-002 workload criterion, not Studio's separate 8 MiB source-read limit.
+
+An exploratory fixture used hundreds of tiny paragraphs per sheet and exceeded
+Studio's existing 64 MiB generated-data budget on update. Same-port restart
+measurements also included approximately three seconds of browser reconnect delay.
+Those probes were retained locally and are not acceptance samples for this final
+bounded-structure, fresh-origin method. Resource limits and timing thresholds were
+not weakened; they are distinct workload/lifecycle conditions.
+
+## Pending human acceptance and other limits
+
+T049 remains unchecked overall until the separate SC-006 study is completed:
+at least four of five representative authors must complete the specified workflow
+within five minutes without maintainer assistance. No authors have been recruited
+or tested, and automated performance/correctness results do not establish usability.
+No Safari/Firefox, Windows process-lifecycle or hostile same-user/OS-compromise
+protection is claimed. See [security boundary](studio-security.md).

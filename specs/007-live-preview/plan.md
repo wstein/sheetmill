@@ -10,7 +10,8 @@
 T001–T018 plus MVP final checks, followed by separately authorized US2
 T042–T046 and its final checks, then separately authorized T019–T041.
 Read-only Studio server stages are implemented; editor/playground stages remain
-planned and T049 performance/usability is unmeasured.
+planned. T049 automated reference-workload checks are implemented; the separate
+five-author usability study remains pending.
 See [verification](../../docs/e2e-verification.md).
 
 Deliver one real `smill` reference through actual CLI validation/inspection/export,
