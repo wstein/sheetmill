@@ -81,3 +81,81 @@ func tempDir(t *testing.T) string {
 	}
 	return p
 }
+
+func TestReferenceImport(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "source.md")
+	output := filepath.Join(dir, "converted.md")
+	source := []byte("---\ntitle: Reference\nplugins: [runCode]\n---\n## Section\n### Card\n```sh\ntouch NEVER_EXECUTED\n```\n")
+	marker := filepath.Join(dir, "executed")
+	source = bytes.ReplaceAll(source, []byte("NEVER_EXECUTED"), []byte(marker))
+	if err := os.WriteFile(input, source, 0600); err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"import", "reference", input, "--repository", "https://github.com/example/reference", "--source-path", "source/source.md", "--revision", strings.Repeat("a", 40), "--license", "GPL-3.0", "--attribution", "Example contributors", "--out", output, "--report", "json"}
+	var out, errout bytes.Buffer
+	if code := Run(append(append([]string{}, args...), "--dry-run"), &out, &errout); code != 0 || !strings.Contains(out.String(), "IMP101") {
+		t.Fatalf("dry run: %d %s %s", code, out.String(), errout.String())
+	}
+	if _, err := os.Stat(output); !os.IsNotExist(err) {
+		t.Fatal("dry-run wrote output", err)
+	}
+	out.Reset()
+	errout.Reset()
+	if code := Run(args, &out, &errout); code != 0 || !strings.Contains(out.String(), "source_sha256") {
+		t.Fatalf("import: %d %s %s", code, out.String(), errout.String())
+	}
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Fatal("source command executed", err)
+	}
+	original, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	errout.Reset()
+	if code := Run(args, &out, &errout); code != 2 || !strings.Contains(errout.String(), "IO003") {
+		t.Fatalf("overwrite: %d %s %s", code, out.String(), errout.String())
+	}
+	after, _ := os.ReadFile(output)
+	if !bytes.Equal(original, after) {
+		t.Fatal("overwrote output")
+	}
+	out.Reset()
+	errout.Reset()
+	if code := Run([]string{"check", output}, &out, &errout); code != 0 {
+		t.Fatal("converted source invalid", errout.String())
+	}
+	os.Remove(output)
+	os.Symlink(input, output)
+	out.Reset()
+	errout.Reset()
+	if Run(args, &out, &errout) != 2 {
+		t.Fatal("output symlink accepted")
+	}
+	after, _ = os.ReadFile(input)
+	if !bytes.Equal(source, after) {
+		t.Fatal("input modified")
+	}
+}
+func TestImportUsage(t *testing.T) {
+	for _, args := range [][]string{{"import"}, {"import", "auto", "x.md"}, {"import", "reference", "x.md"}, {"import", "reference", "x.md", "--dry-run", "--report", "xml"}} {
+		var out, errout bytes.Buffer
+		if Run(args, &out, &errout) != 2 || out.Len() != 0 {
+			t.Fatal(args, out.String(), errout.String())
+		}
+	}
+}
+
+func TestImportErrorJSON(t *testing.T) {
+	dir := tempDir(t)
+	p := filepath.Join(dir, "invalid.md")
+	if err := os.WriteFile(p, []byte("---\ntitle: X\n---\n## S\n### C {.unsupported}\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var out, errout bytes.Buffer
+	args := []string{"import", "reference", p, "--repository", "https://github.com/example/reference", "--source-path", "source/example.md", "--revision", strings.Repeat("a", 40), "--license", "GPL-3.0", "--attribution", "Examples", "--dry-run", "--report", "json"}
+	if code := Run(args, &out, &errout); code != 1 || !strings.Contains(out.String(), "\"severity\": \"error\"") || !strings.Contains(out.String(), "ATTR001") || !strings.Contains(errout.String(), "ATTR001") {
+		t.Fatalf("%d %s %s", code, out.String(), errout.String())
+	}
+}

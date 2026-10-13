@@ -1,6 +1,6 @@
 # 003 — Controlled Reference import
 
-Created: 2026-10-13 · Status: implementation in progress · Depends on: 002
+Created: 2026-10-13 · Status: implemented, review pending · Depends on: 002
 
 ## User scenarios and acceptance
 
