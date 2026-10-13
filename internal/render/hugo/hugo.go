@@ -5,6 +5,7 @@ package hugo
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha256"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -213,10 +214,8 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if title == "" {
 		title = "SheetMill References"
 	}
-	config := map[string]any{"baseURL": "https://example.invalid/", "title": title, "languageCode": "en", "disableKinds": []string{"taxonomy", "term", "RSS", "sitemap"}, "enableRobotsTXT": false, "disableHugoGeneratorInject": true, "params": map[string]any{"base": base}, "outputs": map[string]any{"home": []string{"HTML"}, "page": []string{"HTML"}}, "security": map[string]any{"enableInlineShortcodes": false, "exec": map[string]any{"allow": []string{"none"}, "osEnv": []string{"none"}}, "http": map[string]any{"methods": []string{"none"}, "urls": []string{"none"}}}}
-	if err := putJSON("hugo.json", config); err != nil {
-		panic(err)
-	} // strings and literals only
+	params := map[string]any{"base": base}
+	config := map[string]any{"baseURL": "https://example.invalid/", "title": title, "languageCode": "en", "disableKinds": []string{"taxonomy", "term", "RSS", "sitemap"}, "enableRobotsTXT": false, "disableHugoGeneratorInject": true, "params": params, "outputs": map[string]any{"home": []string{"HTML"}, "page": []string{"HTML"}}, "security": map[string]any{"enableInlineShortcodes": false, "exec": map[string]any{"allow": []string{"none"}, "osEnv": []string{"none"}}, "http": map[string]any{"methods": []string{"none"}, "urls": []string{"none"}}}}
 	// Every remaining file is required; never return a partial project.
 	copyTree := func(files fs.FS, from, to string) error {
 		return fs.WalkDir(files, from, func(name string, d fs.DirEntry, e error) error {
@@ -236,6 +235,22 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN001", Message: "project assembly failed: " + e.Error()}})
 		}
 	}
+	// Hash the exact exported bytes; keep assets in the same directory so CSS's
+	// relative local-font URLs continue to resolve. No unversioned aliases remain.
+	for _, asset := range []struct{ key, stem, ext string }{{"stylesheet", "site", "css"}, {"script", "app", "js"}} {
+		original := "static/assets/" + asset.stem + "." + asset.ext
+		data, ok := p.Files[original]
+		if !ok {
+			return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN001", Message: "project assembly failed: missing asset " + original}})
+		}
+		name := fmt.Sprintf("assets/%s.%x.%s", asset.stem, sha256.Sum256(data), asset.ext)
+		p.Files["static/"+name] = data
+		delete(p.Files, original)
+		params[asset.key] = name
+	}
+	if err := putJSON("hugo.json", config); err != nil {
+		panic(err)
+	} // strings and literals only
 	return p, nil
 }
 

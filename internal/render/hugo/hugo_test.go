@@ -3,7 +3,9 @@ package hugo
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -12,6 +14,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/wstein/sheetmill/internal/markdown"
 	"github.com/wstein/sheetmill/internal/model"
@@ -48,7 +51,7 @@ func TestSemanticRendering(t *testing.T) {
 			t.Errorf("missing %q in %s", want, b)
 		}
 	}
-	for _, f := range []string{"hugo.json", "layouts/baseof.html", "layouts/home.html", "layouts/page.html", "static/assets/site.css", "static/assets/app.js", "static/search.json", "static/brand/favicon.svg", "static/brand/fonts/IBMPlexSans-Regular.woff2", "content/test/index.md", "data/ir/test.json"} {
+	for _, f := range []string{"hugo.json", "layouts/baseof.html", "layouts/home.html", "layouts/page.html", "static/" + assetPath(t, p, "stylesheet"), "static/" + assetPath(t, p, "script"), "static/search.json", "static/brand/favicon.svg", "static/brand/fonts/IBMPlexSans-Regular.woff2", "content/test/index.md", "data/ir/test.json"} {
 		if len(p.Files[f]) == 0 {
 			t.Errorf("missing %s", f)
 		}
@@ -206,7 +209,7 @@ func TestLargeLayoutHints(t *testing.T) {
 	if len(ds) > 0 {
 		t.Fatal(ds)
 	}
-	css := string(p.Files["static/assets/site.css"])
+	css := string(p.Files["static/"+assetPath(t, p, "stylesheet")])
 	for _, selector := range []string{".col-span-4", ".col-span-12", ".row-span-4", ".row-span-12"} {
 		if !strings.Contains(css, selector) {
 			t.Error("missing responsive hint", selector)
@@ -397,7 +400,7 @@ func TestSystemDarkModeWithoutScript(t *testing.T) {
 	if len(ds) > 0 {
 		t.Fatal(ds)
 	}
-	css := string(p.Files["static/assets/site.css"])
+	css := string(p.Files["static/"+assetPath(t, p, "stylesheet")])
 	explicit := css[strings.Index(css, ":root[data-theme=dark]{"):]
 	explicit = explicit[len(":root[data-theme=dark]") : strings.Index(explicit, "}")+1]
 	for _, want := range []string{"@media(prefers-color-scheme:dark){:root:not([data-theme=light])" + explicit, ":root:not([data-theme=light]) .logo-light{display:none!important}", ":root:not([data-theme=light]) .logo-dark{display:block!important}"} {
@@ -525,14 +528,14 @@ func TestHugoIntegrationBasePath(t *testing.T) {
 		t.Fatalf("hugo: %v %s", err, b)
 	}
 	// Files stay at the publish root; only URLs carry the base path.
-	for _, name := range []string{"index.html", "a/index.html", "b/index.html", "search.json", "assets/site.css", "brand/favicon.svg"} {
+	for _, name := range []string{"index.html", "a/index.html", "b/index.html", "search.json", assetPath(t, p, "stylesheet"), assetPath(t, p, "script"), "brand/favicon.svg"} {
 		if _, err := os.Stat(filepath.Join(out, name)); err != nil {
 			t.Fatal(err)
 		}
 	}
 	for _, name := range []string{"index.html", "a/index.html"} {
 		html, _ := os.ReadFile(filepath.Join(out, name))
-		for _, want := range []string{`data-base="/sheetmill/"`, `href="/sheetmill/assets/site.css"`, `src="/sheetmill/assets/app.js"`, `href="/sheetmill/a/"`} {
+		for _, want := range []string{`data-base="/sheetmill/"`, `href="/sheetmill/` + assetPath(t, p, "stylesheet") + `"`, `src="/sheetmill/` + assetPath(t, p, "script") + `"`, `href="/sheetmill/a/"`} {
 			if !bytes.Contains(html, []byte(want)) {
 				t.Errorf("%s lacks %s", name, want)
 			}
@@ -604,5 +607,83 @@ func TestCompactProvenance(t *testing.T) {
 	}
 	if strings.Contains(b, `<details class="source-details" open`) {
 		t.Fatal("metadata must start collapsed")
+	}
+}
+
+// Asset URLs must identify their exact bytes, independently of export location.
+func assetPath(t *testing.T, p Project, key string) string {
+	t.Helper()
+	var config struct {
+		Params map[string]string `json:"params"`
+	}
+	if err := json.Unmarshal(p.Files["hugo.json"], &config); err != nil {
+		t.Fatal(err)
+	}
+	name := config.Params[key]
+	if name == "" {
+		t.Fatalf("missing fingerprinted %s URL", key)
+	}
+	data, ok := p.Files["static/"+name]
+	if !ok {
+		t.Fatalf("missing asset %s", name)
+	}
+	stem, ext := "site", "css"
+	if key == "script" {
+		stem, ext = "app", "js"
+	}
+	want := fmt.Sprintf("assets/%s.%x.%s", stem, sha256.Sum256(data), ext)
+	if name != want {
+		t.Fatalf("asset digest mismatch: got %s want %s", name, want)
+	}
+	if _, ok := p.Files["static/assets/"+stem+"."+ext]; ok {
+		t.Fatal("unversioned asset alias remains")
+	}
+	return name
+}
+
+func TestAssetFingerprintsTrackContent(t *testing.T) {
+	original := themeFiles
+	defer func() { themeFiles = original }()
+	files := fstest.MapFS{}
+	if err := fs.WalkDir(original, "theme", func(name string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		data, err := fs.ReadFile(original, name)
+		files[name] = &fstest.MapFile{Data: data}
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	themeFiles = files
+	input := []Sheet{sheet(t, "test", "Text.")}
+	before, ds := Render(input, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	css, js := assetPath(t, before, "stylesheet"), assetPath(t, before, "script")
+	for _, key := range []string{"stylesheet", "script"} {
+		file := "theme/static/assets/site.css"
+		if key == "script" {
+			file = "theme/static/assets/app.js"
+		}
+		saved := files[file]
+		files[file] = &fstest.MapFile{Data: append(append([]byte{}, saved.Data...), []byte("\n/* asset change */\n")...)}
+		after, ds := Render(input, Options{BasePath: "/sheetmill/"})
+		if len(ds) > 0 {
+			t.Fatal(ds)
+		}
+		newCSS, newJS := assetPath(t, after, "stylesheet"), assetPath(t, after, "script")
+		if (newCSS != css) != (key == "stylesheet") || (newJS != js) != (key == "script") {
+			t.Fatal("only changed asset should get a new URL")
+		}
+		files[file] = saved
+	}
+	delete(files, "theme/static/assets/site.css")
+	if p, ds := Render(input, Options{}); len(ds) == 0 || ds[0].Code != "REN001" || len(p.Files) != 0 {
+		t.Fatal("missing fingerprint input must fail without a partial project", ds)
 	}
 }

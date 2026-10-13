@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark"><title>{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ .Site.Title }}</title>
 <link rel="icon" href="{{ site.Params.base }}brand/favicon.svg" type="image/svg+xml"><link rel="icon" href="{{ site.Params.base }}brand/favicon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="{{ site.Params.base }}brand/apple-touch-icon.png">
-<link rel="stylesheet" href="{{ site.Params.base }}assets/site.css"><script src="{{ site.Params.base }}assets/app.js" defer></script>
+<link rel="stylesheet" href="{{ site.Params.base }}{{ site.Params.stylesheet }}"><script src="{{ site.Params.base }}{{ site.Params.script }}" defer></script>
 </head>
 <body>
 <a class="skip" href="#app-main">Skip to content</a>
