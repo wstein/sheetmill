@@ -33,13 +33,47 @@ func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	return build
 }
 func runHugo(args []string, destination string, options hugo.Options, out, errout io.Writer) int {
+	project, count, report, status := renderSelection(args, options, errout)
+	if status != 0 {
+		return status
+	}
+	report(project.Warnings, " (warning)")
+	if err := writeFiles(destination, project.Files); err != nil {
+		fmt.Fprintf(errout, "%s:1:1: IO003: %v\n", destination, err)
+		return 2
+	}
+	if _, err := fmt.Fprintf(out, "Exported %d sheets to %s (Hugo %s; local generation is a separate command).\n", count, destination, hugo.Version); err != nil {
+		fmt.Fprintln(errout, "IO002: "+err.Error())
+		return 2
+	}
+	return 0
+}
+
+// runStrict renders the selection in memory and reports every renderer warning
+// (unresolved links, inert HTML, unfetched images) as an error. Nothing is written.
+func runStrict(args []string, sourceBase string, errout io.Writer) int {
+	project, _, report, status := renderSelection(args, hugo.Options{SourceBaseURL: sourceBase}, errout)
+	if status != 0 {
+		return status
+	}
+	report(project.Warnings, "")
+	if len(project.Warnings) > 0 {
+		return 1
+	}
+	return 0
+}
+
+// renderSelection reads, parses and renders the selected sheets. The returned
+// report prints renderer issues against every selected path of their source.
+func renderSelection(args []string, options hugo.Options, errout io.Writer) (hugo.Project, int, func([]hugo.Issue, string), int) {
+	report := func([]hugo.Issue, string) {}
 	seen := map[string]bool{}
 	var files []string
 	for _, arg := range args {
 		paths, err := inputs(arg, true)
 		if err != nil {
 			fmt.Fprintf(errout, "%s:1:1: IO001: %v\n", arg, err)
-			return 2
+			return hugo.Project{}, 0, report, 2
 		}
 		for _, path := range paths {
 			if !seen[path] {
@@ -58,7 +92,7 @@ func runHugo(args []string, destination string, options hugo.Options, out, errou
 		b, err := read(path)
 		if err != nil {
 			fmt.Fprintf(errout, "%s:1:1: IO001: %v\n", path, err)
-			return 2
+			return hugo.Project{}, 0, report, 2
 		}
 		document, ds := markdown.Parse(b)
 		for _, d := range ds {
@@ -71,10 +105,10 @@ func runHugo(args []string, destination string, options hugo.Options, out, errou
 		sheets = append(sheets, hugo.Sheet{ID: sheetID(name), SourceName: name, Path: filepath.ToSlash(relative), Document: document})
 	}
 	if invalid {
-		return 1
+		return hugo.Project{}, 0, report, 1
 	}
 	project, ds := hugo.Render(sheets, options)
-	report := func(ds []hugo.Issue, suffix string) {
+	report = func(ds []hugo.Issue, suffix string) {
 		printed := map[string]bool{}
 		for _, d := range ds {
 			paths := sourcePaths[d.Source]
@@ -92,18 +126,9 @@ func runHugo(args []string, destination string, options hugo.Options, out, errou
 	}
 	report(ds, "")
 	if len(ds) > 0 {
-		return 1
+		return hugo.Project{}, 0, report, 1
 	}
-	report(project.Warnings, " (warning)")
-	if err := writeFiles(destination, project.Files); err != nil {
-		fmt.Fprintf(errout, "%s:1:1: IO003: %v\n", destination, err)
-		return 2
-	}
-	if _, err := fmt.Fprintf(out, "Exported %d sheets to %s (Hugo %s; local generation is a separate command).\n", len(sheets), destination, hugo.Version); err != nil {
-		fmt.Fprintln(errout, "IO002: "+err.Error())
-		return 2
-	}
-	return 0
+	return project, len(sheets), report, 0
 }
 
 // commonDir is the deepest directory containing every selected file. Sheet paths

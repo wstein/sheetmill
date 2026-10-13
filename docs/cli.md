@@ -6,7 +6,7 @@ category: reference
 | Command | Behavior |
 | --- | --- |
 | `smill version` | Print `smill dev` and LF |
-| `smill check <file-or-directory>...` | Validate selected Markdown; no success output |
+| `smill check <file-or-directory>... [--strict [--source-base-url <GitHub-blob-directory>]]` | Validate selected Markdown; no success output. `--strict` also renders the selection in memory and fails on renderer warnings such as unresolved links (`REN103`) |
 | `smill inspect <file>` | Validate one file and print canonical JSON |
 | `smill import reference <file> [options]` | [Controlled conversion](imports.md), dry-run and loss reports |
 | `smill serve [file-or-directory] [--open] [--port 0..65535] [--hugo /absolute/path]` | Authenticated read-only local live preview through installed Hugo 0.167.0 |
