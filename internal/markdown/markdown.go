@@ -90,7 +90,7 @@ func Parse(src []byte) (*model.Document, []diagnostic.Diagnostic) {
 					ds = append(ds, diagnostic.Diagnostic{Code: "MD001", Message: "a ### card requires a preceding ## section", Span: node.Span})
 					continue
 				}
-				section.Cards = append(section.Cards, model.Card{ID: contentID, Title: title, Span: node.Span, Heading: node, Layout: attrs.Layout, Classes: attrs.Classes, Compatibility: attrs.Compatibility, Content: []model.Node{}})
+				section.Cards = append(section.Cards, model.Card{ID: contentID, IDExplicit: attrs.ID != "", Title: title, Span: node.Span, Heading: node, Layout: attrs.Layout, Classes: attrs.Classes, Compatibility: attrs.Compatibility, Content: []model.Node{}})
 				card = &section.Cards[len(section.Cards)-1]
 			}
 			continue
