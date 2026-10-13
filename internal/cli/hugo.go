@@ -17,16 +17,19 @@ import (
 
 func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	build := &cobra.Command{Use: "build", Short: "Export a renderer project (no tool execution)"}
-	var destination, title string
-	command := &cobra.Command{Use: "hugo <file-or-directory>...", Short: "Export a self-contained Hugo project to a new directory", Args: cobra.MinimumNArgs(1), Run: func(cmd *cobra.Command, args []string) { *status = runHugo(args, destination, title, out, errout) }}
+	var destination, title, base string
+	command := &cobra.Command{Use: "hugo <file-or-directory>...", Short: "Export a self-contained Hugo project to a new directory", Args: cobra.MinimumNArgs(1), Run: func(cmd *cobra.Command, args []string) {
+		*status = runHugo(args, destination, hugo.Options{Title: title, BasePath: base}, out, errout)
+	}}
 	command.Flags().StringVar(&destination, "out", "", "new project directory; never overwritten")
 	command.Flags().StringVar(&title, "title", "SheetMill References", "reference library title")
+	command.Flags().StringVar(&base, "base-path", "/", "URL path the site is served under, such as /sheetmill/")
 	command.MarkFlagRequired("out")
 	build.AddCommand(command)
 	build.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a renderer is required") }
 	return build
 }
-func runHugo(args []string, destination, title string, out, errout io.Writer) int {
+func runHugo(args []string, destination string, options hugo.Options, out, errout io.Writer) int {
 	seen := map[string]bool{}
 	var files []string
 	for _, arg := range args {
@@ -65,7 +68,7 @@ func runHugo(args []string, destination, title string, out, errout io.Writer) in
 	if invalid {
 		return 1
 	}
-	project, ds := hugo.Render(sheets, hugo.Options{Title: title})
+	project, ds := hugo.Render(sheets, options)
 	report := func(ds []hugo.Issue, suffix string) {
 		printed := map[string]bool{}
 		for _, d := range ds {
