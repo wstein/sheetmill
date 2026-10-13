@@ -1,4 +1,4 @@
-# One-sheet web E2E
+# Reference web E2E
 
 Development-only package: Node **24.21.0**, Playwright **1.64.0**, bundled Chromium
 revision **1248** (156.0.8078.4), Go **1.27.2** and installed Hugo **0.167.0**.
@@ -7,7 +7,7 @@ No sibling CLI, container or account is required. No production JavaScript compi
 Explicit setup, from this directory:
 
 ```sh
-npm ci
+npm ci --ignore-scripts
 npx --no-install playwright install chromium
 export SHEETMILL_HUGO=/absolute/path/to/hugo
 npm run test:harness
@@ -26,7 +26,10 @@ Hugo projects and a loopback server on an ephemeral port. It never uses an insta
 smill version/check/inspect/build-hugo and pinned Hugo version/build arguments via
 direct subprocess APIs. Commands displayed in sheets are content, never executed.
 
-Exactly one real-product corpus case, `smill`, is accepted. Desktop and mobile run
+The default selection remains the single `smill` case. Set
+`SHEETMILL_E2E_CORPUS=all npm test` to generate `smill`, `bdock` and `whr`
+together and exercise every sheet through the same journey. Unknown selections
+fail explicitly. Cross-sheet links are checked against selected card identities. Desktop and mobile run
 the same full reader journey: keyboard search/navigation, actual clipboard contents,
 appearance persistence, card links and overflow. A separate no-JavaScript context
 checks ordinary navigation/content. Temporary adversarial variants of the same
@@ -41,5 +44,7 @@ never upload traces, generated sites or executables. Teardown removes only owned
 temporary trees and closes owned contexts/listeners/children. One worker avoids
 clipboard interference; zero retries keeps failures visible.
 
-This implements only the 007 MVP. `serve`, sibling sheets, PDF, navi, playgrounds
-and deployment remain outside it. See `docs/e2e-verification.md` for actual results.
+This implements the 007 MVP and US2 corpus increment. `serve`, PDF, navi and
+playgrounds remain deferred. CI runs default and explicit all-corpus suites,
+without publishing artifacts or deploying. See `docs/e2e-corpus.md` for pinned
+product identities; no sibling executable is needed on PATH. See `docs/e2e-verification.md` for actual results.

@@ -82,10 +82,34 @@ journeys. Those are not claims that the later Studio stories are implemented.
 
 ## Remaining scope
 
-No `smill serve`, browser editor, sibling-product corpus, playground, PDF, navi,
-deployment, release or distribution build was added. T019–T046 and T049 remain
-unchecked. Live-update latency, five-author usability, other browser engines and
+The original MVP added no `smill serve`, browser editor, sibling-product corpus,
+playground, PDF, navi, deployment, release or distribution build. The separately
+authorized US2 corpus increment below adds only sibling sheets and harness
+coverage; T019–T041 and T049 remain unchecked. Live-update latency, five-author usability, other browser engines and
 Windows process lifecycle are not measured or claimed. Exact site bytes across
 different operating systems are not asserted; repeated builds use identical tools
 and configuration on each host. Independent review and hosted CI results remain
 separate evidence from author-local checks.
+
+
+## US2: additional inputs (2026-10-13)
+
+T042–T046 add independently authored BundleDock and WorkHarbor references at
+verified immutable source revisions. The default `smill` suite passed all 6
+checks; the explicit `SHEETMILL_E2E_CORPUS=all` suite passed all 12 checks twice
+from fresh owned roots. All 15 helpers passed, along with Go race tests, vet,
+module verification, formatting and diff checks. Both sibling executables were
+absent from the test PATH. No source example was executed.
+
+The same reader assertion function covers all products at desktop/mobile sizes
+and with JavaScript disabled. Cross-sheet/card targets, attribution and exact
+clipboard bytes are tested; every generated tree and selected source hash is
+compared. See [corpus inventories, hashes and evidence](e2e-corpus.md). The existing
+[deployed demo](deployed-demo-verification.md) was verified read-only before this
+increment. Existing Pages workflow behavior was not modified.
+
+The new selection/target helper test was observed failing against the MVP-only
+loader before implementation, then passing with explicit selection and cross-card
+validation. Additional permalink validation rejects a missing oracle before a
+browser journey begins. Source/CI and final documentation receive independent
+Sol review; exact review results are recorded in the corpus evidence document.

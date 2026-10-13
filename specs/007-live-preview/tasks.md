@@ -1,7 +1,7 @@
 # Tasks: SheetMill Studio — Local Live Preview
 
 **Input**: `specs/007-live-preview/{spec,plan,research,data-model,quickstart}.md` and
-`contracts/{e2e,serve}.md`. MVP tasks are implemented as marked; later tasks remain planned and unchecked.
+`contracts/{e2e,serve}.md`. MVP and US2 tasks are implemented as marked; server tasks remain planned and unchecked.
 **Tests**: Explicitly requested by the spec and repository test-first policy.
 **Format**: `- [ ] Tnnn [P?] [USn?] Description with exact repository-relative paths`.
 
@@ -108,11 +108,11 @@ refused/inert while an authorized local preview remains usable.
 **Independent test**: `SHEETMILL_E2E_CORPUS=all npm test` passes without installed
 `bdock`/`whr`, proving representative cards and cross-links for all selected sheets.
 
-- [ ] T042 [US2] Record the authoritative full source revisions or released versions and verified command inventories for BundleDock/WorkHarbor in `docs/e2e-corpus.md`; do not assume a similarly named checkout or installed `whr` is authoritative, and perform no sibling repository edits.
-- [ ] T043 [P] [US2] Author `examples/sheets/bdock.md` against its T042 identity with stable IDs, verified command/flag examples, provenance and at least one meaningful cross-reference; original content only and no runtime invocation from the journey.
-- [ ] T044 [P] [US2] Author `examples/sheets/whr.md` against its T042 identity with stable IDs, verified workflow examples, provenance and at least one meaningful cross-reference; original content only and no accounts/containers/services in the journey.
-- [ ] T045 [US2] Add failing parameterized cases in `tests/e2e/corpus.spec.mjs`, then extend `tests/e2e/corpus.json` and selection in `tests/e2e/helpers/fixtures.mjs` for explicit `SHEETMILL_E2E_CORPUS=all`, preserving default MVP `smill` only and the same shared browser assertions/oracle rules.
-- [ ] T046 [US2] Run all selected references with sibling executables absent from PATH and verify cross-sheet/card links, search, attribution and exact copy using the same harness; record actual results in `docs/e2e-corpus.md` and `docs/e2e-verification.md` without executing displayed examples.
+- [X] T042 [US2] Record the authoritative full source revisions or released versions and verified command inventories for BundleDock/WorkHarbor in `docs/e2e-corpus.md`; do not assume a similarly named checkout or installed `whr` is authoritative, and perform no sibling repository edits.
+- [X] T043 [P] [US2] Author `examples/sheets/bdock.md` against its T042 identity with stable IDs, verified command/flag examples, provenance and at least one meaningful cross-reference; original content only and no runtime invocation from the journey.
+- [X] T044 [P] [US2] Author `examples/sheets/whr.md` against its T042 identity with stable IDs, verified workflow examples, provenance and at least one meaningful cross-reference; original content only and no accounts/containers/services in the journey.
+- [X] T045 [US2] Add failing parameterized cases in `tests/e2e/corpus.spec.mjs`, then extend `tests/e2e/corpus.json` and selection in `tests/e2e/helpers/fixtures.mjs` for explicit `SHEETMILL_E2E_CORPUS=all`, preserving default MVP `smill` only and the same shared browser assertions/oracle rules.
+- [X] T046 [US2] Run all selected references with sibling executables absent from PATH and verify cross-sheet/card links, search, attribution and exact copy using the same harness; record actual results in `docs/e2e-corpus.md` and `docs/e2e-verification.md` without executing displayed examples.
 
 ## Phase 8: Polish and cross-cutting checks (apply to the selected increment only)
 
@@ -169,3 +169,7 @@ matching browser were provisioned explicitly; tests themselves download nothing.
 No product server or later runtime feature was implemented. Independent source
 re-review is clear; final documentation is reviewed at handoff. See
 `docs/e2e-verification.md`.
+
+US2 implementation was separately authorized on 2026-10-13: T042–T046 plus
+applicable final checks. See `docs/e2e-corpus.md` for pinned source inventories and
+actual default/all-corpus results. T019–T041 and T049 remain unchecked.

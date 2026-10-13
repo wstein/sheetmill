@@ -70,6 +70,9 @@ The [007 MVP harness](../tests/e2e/README.md) selects only
 compares every built public file byte, and automates desktop/mobile/no-JavaScript
 reader journeys. This complements the renderer integration test without adding a
 product preview server. See [actual E2E verification](e2e-verification.md).
+The explicit `SHEETMILL_E2E_CORPUS=all` selection adds independently authored
+BundleDock and WorkHarbor references to that same harness, including cross-card
+links. See [verified corpus identities](e2e-corpus.md).
 
 ## GitHub Pages
 
