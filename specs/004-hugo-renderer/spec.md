@@ -32,6 +32,20 @@ Depends on: accepted core/Reference import (001–003)
   characters, entity-encoded forbidden schemes, whitespace in opaque parts, and any scheme
   other than http, https or mailto. Generated Hugo config sets `security` `exec` and
   `http` to none and disables inline shortcodes.
+- FR-005: Keep deterministic source/project/search bytes independent of input order,
+  clocks and absolute host paths. Pin Hugo 0.167.0 (single source: `.hugo-version`,
+  checked by CI); the integration test refuses any other `hugo version` output,
+  allowing only `-`/`+` build suffixes. Compare actual built file bytes.
+- FR-006: Preserve all metadata in JSON (`data/ir/<sheet>.json`, including unknown
+  frontmatter keys) and show source/license attribution on pages.
+- FR-007: Provide responsive layout, progressive local search, visible keyboard focus,
+  semantic navigation, code copy, dark mode and print-friendly CSS.
+- FR-008: Use original embedded templates/styles/scripts and local licensed brand/font
+  assets; no remote themes, CDN, snippet execution or deployment; `smill` and the
+  renderer never download tools. CI may install the pinned, checksum-verified Hugo
+  for the integration test, and never uploads site artifacts.
+- FR-009: User explicitly authorizes brand exports, implementation and local site
+  generation on 2026-10-13. Merge/release/deploy and Typst/navi remain separately gated.
 - FR-010: Diagnostics (documented in docs/cli.md and docs/hugo.md):
   - `REN001` (error): unsupported IR node.
   - `REN002` (error): unsafe URL.
@@ -40,26 +54,12 @@ Depends on: accepted core/Reference import (001–003)
   - `REN102` (warning): image retained as an unfetched link.
   - `REN103` (warning): unresolved internal link (target not a selected sheet, or
     fragment matching no section/card ID); kept as written.
-- FR-005: Keep deterministic source/project/search bytes independent of input order,
-  clocks and absolute host paths. Pin Hugo 0.167.0 (single source: `.hugo-version`, checked by CI); the integration
-  test refuses any other `hugo version` output, allowing only `-`/`+` build suffixes.
-  Compare actual built file bytes.
-- FR-006: Preserve all metadata in JSON (`data/ir/<sheet>.json`, including unknown
-  frontmatter keys) and show source/license attribution on pages.
-- FR-007: Provide responsive layout, progressive local search, visible keyboard focus,
-  semantic navigation, code copy, dark mode and print-friendly CSS.
-- FR-008: Use original embedded templates/styles/scripts and local licensed brand/font
-  assets; no remote themes, CDN, snippet execution or deployment; `smill` and the renderer never
-  download tools. CI may install the pinned, checksum-verified Hugo for the integration
-  test, and never uploads site artifacts.
-- FR-009: User explicitly authorizes brand exports, implementation and local site
-  generation on 2026-10-13. Merge/release/deploy and Typst/navi remain separately gated.
 
 ## Success criteria
 
-Semantic and negative tests pass. New-output boundaries preserve existing files, including after an injected
-mid-write IO failure (partial new project reported as `IO003`).
+Semantic and negative tests pass. New-output boundaries preserve existing files.
 Project and actual Hugo output hashes match across repeated generation. Local site
-is visually checked at desktop/mobile, with search/navigation exercised. a separately assigned independent reviewer (recorded in docs/hugo-verification.md)
-reviews the exact final revision; findings are fixed and re-reviewed. Human approval
-remains required before any merge.
+is visually checked at desktop/mobile, with search/navigation exercised. A separately
+assigned independent reviewer (recorded in docs/hugo-verification.md) reviews the
+exact final revision; findings are fixed and re-reviewed. Human approval remains
+required before any merge.
