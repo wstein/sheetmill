@@ -1,6 +1,6 @@
 # SheetMill brand specification
 
-**Status:** Direction and palette selected — Editorial Stack, revision 2 (2026-10-13). Brand direction/specification approved on 2026-10-13; final masters and optical variants require review.
+**Status:** Direction and palette selected — Editorial Stack, revision 3 (2026-10-13). Brand direction/specification approved on 2026-10-13; final masters and optical variants require review.
 **Product:** **SheetMill** · **CLI:** `smill` · **Tagline:** **One source. Every reference.**
 
 This document records the selected brand direction and palette. The user requested the same three-sheet stack concept with updated colors and correction of the review findings on 2026-10-13. The user approved the brand direction/specification and authorized creation of final masters and exports on 2026-10-13. The previous comparison is a concept, not an exact vector master. Newly implemented master geometry and small-size optical variants must be verified and reviewed before being treated as locked. Small-size optical adaptation and export derivatives retain the same three-sheet identity. No unseen concept-board illustration or sibling artwork was copied. Raster exports, banners, social cards and local Hugo generation are now explicitly authorized. Deployment, PDF and navi output remain separately gated.
@@ -9,7 +9,7 @@ This document records the selected brand direction and palette. The user request
 
 SheetMill is an independent, loosely coupled fourth product alongside BundleDock, WorkHarbor and CrewBook. It shares the family's disciplined typography, recognizable icon silhouette, reproducible vector artwork, and concise copy, **not** WorkHarbor's navy/teal palette or anchor icon.
 
-**Positioning:** A Git-native Go compiler for authoring technical reference sheets in GFM with YAML frontmatter with planned outputs for web, multi-page PDF (Typst), and terminal (navi). The current implementation covers checking, inspection and controlled Reference import.
+**Positioning:** A Git-native Go compiler for authoring technical reference sheets in GFM with YAML frontmatter with planned outputs for web, multi-page PDF (Typst), and terminal (navi). The current implementation covers checking, inspection, controlled Reference import and Hugo project export.
 
 **Personality:** editorial, crisp, approachable, technical, calm. Avoid corporate gradients, 3D effects, physical-paper realism, glossy shadows, and overly playful cartoon shapes.
 
@@ -89,7 +89,7 @@ Dark mode is a presentation adaptation, **not** a second brand. Preserve coral a
 
 Build the master SVG on a **64 × 64 viewBox** (`viewBox="0 0 64 64"`). This grid defines proportions, not the final image pixel size.
 
-- Candidate source geometry is recorded in `tokens.json`; rotation is exactly 0 degrees.
+- Implemented source geometry is recorded in `tokens.json`; rotation is exactly 0 degrees.
 - Canvas padding / safe-area target: at least 6 units on all sides; icon bounding box within `x=7..57`, `y=7..57`.
 - Each sheet is an upright **rounded quadrilateral / near-rectangle** with consistent corner radius approximately 4 units; no stroke and no shadow.
 - Front coral sheet: dominant at **upper-left**, visible as the largest solid page. Bounding box approximately `(9, 9)` to `(43, 47)`.
@@ -118,7 +118,7 @@ For consistency, treat a symbol-in-tile variant as a specific asset, never arbit
 
 ### Wordmark
 
-- Font family: **Bricolage Grotesque**, outlined from the pinned source in `README.md`, with `wght=700`, `wdth=100`, `opsz=72`. SVGs contain no live text or external font dependencies; no font binaries are committed.
+- Font family: **Bricolage Grotesque**, outlined from the pinned source in `README.md`, with `wght=700`, `wdth=100`, `opsz=72`. SVGs contain no live text or external font dependencies. The local web UI includes a separately licensed, pinned IBM Plex Sans WOFF2 font.
 - “**Sheet**” in `ink-900` (`#2C3140`) on light surfaces and white in dark contexts.
 - “**Mill**” in `coral-500` (`#EA877F`) on both surfaces **when used as large display wordmark**. This is a brand-wordmark exception, not permission for low-contrast large body text. The defined light accessible variant uses `coral-700`; small UI text uses ink/white.
 - Letterforms are typeset as a **single joined word** with one baseline, one optical weight, and no gap at the capitalization boundary.
@@ -145,7 +145,7 @@ Any optical adjustments to these ratios must be documented when committing final
 | UI body, captions, documentation | IBM Plex Sans | Explanations, navigation, tagline |
 | Code, commands, key bindings | IBM Plex Mono | CLI snippets, GFM code fences, keyboard hints |
 
-Use consistent weights and spacing. Future PDF output must select an explicit font profile that pins every family, file hash, weight and variation axis. A missing or mismatched font is an error; never substitute according to host availability. An alternate profile is a deliberate configuration change with layout regression checks. IBM Plex Sans/Mono profiles must be pinned before renderer implementation; no PDF is generated by this branding task. Keep headings short and comfortable in multi-column references.
+Use consistent weights and spacing. Future PDF output must select an explicit font profile that pins every family, file hash, weight and variation axis. A missing or mismatched font is an error; never substitute according to host availability. An alternate profile is a deliberate configuration change with layout regression checks. Web v0.1 uses the pinned local IBM Plex Sans regular file for headings/body and platform monospace for code; this deliberate browser fallback is not a print profile. PDF Sans/Mono profiles must be pinned before Typst renderer implementation; no PDF is generated by this branding task. Keep headings short and comfortable in multi-column references.
 
 ## 7. Asset inventory and export rules
 
@@ -155,13 +155,13 @@ All raster assets must be derived from checked-in SVG source masters. Do not ind
 
 | Asset | Intended dimensions / format | Notes |
 | --- | --- | --- |
-| `assets/logo.svg` | SVG; natural lockup ratio | Horizontal symbol + outlined SheetMill wordmark; candidate exists |
-| `assets/logo-dark.svg` | SVG; same lockup ratio | White Sheet / coral Mill on a dark surface; candidate exists |
-| `assets/logo-accessible.svg` | SVG; same lockup ratio | Ink Sheet / dark-coral Mill; candidate exists |
-| `assets/preview.svg` | 1200 × 650 | Local comparison board; candidate exists |
-| `assets/icon.svg` | 64 × 64 viewBox | Source icon; candidate exists |
+| `assets/logo.svg` | SVG; natural lockup ratio | Horizontal symbol + outlined SheetMill wordmark; implemented master |
+| `assets/logo-dark.svg` | SVG; same lockup ratio | White Sheet / coral Mill on a dark surface; implemented master |
+| `assets/logo-accessible.svg` | SVG; same lockup ratio | Ink Sheet / dark-coral Mill; implemented master |
+| `assets/preview.svg` | 1200 × 1070 | Local comparison board; implemented master |
+| `assets/icon.svg` | 64 × 64 viewBox | Source icon; implemented master |
 | `assets/icon-small.svg` | 64 × 64 viewBox | Optically simplified small-size master |
-| `assets/icon-dark.svg` | 64 × 64 viewBox | Defined dark tile; candidate exists |
+| `assets/icon-dark.svg` | 64 × 64 viewBox | Defined dark tile; implemented master |
 | `assets/banner.svg` | 1000 × 220 viewBox | README banner; icon, wordmark, optional tagline |
 | `assets/social-preview.svg` | 1280 × 640 viewBox | Social card with text and whitespace |
 | `assets/favicon.svg` | SVG optimized for tiny sizes | Derived from `icon-small.svg` geometry |
@@ -171,7 +171,7 @@ All raster assets must be derived from checked-in SVG source masters. Do not ind
 | `assets/social-preview.png` | 1280 × 640 | Generated from SVG |
 | `assets/banner.png` | 1000 × 220 | Generated from SVG |
 
-Inventory entries other than the five logo/icon candidates and comparison board remain planned, not generated. The sizes above are **SheetMill proposals**, not inherited dimensions from WorkHarbor. Additional platform-specific variants can be added if justified, but must share the same master geometry.
+All listed masters and raster derivatives are implemented and verified. `icon-mono.svg` and `apple-touch-icon.svg` are the monochrome and opaque square source variants. The sizes above are **SheetMill proposals**, not inherited dimensions from WorkHarbor. Additional platform-specific variants can be added if justified, but must share the same master geometry.
 
 ### Prohibited transformations
 
@@ -199,12 +199,12 @@ Prefer concise, factual, technical copy. Avoid claims such as “pixel-perfect a
 
 Before locking or publishing visual assets (candidate source/preview work is allowed within the user’s request):
 
-1. Review the current light/dark lockups and 64/32/16-px icon samples together. Extend the comparison board with banners/social cards when those assets are explicitly requested. Renderer examples are a separate later gate.
+1. Review the current light/dark lockups and 64/32/16-px icon samples together. Extend the comparison board with banners/social cards when those assets are explicitly requested. Inspect the authorized local Hugo example at desktop and mobile sizes.
 2. Check coral dominance, shape consistency, wordmark proportions, font licensing, and whether the three-sheet silhouette remains recognizable at 16 px.
 3. Verify WCAG AA contrast for **actual** interactive/text combinations, and include text labels where color conveys meaning.
 4. Inspect PNG derivatives against the SVG master and record their generation commands and tool versions.
 5. Inspect the identity in monochrome/grayscale before locking it. Actual PDF print/layout checks belong to the separately authorized Typst renderer milestone.
-6. Obtain explicit human approval of the comparison board **before** treating visual assets as locked. Do not interpret approval of this prose specification as approval to build or publish assets.
+6. Obtain explicit human approval of the comparison board **before** treating visual assets as locked. The user separately authorized implementation and local exports on 2026-10-13; the prose approval alone does not lock exact paths or authorize deployment.
 
 ## 11. Engineering and governance
 
