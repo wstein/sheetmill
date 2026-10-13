@@ -20,7 +20,8 @@ Branch: `codex/001-core-foundation`
 - FR-003: Pin Go 1.27.2 and Actions by verified commit SHAs.
 - FR-004: CI checks format, dependency integrity, race tests, vet and bounded fuzzing.
 - FR-005: Spec Kit Codex scaffolding and SheetMill constitution remain portable.
-- FR-006: Explore three brand concepts without adopting a palette.
+- FR-006: Explore three brand concepts without adopting a palette. (Historical;
+  superseded by `assets/BRAND.md` and 004 T004.)
 
 ## Success criteria
 
