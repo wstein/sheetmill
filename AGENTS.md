@@ -21,10 +21,12 @@ Sibling repository policies do not govern this repository.
   2026-10-13: read-only local `smill serve`, truthful freshness/diagnostics,
   scoped source access and authenticated loopback HTTP. Browser editing, PDF,
   navi, playgrounds and deployment are excluded from this increment.
-- Feature 012 is partly authorized (user, 2026-10-13): the base path option and
-  GitHub Pages deployment of the independently authored `examples/sheets` only,
-  to https://wstein.github.io/sheetmill/ from `main` pushes and manual runs. The
-  redistribution gate and other sheets or hosts remain separately gated.
+- Feature 012 is partly authorized (user, 2026-10-13; extended 2026-10-14): the base
+  path option and GitHub Pages deployment, from `main` pushes and manual runs, of
+  the SheetMill manual built from the user-facing `docs/` pages at
+  https://wstein.github.io/sheetmill/, the independently authored `examples/sheets`
+  demo at `/sheetmill/demo/`, and `llms.txt` plus the agent guide as plain files.
+  The redistribution gate and other sheets or hosts remain separately gated.
 - Use `codex/` feature branches and Conventional Commits. Topic pushes and draft
   PRs belong to an authorized implementation handoff; otherwise ask before publishing.
 - Merge, tag, release, deploy, distribution builds, PDF generation, artifact
