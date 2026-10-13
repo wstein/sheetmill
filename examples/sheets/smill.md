@@ -53,11 +53,15 @@ A directory selects lowercase `.md` files **one level deep**. Subdirectories are
 Use `/private/tmp` for macOS scratch sources. Each input is limited to 8 MiB; there is no recursive or stdin mode.
 
 ### Exit status {#exit-status}
+These statuses describe batch validation and export commands.
+
 | Status | Meaning |
 | :-- | :-- |
 | `0` | Success |
 | `1` | Invalid source or rendering diagnostic |
 | `2` | Usage or file access/output failure |
+
+`serve` keeps invalid sources in a running diagnostic session. Normal interruption exits `0`; setup or fatal runtime failures exit `2`.
 
 IO/usage failures take precedence over invalid-source status. Existing export directories are refused, never overwritten.
 
