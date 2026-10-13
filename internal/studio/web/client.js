@@ -17,12 +17,14 @@
       for(const d of s.diagnostics||[]){const p=document.createElement('p');p.textContent=`${s.name}:${d.span.start.line}:${d.span.start.column}: ${d.code}: ${d.message}`;details.append(p)}
     }
   }
+  let serial=0,lastSuccess=0;
   async function refresh(){
+    const request=++serial,stream=events;
     try{
       const response=await fetch('/studio/state',{cache:'no-store'});if(!response.ok)throw Error('State unavailable');
-      const next=await response.json();if(state&&next.version<state.version)return;state=next;render();
+      const next=await response.json();if(stream!==events)return;lastSuccess=Math.max(lastSuccess,request);connected=events?.readyState===EventSource.OPEN&&navigator.onLine;if(state&&next.version<state.version){render();return}state=next;render();
       if(connected&&next.published>seen){seen=next.published;location.reload()}
-    }catch{connected=false;render()}
+    }catch{if(stream===events&&request>=lastSuccess){connected=false;render()}}
   }
   let events;
   function connect(){
