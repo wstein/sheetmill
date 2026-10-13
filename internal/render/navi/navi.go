@@ -18,6 +18,9 @@ import (
 // Version is the export format version recorded in every file header.
 const Version = 1
 
+// braille is U+2800, which navi's finder serialization uses as a field separator.
+const braille = '⠀'
+
 // Profile names the one shell an export targets. navi runs every snippet through
 // its single configured shell, so SheetMill validates against one profile per build.
 type Profile struct {
@@ -83,6 +86,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	}
 	p := Project{Files: map[string][]byte{}}
 	var errs []Issue
+	hashes := map[uint64]string{}
 	ordered := append([]Sheet(nil), sheets...)
 	sort.SliceStable(ordered, func(i, j int) bool { return ordered[i].Path < ordered[j].Path })
 	for _, s := range ordered {
@@ -95,9 +99,19 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			errs = append(errs, issue(s, "REN001", "duplicate output file "+name+"; sheet IDs must be unique", diagnostic.Span{}))
 			continue
 		}
-		body, warnings, es := renderSheet(s, profile)
+		body, entries, warnings, es := renderSheet(s, profile)
 		errs = append(errs, es...)
 		p.Warnings = append(p.Warnings, warnings...)
+		for _, e := range entries {
+			// navi keeps only the first entry per identity hash and says nothing about
+			// the rest, so a batch with equal hashes would lose cards silently.
+			h := itemHash(e.prehash)
+			if prior, seen := hashes[h]; seen {
+				errs = append(errs, issue(s, "NAV008", fmt.Sprintf("card %q has the same navi identity hash as %s; navi would silently drop one of them", e.card, prior), diagnostic.Span{}))
+			} else {
+				hashes[h] = s.SourceName + "#" + e.card
+			}
+		}
 		if len(es) == 0 && body != nil {
 			p.Files[name] = body
 		}
@@ -114,7 +128,40 @@ func issue(s Sheet, code, message string, span diagnostic.Span) Issue {
 
 type cardMeta struct{ params map[string]param }
 
-func renderSheet(s Sheet, profile Profile) ([]byte, []Issue, []Issue) {
+// entry identifies one exported card for the batch-wide identity check.
+type entry struct{ card, prehash string }
+
+// itemHash models navi v2.24.0 common/hash.rs: FNV-1a (64 bit) over the Rust
+// string hash input, which is the UTF-8 bytes followed by 0xff.
+func itemHash(prehash string) uint64 {
+	h := uint64(0x811C9DC5)
+	for _, b := range append([]byte(prehash), 0xff) {
+		h ^= uint64(b)
+		h *= 0x100000001b3
+	}
+	return h
+}
+
+// context is the unique first tag of one card: sheetmill:<path>#<id>!. The final
+// ! terminates it so tags and title cannot concatenate into another card's text.
+func context(s Sheet, card model.Card) string {
+	return "sheetmill:" + encode(firstNonEmpty(s.Path, s.SourceName)) + "#" + encode(card.ID) + "!"
+}
+
+// encode percent-escapes every byte outside [A-Za-z0-9_./-].
+func encode(s string) string {
+	var b strings.Builder
+	for _, c := range []byte(s) {
+		if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-' || c == '.' || c == '/' {
+			b.WriteByte(c)
+		} else {
+			fmt.Fprintf(&b, "%%%02X", c)
+		}
+	}
+	return b.String()
+}
+
+func renderSheet(s Sheet, profile Profile) ([]byte, []entry, []Issue, []Issue) {
 	d := s.Document
 	var errs, warns []Issue
 	bad := func(msg string) { errs = append(errs, issue(s, "NAV006", msg, diagnostic.Span{})) }
@@ -124,7 +171,7 @@ func renderSheet(s Sheet, profile Profile) ([]byte, []Issue, []Issue) {
 	if raw, present := cheat["navi"]; present {
 		cards = parseMetadata(raw, profile, bad)
 	}
-	tags := tagList(d.Metadata, tool, s.ID, bad)
+	tags := tagList(d.Metadata, tool, bad)
 	// Declarations of one name must agree across a sheet: all its cards share one
 	// navi tag context, where a variable name has one definition.
 	declared := map[string]param{}
@@ -168,29 +215,31 @@ func renderSheet(s Sheet, profile Profile) ([]byte, []Issue, []Issue) {
 		line("; License: ", "not stated")
 		warns = append(warns, issue(s, "NAV105", "license is not stated; the export header says so", diagnostic.Span{}))
 	}
-	out.WriteString("% " + strings.Join(tags, ", ") + "\n")
-	exported := 0
+	var entries []entry
 	for _, section := range d.Sections {
 		for _, card := range section.Cards {
 			if !contains(card.Classes, "navi") {
 				continue
 			}
-			text, ws := renderCard(s, card, profile, cards)
+			// The context comes first and is unique per card; the sheet's tags follow
+			// so navi users can still filter by tool or tag.
+			tagLine := strings.Join(append([]string{context(s, card)}, tags...), ", ")
+			text, ws := renderCard(s, card, tagLine, profile, cards)
 			warns = append(warns, ws...)
 			if text != "" {
 				out.WriteString("\n" + text)
-				exported++
+				entries = append(entries, entry{card.ID, tagLine + oneLine(card.Title)})
 			}
 		}
 	}
 	if len(errs) > 0 {
-		return nil, warns, errs
+		return nil, nil, warns, errs
 	}
-	if exported == 0 {
+	if len(entries) == 0 {
 		warns = append(warns, issue(s, "NAV106", "no card was exported, so no .cheat file is written for this sheet", diagnostic.Span{}))
-		return nil, warns, nil
+		return nil, nil, warns, nil
 	}
-	return []byte(out.String()), warns, nil
+	return []byte(out.String()), entries, warns, nil
 }
 
 func parseMetadata(raw any, profile Profile, bad func(string)) map[string]*cardMeta {
@@ -279,11 +328,11 @@ func parseCard(id string, raw any, bad func(string)) *cardMeta {
 
 // renderCard returns the card's .cheat text, or "" with a warning when the card
 // cannot be exported. Nothing is rewritten to make a card pass.
-func renderCard(s Sheet, card model.Card, profile Profile, metas map[string]*cardMeta) (string, []Issue) {
+func renderCard(s Sheet, card model.Card, tagLine string, profile Profile, metas map[string]*cardMeta) (string, []Issue) {
 	skip := func(code, msg string, span diagnostic.Span) (string, []Issue) {
 		return "", []Issue{issue(s, code, fmt.Sprintf("card %q not exported: %s", card.ID, msg), span)}
 	}
-	if !hasExplicitID(card) {
+	if !card.IDExplicit {
 		return skip("NAV101", "a .navi card needs an explicit {#id}; generated IDs change when titles change", card.Span)
 	}
 	var blocks []model.Node
@@ -324,7 +373,11 @@ func renderCard(s Sheet, card model.Card, profile Profile, metas map[string]*car
 			return skip("NAV104", fmt.Sprintf("parameter %q is declared but never used", name), block.Span)
 		}
 	}
-	return "; card: " + card.ID + "\n# " + oneLine(card.Title) + "\n" + command + "\n", nil
+	title := oneLine(card.Title)
+	if strings.ContainsRune(title, braille) {
+		return skip("NAV102", "the card title contains U+2800, navi's finder field separator", card.Span)
+	}
+	return "; card: " + card.ID + "\n% " + tagLine + "\n# " + title + "\n" + command + "\n", nil
 }
 
 // checkCommand applies the verified navi marker rules (parser.rs read_lines reads
@@ -340,9 +393,14 @@ func checkCommand(command string, profile Profile) (string, string) {
 		case r == '\n' || r == '\t':
 		case unicode.IsControl(r):
 			return "NAV102", fmt.Sprintf("the command contains control character U+%04X", r)
+		case r == braille:
+			return "NAV102", "the command contains U+2800, navi's finder field separator"
 		case unicode.Is(unicode.Cf, r) || r == ' ' || r == ' ':
 			return "NAV102", fmt.Sprintf("the command contains invisible or bidirectional control U+%04X", r)
 		}
+	}
+	if strings.HasPrefix(command, "navi ") || strings.HasPrefix(command, "navi\t") || command == "navi" {
+		return "NAV102", "navi rewrites a leading `navi` word to its own executable path; start the command differently"
 	}
 	lines := strings.Split(command, "\n")
 	for i, l := range lines {
@@ -408,34 +466,13 @@ func unterminatedQuote(s string, p Profile) rune {
 	return quote
 }
 
-// hasExplicitID reports whether the heading source carried {#id}; card IDs are
-// otherwise generated from the title.
-func hasExplicitID(card model.Card) bool {
-	var text strings.Builder
-	var walk func(model.Node)
-	walk = func(n model.Node) {
-		text.WriteString(n.Text)
-		for _, c := range n.Children {
-			walk(c)
-		}
-	}
-	walk(card.Heading)
-	spaced := strings.Map(func(r rune) rune {
-		if r == '{' || r == '}' {
-			return ' '
-		}
-		return r
-	}, text.String())
-	return contains(strings.Fields(spaced), "#"+card.ID)
-}
-
-func tagList(metadata map[string]any, tool, fallback string, bad func(string)) []string {
+func tagList(metadata map[string]any, tool string, bad func(string)) []string {
 	var tags []string
 	seen := map[string]bool{}
 	add := func(v string) {
 		v = strings.TrimSpace(v)
-		if v == "" || oneLine(v) != v || strings.ContainsRune(v, ',') {
-			bad(fmt.Sprintf("tag %q must be nonempty, single-line and free of commas for navi", v))
+		if v == "" || oneLine(v) != v || strings.ContainsRune(v, ',') || strings.ContainsRune(v, braille) {
+			bad(fmt.Sprintf("tag %q must be nonempty, single-line and free of commas and U+2800 for navi", v))
 			return
 		}
 		if !seen[v] {
@@ -452,9 +489,6 @@ func tagList(metadata map[string]any, tool, fallback string, bad func(string)) [
 				add(v)
 			}
 		}
-	}
-	if len(tags) == 0 {
-		tags = []string{fallback}
 	}
 	return tags
 }
