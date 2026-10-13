@@ -1052,3 +1052,38 @@ func TestSectionJumpList(t *testing.T) {
 		t.Fatal("a single section needs no jump list")
 	}
 }
+
+// Performance budget: the theme ships at most 32 KiB of CSS and JavaScript, and
+// the search index stays within twice the size of the sources it indexes.
+func TestPerformanceBudget(t *testing.T) {
+	files, err := filepath.Glob(filepath.Join("..", "..", "..", "examples", "sheets", "*.md"))
+	if err != nil || len(files) == 0 {
+		t.Fatal(err, files)
+	}
+	var sheets []Sheet
+	sources := 0
+	for _, f := range files {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sources += len(b)
+		d, ds := markdown.Parse(b)
+		if len(ds) > 0 {
+			t.Fatal(f, ds)
+		}
+		name := filepath.Base(f)
+		sheets = append(sheets, Sheet{ID: strings.TrimSuffix(name, ".md"), SourceName: name, Document: d})
+	}
+	p, ds := Render(sheets, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	assets := len(p.Files["static/"+assetPath(t, p, "stylesheet")]) + len(p.Files["static/"+assetPath(t, p, "script")])
+	if assets > 32<<10 {
+		t.Errorf("CSS and JavaScript use %d bytes; budget is 32 KiB", assets)
+	}
+	if index := len(p.Files["static/search.json"]); index > 2*sources {
+		t.Errorf("search index is %d bytes for %d source bytes; budget is 2x", index, sources)
+	}
+}
