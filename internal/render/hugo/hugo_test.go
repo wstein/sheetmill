@@ -950,3 +950,25 @@ func hugoBuild(t *testing.T, binary string, p Project) string {
 	}
 	return out
 }
+
+func TestCardKindLabels(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### A {.tip}\nA.\n### B {.warning}\nB.\n### C {.note}\nC.\n### D\nD.\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "test")
+	for _, want := range []string{`<p class="card-kind">Tip</p>`, `<p class="card-kind">Warning</p>`, `<p class="card-kind">Note</p>`} {
+		if !strings.Contains(got, want) {
+			t.Error(want, got)
+		}
+	}
+	if strings.Count(got, "card-kind") != 3 {
+		t.Error("plain cards must not get a label", got)
+	}
+	css := string(p.Files["static/"+assetPath(t, p, "stylesheet")])
+	for _, want := range []string{".card.tip{", ".card.warning{", ".card.note{", ".card-kind{"} {
+		if !strings.Contains(css, want) {
+			t.Error("missing", want)
+		}
+	}
+}
