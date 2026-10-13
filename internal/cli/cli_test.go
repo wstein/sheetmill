@@ -150,7 +150,7 @@ func TestImportUsage(t *testing.T) {
 func TestImportErrorJSON(t *testing.T) {
 	dir := tempDir(t)
 	p := filepath.Join(dir, "invalid.md")
-	if err := os.WriteFile(p, []byte("---\ntitle: X\n---\n## S\n### C {.unsupported}\n"), 0600); err != nil {
+	if err := os.WriteFile(p, []byte("---\ntitle: X\n---\n## S\n### C {.tip\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	var out, errout bytes.Buffer
