@@ -1,0 +1,93 @@
+// SPDX-License-Identifier: EUPL-1.2
+import { test as base, expect } from '@playwright/test';
+import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
+import { appendFileSync } from 'node:fs';
+import { join, isAbsolute } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+import { OwnedWorkspace, registerInterruptCleanup, validateVersions } from './process.mjs';
+import { loadCorpus } from './corpus.mjs';
+import { readSite, compareSites, serveSite } from './site.mjs';
+import { guardNetwork } from './network.mjs';
+
+export const root=fileURLToPath(new URL('../../../',import.meta.url));
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+async function evidence() {
+  const directory=join(root,'.local/e2e/runs');await mkdir(directory,{recursive:true});
+  const {mkdtemp}=await import('node:fs/promises');return mkdtemp(join(directory,'run-'));
+}
+function recordTo(path,records) {return record=>{records.push(record);appendFileSync(path,JSON.stringify(record)+'\n');};}
+
+export const test=base.extend({
+  sourceSuffix:['',{option:true}],
+  corpus:[async({},use)=>{
+    if(process.env.SHEETMILL_E2E_CORPUS&&process.env.SHEETMILL_E2E_CORPUS!=='smill')throw Error('Only smill is implemented in the MVP');
+    await use(await loadCorpus(root,JSON.parse(await readFile(join(root,'tests/e2e/corpus.json'),'utf8'))));
+  },{scope:'worker'}],
+  tools:[async({browser},use)=>{
+    const directory=await evidence(),log=join(directory,'tools.jsonl'),records=[];
+    await writeFile(log,'');
+    const owner=await OwnedWorkspace.create();registerInterruptCleanup(owner);
+    const exec=(executable,args,options={})=>owner.run(executable,args,{...options,onRecord:recordTo(log,records)});
+    try {
+      const hugo=process.env.SHEETMILL_HUGO;
+      if(!hugo||!isAbsolute(hugo))throw Error('SHEETMILL_HUGO must name an absolute installed Hugo 0.167.0 executable');
+      const go=(await exec('go',['version'])).stdout;
+      const hv=(await exec(hugo,['version'])).stdout;
+      const pkg=JSON.parse(await readFile(new URL('../node_modules/@playwright/test/package.json',import.meta.url),'utf8'));
+      validateVersions({node:process.versions.node,playwright:pkg.version,chromium:browser.version(),go,hugo:hv});
+      const env={...process.env,GOPROXY:'off',GOSUMDB:'off',GOTOOLCHAIN:'local',GOCACHE:process.env.GOCACHE||join(owner.root,'go-cache')};
+      const smill=join(owner.root,'smill');
+      await exec('go',['build','-trimpath','-o',smill,'./cmd/smill'],{cwd:root,env,timeoutMs:120_000});
+      const version=await exec(smill,['version'],{env});expect(version.stdout).toBe('smill dev\n');
+      await use({smill,hugo,env,log,records});
+    } catch(error) {
+      appendFileSync(log,JSON.stringify({stage:'tool-setup',error:error.message})+'\n');
+      throw Error(`${error.message} (setup evidence: ${log})`,{cause:error});
+    } finally {await owner.close();}
+  },{scope:'worker',timeout:300_000}],
+  site:async({tools,corpus,sourceSuffix},use,testInfo)=>{
+    const directory=await evidence(),log=join(directory,'stages.jsonl'),records=[];
+    await writeFile(log,'');
+    const owner=await OwnedWorkspace.create();registerInterruptCleanup(owner);
+    const originalHash=hash(corpus.sourceBytes);
+    let source,sourceHash;
+    const exec=(executable,args,options={})=>owner.run(executable,args,{env:tools.env,cwd:owner.root,...options,onRecord:recordTo(log,records)});
+    try {
+      source=join(owner.root,'smill.md');await writeFile(source,Buffer.concat([corpus.sourceBytes,Buffer.from(sourceSuffix)]));
+      sourceHash=hash(await readFile(source));
+      const checked=await exec(tools.smill,['check',source]);expect(checked.stdout).toBe('');
+      const inspected=JSON.parse((await exec(tools.smill,['inspect',source])).stdout);
+      expect(inspected.schema).toBe(1);expect(inspected.metadata.title).toBe(corpus.title);
+      const ids=inspected.sections.flatMap(s=>s.cards.map(c=>c.id));
+      for(const id of corpus.cards)expect(ids).toContain(id);
+      const sites=[];
+      for(const name of ['first','second']) {
+        const project=join(owner.root,name),destination=join(project,'public');
+        await exec(tools.smill,['build','hugo',source,'--out',project]);
+        await exec(tools.hugo,['--source',project,'--destination',destination,'--clock','2000-01-01T00:00:00Z','--noBuildLock','--quiet'],{timeoutMs:30_000,env:{...tools.env,HUGO_CACHEDIR:join(owner.root,'cache-'+name)}});
+        sites.push(await readSite(destination));
+      }
+      compareSites(...sites);
+      const digest=createHash('sha256');for(const [name,bytes] of sites[0])digest.update(name+'\0').update(bytes).update('\0');
+      await writeFile(join(directory,'result.json'),JSON.stringify({files:sites[0].size,sha256:digest.digest('hex'),sourceHash},null,2));
+      const server=await serveSite(sites[0]);owner.defer(server.close);
+      await use({...server,records,toolRecords:tools.records,workspace:owner.root,log});
+    } finally {
+      try {
+        if(sourceHash)expect(hash(await readFile(source))).toBe(sourceHash);
+        expect(hash(await readFile(corpus.sourcePath))).toBe(originalHash);
+        await expect(access(join(owner.root,'SHEETMILL_SNIPPET_MUST_NOT_RUN'))).rejects.toThrow();
+      } finally {
+        await owner.close();
+        await testInfo.attach('tool-stages',{path:tools.log,contentType:'application/jsonl'});
+        await testInfo.attach('site-stages',{path:log,contentType:'application/jsonl'});
+      }
+    }
+  },
+  _network:[async({context,site},use)=>{
+    const violations=await guardNetwork(context,site.origin);
+    await use();expect(violations,'off-origin browser requests').toEqual([]);
+  },{auto:true}],
+});
+export {expect};
