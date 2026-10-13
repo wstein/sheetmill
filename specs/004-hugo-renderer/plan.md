@@ -23,6 +23,6 @@ Brand source is embedded from the approved asset package; exports use pinned fon
 hashes and local tools. Serve an OFL-licensed local IBM Plex Sans webfont. Code uses
 an explicit system monospace stack; no PDF font selection is implemented.
 
-Verification: failing behavior tests, deterministic semantic goldens, optional actual
+Verification: failing behavior tests, semantic fidelity assertions and deterministic project-byte comparison, optional actual
 Hugo integration gated by explicit SHEETMILL_HUGO (skip if absent), repeated output
 hashes, browser desktop/mobile/search checks, race/vet/fuzz and Sol exact-SHA review.

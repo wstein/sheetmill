@@ -13,9 +13,10 @@ validates the limited heading attribute grammar and converts the AST to our IR.
 Goldmark types do not escape this package. `internal/model` owns the versioned
 serializable representation, stable IDs, ordered sections/cards and literal code.
 
-Two direct dependencies are justified: correct GFM parsing is too large for a
-handwritten line scanner, and a YAML node tree is needed for duplicate keys and
-source locations. Everything else uses the Go standard library. Dependencies are
+Three direct dependencies are justified: Goldmark handles GFM parsing, a YAML
+node tree supports duplicate keys and source locations, and the user-selected
+Cobra v1.10.2 provides command/help/flag parsing. Other production operations use
+the Go standard library. Dependencies are
 pinned in `go.mod`/`go.sum`; no sibling project package is imported.
 
 Future renderers consume IR and must establish their own layout and escaping
