@@ -180,9 +180,14 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		for _, section := range s.Document.Sections {
 			fmt.Fprintf(&b, `<section class="sheet-section" id="ref-%s"><h2>%s</h2>`, esc(section.ID), r.heading(section.Heading))
 			r.nodes(&b, section.Content, false)
-			b.WriteString(`<div class="cards">`)
+			// Cards never span more columns than their section's grid provides.
+			columns := section.Columns
+			if columns == 0 {
+				columns = 3
+			}
+			fmt.Fprintf(&b, `<div class="cards cols-%d">`, columns)
 			for _, card := range section.Cards {
-				class := fmt.Sprintf("card col-span-%d row-span-%d", max(1, card.Layout.Columns), max(1, card.Layout.Rows))
+				class := fmt.Sprintf("card col-span-%d row-span-%d", min(max(1, card.Layout.Columns), columns), max(1, card.Layout.Rows))
 				for _, c := range card.Classes {
 					class += " " + c
 				}

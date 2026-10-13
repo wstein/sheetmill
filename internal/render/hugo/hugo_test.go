@@ -211,10 +211,14 @@ func TestLargeLayoutHints(t *testing.T) {
 		t.Fatal(ds)
 	}
 	css := string(p.Files["static/"+assetPath(t, p, "stylesheet")])
-	for _, selector := range []string{".col-span-4", ".col-span-12", ".row-span-4", ".row-span-12"} {
+	for _, selector := range []string{".row-span-4", ".row-span-12"} {
 		if !strings.Contains(css, selector) {
 			t.Error("missing responsive hint", selector)
 		}
+	}
+	// Column spans beyond the default three-column grid are clamped, never dropped.
+	if got := body(t, p, "test"); strings.Count(got, `class="card col-span-3 `) != 2 {
+		t.Error("wide spans must clamp to the section grid", got)
 	}
 }
 
@@ -815,6 +819,30 @@ func TestNestedEditLinkAndInvalidPath(t *testing.T) {
 		s.Path = bad
 		if _, ds := Render([]Sheet{s}, Options{}); len(ds) == 0 || ds[0].Code != "REN003" {
 			t.Error(bad, ds)
+		}
+	}
+}
+
+func TestSectionColumnsClampCardSpans(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## Two {.cols-2}\n### Wide {.col-span-3}\nA.\n## Default\n### Huge {.col-span-12}\nB.\n## Six {.cols-6}\n### Five {.col-span-5}\nC.\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "test")
+	for _, want := range []string{`<div class="cards cols-2"><article class="card col-span-2 `, `<div class="cards cols-3"><article class="card col-span-3 `, `<div class="cards cols-6"><article class="card col-span-5 `} {
+		if !strings.Contains(got, want) {
+			t.Error(want, got)
+		}
+	}
+	css := string(p.Files["static/"+assetPath(t, p, "stylesheet")])
+	for n := 1; n <= 6; n++ {
+		for _, want := range []string{fmt.Sprintf(".cards.cols-%d{", n), fmt.Sprintf(".col-span-%d{grid-column:span %d}", n, n)} {
+			if n == 1 && strings.HasPrefix(want, ".col-span") {
+				continue
+			}
+			if !strings.Contains(css, want) {
+				t.Error("missing", want)
+			}
 		}
 	}
 }
