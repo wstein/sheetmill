@@ -61,3 +61,9 @@ all built file bytes across two independent source/output directories with a fix
 clock. Unit tests cover semantic fidelity, escaping, unsafe URLs, unknown IR,
 deterministic input ordering and output boundaries. CI installs only the pinned,
 checksum-verified development tool and uploads no generated site artifacts.
+
+The [007 MVP harness](../tests/e2e/README.md) selects only
+`examples/sheets/smill.md`, exports two fresh projects through the actual CLI,
+compares every built public file byte, and automates desktop/mobile/no-JavaScript
+reader journeys. This complements the renderer integration test without adding a
+product preview server. See [actual E2E verification](e2e-verification.md).

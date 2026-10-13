@@ -1,9 +1,9 @@
-# Quickstart validation — planned 007
+# Quickstart validation — 007 MVP
 
-This is a run guide for the future implementation. The E2E package, authored
-`smill.md`, CI job and `serve` command do not exist merely because this plan does.
-Current core/Hugo tests remain runnable; proposed commands below become valid when
-the corresponding tasks are complete. No PDF, navi or deployment steps appear.
+The one-sheet automated GFM → CLI → Hugo → browser MVP is implemented. The
+private E2E package, `smill.md` and CI job exist; the `serve` command and later
+stages do not. Current commands below run only the MVP, with no PDF, navi or
+publication. See [actual evidence](../../docs/e2e-verification.md).
 
 ## Prerequisites
 
@@ -19,13 +19,13 @@ All operations use your own feature worktree. On macOS resolve `/tmp` to
 
 ## First slice: one sheet, one complete publishing journey
 
-After implementation, from the worktree root:
+From the worktree root:
 
 ```sh
 export SHEETMILL_HUGO=/absolute/path/to/hugo
 cd tests/e2e
 node --version
-npm ci
+npm ci --ignore-scripts
 npx --no-install playwright install chromium
 npm test -- --project=desktop
 npm test

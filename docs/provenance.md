@@ -41,3 +41,14 @@ SheetMill does not infer legal permission from that identifier.
 - Local web font and outlined brand fonts retain their separate SIL OFL notices;
   hashes and sources are recorded in [font provenance](../assets/fonts/README.md)
   and [asset reproduction](../assets/README.md).
+
+- Browser E2E development package: `@playwright/test`, `playwright` and
+  `playwright-core` 1.64.0, Apache-2.0, pinned with npm integrity hashes in
+  `tests/e2e/package-lock.json`. No production Go/frontend dependency is added.
+  Matching Chromium revision 1248 (156.0.8078.4) is provisioned explicitly from
+  Microsoft's versioned Playwright tooling; browser binaries are not committed.
+- Node 24.21.0 LTS is pinned for this private test package only. The official
+  macOS arm64 archive was verified against the vendor's SHASUMS256.txt:
+  `bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057`.
+  Local setup stayed in temporary storage. Node setup Action v6 was resolved through
+  its official tag ref to `249970729cb0ef3589644e2896645e5dc5ba9c38` before pinning CI.
