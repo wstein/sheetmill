@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wstein/sheetmill/schema/cheatsheet.schema.json",
+  "title": "SheetMill source metadata v0.1",
+  "type": "object",
+  "required": ["title"],
+  "properties": {
+    "title": {"type": "string", "pattern": "\\S"},
+    "category": {"type": "string"},
+    "description": {"type": "string"},
+    "tags": {"type": "array", "items": {"type": "string", "pattern": "\\S"}},
+    "cheatsheet": {
+      "type": "object",
+      "properties": {
+        "schema": {"type": "integer", "const": 1},
+        "tool": {"type": "string", "pattern": "\\S"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
