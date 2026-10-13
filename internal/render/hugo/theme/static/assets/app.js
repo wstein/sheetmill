@@ -37,12 +37,32 @@
   }).catch(() => { status.textContent = 'Search unavailable. Browse the library below.'; });
   if (navigator.clipboard?.writeText) document.querySelectorAll('pre > code').forEach(code => {
     const button = document.createElement('button');
-    button.type = 'button'; button.className = 'copy'; button.textContent = 'Copy code';
+    button.type = 'button'; button.className = 'copy';
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('width', '16'); icon.setAttribute('height', '16');
+    icon.setAttribute('fill', 'none'); icon.setAttribute('stroke', 'currentColor'); icon.setAttribute('stroke-width', '1.7');
+    icon.setAttribute('stroke-linecap', 'round'); icon.setAttribute('stroke-linejoin', 'round'); icon.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); icon.append(path);
+    const feedback = document.createElement('span'); feedback.className = 'copy-feedback'; feedback.setAttribute('role', 'status');
+    button.append(icon, feedback);
+    const states = {
+      idle: ['Copy code', 'M9 9h11v11H9z M5 15H4V4h11v1', ''],
+      copied: ['Copied', 'm5 12 4 4L19 6', 'Code copied'],
+      error: ['Select code to copy', 'M12 7v6m0 4h.01 M4 3h16v18H4z', 'Copy failed. Select code to copy.'],
+    };
+    const show = state => {
+      const [label, shape, message] = states[state];
+      button.setAttribute('aria-label', label); button.title = label;
+      path.setAttribute('d', shape); feedback.textContent = message;
+    };
+    let reset;
+    show('idle');
     button.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(code.textContent); button.textContent = 'Copied'; }
-      catch { button.textContent = 'Select code to copy'; }
-      setTimeout(() => { button.textContent = 'Copy code'; }, 2000);
+      clearTimeout(reset);
+      try { await navigator.clipboard.writeText(code.textContent); show('copied'); }
+      catch { show('error'); }
+      reset = setTimeout(() => { show('idle'); }, 2000);
     });
-    code.parentElement.append(button);
+    code.parentElement.insertBefore(button, code);
   });
 })();

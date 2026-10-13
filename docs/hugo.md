@@ -48,7 +48,10 @@ or card ID of the target sheet, are kept as written and reported with `REN103`.
 The library includes responsive ordered cards, GFM tables/tasks/code, local search,
 code copy, an explicit dark-mode control, visible keyboard focus and print CSS.
 Without JavaScript, navigation/content remain available; search/copy/theme controls
-are progressive enhancements. Copy uses the browser clipboard only after a click.
+are progressive enhancements. Copy uses a compact icon beside the first code
+line, without a reserved header row. Keyboard access, tooltip labels and announced
+success/failure feedback are available; copying preserves the exact code text and
+uses the browser clipboard only after activation.
 The theme preference is stored locally; search runs entirely in the browser.
 No CDN, analytics, remote theme or resource fetches are present. Source/license
 metadata is visible on each sheet when supplied; presence of a license identifier
