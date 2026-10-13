@@ -217,3 +217,16 @@ func TestManualBuildsWithoutWarnings(t *testing.T) {
 		t.Fatal(code, errout.String())
 	}
 }
+
+func TestHugoBuildDescription(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "sheet.md")
+	os.WriteFile(input, []byte("---\ntitle: Sheet\n---\n## S\n### C\nText.\n"), 0600)
+	var out, errout bytes.Buffer
+	if code := Run([]string{"build", "hugo", input, "--out", filepath.Join(dir, "site"), "--description", "A tidy shelf."}, &out, &errout); code != 0 {
+		t.Fatal(code, errout.String())
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, "site", "hugo.json")); !bytes.Contains(b, []byte(`"description": "A tidy shelf."`)) {
+		t.Fatal(string(b))
+	}
+}
