@@ -403,3 +403,32 @@ func TestSystemDarkModeWithoutScript(t *testing.T) {
 		}
 	}
 }
+
+func TestUnknownMetadataReachesIR(t *testing.T) {
+	d, ds := markdown.Parse([]byte("---\ntitle: T\nx-review:\n  owner: docs\n  levels: [1, 2]\nfuture_flag: true\n---\n## S\n### C\nText.\n"))
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	want, err := d.JSON()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, issues := Render([]Sheet{{ID: "test", SourceName: "test.md", Document: d}}, Options{})
+	if len(issues) > 0 {
+		t.Fatal(issues)
+	}
+	got := p.Files["data/ir/test.json"]
+	if !bytes.Equal(got, want) {
+		t.Fatal("IR bytes differ from the parser's canonical JSON")
+	}
+	var ir struct {
+		Metadata map[string]any `json:"metadata"`
+	}
+	if err := json.Unmarshal(got, &ir); err != nil {
+		t.Fatal(err)
+	}
+	review, _ := ir.Metadata["x-review"].(map[string]any)
+	if review["owner"] != "docs" || len(review["levels"].([]any)) != 2 || ir.Metadata["future_flag"] != true {
+		t.Fatal("unknown metadata lost", ir.Metadata)
+	}
+}

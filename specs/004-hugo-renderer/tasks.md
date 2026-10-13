@@ -19,7 +19,7 @@ See [verification evidence](../../docs/hugo-verification.md); no merge/deploymen
 Test gaps found in the post-merge review. Each needs a failing test first;
 behavior fixes stay within the authorized 004 scope.
 
-- [ ] T011 Test that unknown frontmatter keys round-trip byte-stable into
+- [x] T011 Test that unknown frontmatter keys round-trip byte-stable into
   `data/ir/<sheet>.json` (FR-006).
 - [ ] T012 Inject a write failure partway through `writeProject`; assert `IO003`,
   exit status 2 and that no pre-existing path is modified (FR-003).
