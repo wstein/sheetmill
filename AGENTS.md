@@ -13,10 +13,14 @@ Sibling repository policies do not govern this repository.
   user on 2026-10-13). PDF/Typst and navi renderers remain out of scope.
 - Feature 007 MVP T001–T018 and applicable final checks are authorized on
   2026-10-13: one smill sheet, temporary verification executable, Hugo and local
-  browser E2E. Later Studio server/editor stages remain out of scope.
+  browser E2E.
 - Feature 007 US2 T042–T046 and applicable final checks are authorized on
   2026-10-13: independently authored BundleDock/WorkHarbor references through
   the same harness. Sibling commands remain content; no sibling runtime or edits.
+- Feature 007 T019–T041 and applicable final checks are authorized on
+  2026-10-13: read-only local `smill serve`, truthful freshness/diagnostics,
+  scoped source access and authenticated loopback HTTP. Browser editing, PDF,
+  navi, playgrounds and deployment are excluded from this increment.
 - Feature 012 is partly authorized (user, 2026-10-13): the base path option and
   GitHub Pages deployment of the independently authored `examples/sheets` only,
   to https://wstein.github.io/sheetmill/ from `main` pushes and manual runs. The
