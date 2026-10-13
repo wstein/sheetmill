@@ -36,7 +36,7 @@ func TestStructure(t *testing.T) {
 
 func TestInvalid(t *testing.T) {
 	for _, tt := range []struct{ heading, code string }{
-		{"### Orphan", "MD001"}, {"## S\n### X {.col-span-0}", "ATTR001"}, {"## S\n### X {.col-span-2 .col-span-3}", "ATTR002"}, {"## S\n### X {.unknown}", "ATTR001"}, {"## S\n### X {.navi", "ATTR001"}, {"## S\n### X {#a}\n### Y {#a}", "ID001"}, {"## S {.navi}", "ATTR001"},
+		{"### Orphan", "MD001"}, {"## S\n### X {.navi} {.tip}", "ATTR001"}, {"## S\n### X {.col-span-0}", "ATTR001"}, {"## S\n### X {.col-span-2 .col-span-3}", "ATTR002"}, {"## S\n### X {.unknown}", "ATTR001"}, {"## S\n### X {.navi", "ATTR001"}, {"## S\n### X {#a}\n### Y {#a}", "ID001"}, {"## S {.navi}", "ATTR001"},
 	} {
 		t.Run(tt.heading, func(t *testing.T) {
 			_, ds := Parse([]byte("---\ntitle: Test\n---\n" + tt.heading + "\n"))
@@ -126,4 +126,28 @@ func FuzzParse(f *testing.F) {
 			}
 		}
 	})
+}
+
+func TestCRLFLiteral(t *testing.T) {
+	src := []byte("---\r\ntitle: X\r\n---\r\n## S\r\n### C\r\n```sh\r\necho 'literal'\r\n```\r\n")
+	d, ds := Parse(src)
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	n := d.Sections[0].Cards[0].Content[0]
+	if n.Text != "echo 'literal'\r\n" {
+		t.Fatalf("literal changed: %q", n.Text)
+	}
+}
+func TestNestedFenceSpan(t *testing.T) {
+	src := []byte("---\ntitle: X\n---\n## S\n### C\n> ```sh\n> echo literal\n> ```\n\nAfter.\n")
+	d, ds := Parse(src)
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	quote := d.Sections[0].Cards[0].Content[0]
+	code := quote.Children[0]
+	if code.Text != "echo literal\n" || code.Span.End.Line > 10 {
+		t.Fatalf("%+v", code)
+	}
 }

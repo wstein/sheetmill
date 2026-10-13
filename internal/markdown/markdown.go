@@ -72,7 +72,7 @@ func Parse(src []byte) (*model.Document, []diagnostic.Diagnostic) {
 		if h, ok := n.(*ast.Heading); ok && (h.Level == 2 || h.Level == 3) {
 			title, attrs, errors := heading(h, fm.Body, cv, node.Span)
 			ds = append(ds, errors...)
-			if title == "" {
+			if title == "" && len(errors) == 0 {
 				ds = append(ds, diagnostic.Diagnostic{Code: "MD002", Message: "section and card titles must be nonempty", Span: node.Span})
 			}
 			contentID := id(title, attrs.ID, node.Span)
@@ -164,6 +164,9 @@ func heading(h *ast.Heading, body []byte, cv converter, span diagnostic.Span) (s
 	attrSpan := cv.source.Span(off, off+len(suffix))
 	bad := func(code, msg string) (string, attributes, []diagnostic.Diagnostic) {
 		return "", a, []diagnostic.Diagnostic{{Code: code, Message: msg, Span: attrSpan}}
+	}
+	if strings.Contains(tail[:open], "{.") || strings.Contains(tail[:open], "{#") {
+		return bad("ATTR001", "use one trailing heading attribute group")
 	}
 	if !strings.HasSuffix(suffix, "}") || strings.Count(suffix, "{") != 1 || strings.Count(suffix, "}") != 1 {
 		return bad("ATTR001", "malformed heading attributes; expected {.class #id}")
