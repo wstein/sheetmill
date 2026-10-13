@@ -32,6 +32,14 @@ Depends on: accepted core/Reference import (001–003)
   characters, entity-encoded forbidden schemes, whitespace in opaque parts, and any scheme
   other than http, https or mailto. Generated Hugo config sets `security` `exec` and
   `http` to none and disables inline shortcodes.
+- FR-010: Diagnostics (documented in docs/cli.md and docs/hugo.md):
+  - `REN001` (error): unsupported IR node.
+  - `REN002` (error): unsafe URL.
+  - `REN003` (error): invalid or ambiguous route (collision, duplicate basename, reserved route).
+  - `REN101` (warning): raw HTML shown inertly (escaped).
+  - `REN102` (warning): image retained as an unfetched link.
+  - `REN103` (warning): unresolved internal link (target not a selected sheet, or
+    fragment matching no section/card ID); kept as written.
 - FR-005: Keep deterministic source/project/search bytes independent of input order,
   clocks and absolute host paths. Pin Hugo 0.167.0; compare actual built file bytes.
 - FR-006: Preserve all metadata in JSON and show source/license attribution on pages.
