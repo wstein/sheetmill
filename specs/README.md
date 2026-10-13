@@ -9,6 +9,10 @@
 | [005](005-typst-renderer/spec.md) | Typst multi-page PDFs | Specs only |
 | [006](006-navi-renderer/spec.md) | Safe annotated command export | Specs only |
 | [007](007-live-preview/spec.md) | Studio local live preview; first slice GFM → Hugo → browser E2E | Specification only |
+| 008–010 | Studio editor and playgrounds ([roadmap](../docs/studio-roadmap.md)) | Reserved; not created |
+| [011](011-heading-attribute-ir/spec.md) | Parser-owned heading title nodes in the IR | Specs only |
+| [012](012-public-hosting/spec.md) | Base path and publication gate for hosting | Specs only |
+| [013](013-tldr-import/spec.md) | Controlled TLDR page import | Specs only |
 
 Public source compatibility is defined in `docs/format`, not redefined per feature.
 Each feature has spec, plan and tasks. Use `SPECIFY_FEATURE_DIRECTORY=specs/001-core-foundation`
