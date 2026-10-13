@@ -22,10 +22,22 @@ jobs:
         with:
           go-version-file: .go-version
           check-latest: false
-      - run: test -z "$(gofmt -l cmd internal)"
+      - run: test -z "$(gofmt -l cmd internal assets)"
       - run: go mod verify
       - run: go test -race ./...
       - run: go vet ./...
+      - run: python3 -m unittest discover -s assets -p 'test_*.py'
+      - name: Install pinned Hugo development tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat .hugo-version)" = 0.167.0
+          mkdir -p "$RUNNER_TEMP/sheetmill-hugo"
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_0.167.0_linux-amd64.tar.gz
+          echo '4d84519b9f619e6d4c3fb45a50157abeabeb724f859c60605f44c23def6e1169  '"$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" -C "$RUNNER_TEMP/sheetmill-hugo" hugo
+      - name: Verify actual local Hugo output
+        run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" go test ./internal/render/hugo -run TestHugoIntegration -count=1
       - run: go test ./internal/frontmatter -run '^$' -fuzz FuzzParse -fuzztime 5s -parallel 2
       - run: go test ./internal/markdown -run '^$' -fuzz FuzzParse -fuzztime 5s -parallel 2
       - run: go test ./internal/importer/reference -run '^$' -fuzz FuzzConvert -fuzztime 5s -parallel 2
