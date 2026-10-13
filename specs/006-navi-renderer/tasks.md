@@ -1,22 +1,20 @@
 # Tasks — 006
 
-Documentation-only refinement; unchecked implementation tasks remain gated.
-
 - [x] T001 Capture renderer scope and dependencies.
-- [x] T001a Draft safety rules and diagnostics (superseded by the refined profile).
+- [x] T001a Draft safety rules and diagnostics (superseded by the refined contract).
 - [x] T001b Propose explicit cards, card-keyed metadata, free-input parameters and
-  one `bash-free-input-v1` profile; document format and immutable upstream evidence.
-- [ ] T002 Obtain scope-specific implementation authorization; this docs PR grants none.
-- [ ] T003 Accept the refined contract through independent review/human merge;
-  confirm the acceptance matrix. This is design acceptance, not a passed test claim.
-- [ ] T004 After authorization, pin a pure Bash grammar parser, define reviewed
-  explicit-ID IR provenance and sidecar schema, and write failing acceptance tests,
-  golden bytes, pure pinned-navi parser/interpolation fixtures, determinism checks,
-  fuzz targets and transitive no-execution audit. No navi/shell invocation.
-- [ ] T005 Implement selection/metadata validation, renderer and proposed CLI in
-  a focused branch; update JSON Schema, NAV diagnostics, docs/cli.md and user guide.
-  Keep default/enum/provider/multiline/other-shell capabilities out of scope.
-- [ ] T006 Obtain generation/build approval before producing output artifacts.
-- [ ] T007 Run the complete acceptance matrix, record exact compatibility evidence
-  and obtain independent review before human merge. No source commands execute.
+  pinned upstream evidence (navi v2.24.0).
+- [x] T002 Implementation authorization (user, 2026-10-14; see AGENTS.md).
+- [x] T003 Resolve decisions: file format, explicit-ID selection, shell profiles,
+  warnings for unexportable cards, no navi execution.
+- [x] T004 Failing-first tests: negative table, golden bytes, grammar model with
+  entry deduplication, fuzz target, no-execution lint; additive IR `id_explicit`.
+- [x] T005 Implement `internal/render/navi` and `smill build navi`; document in
+  docs/format/navi-profile.md, docs/cli.md and docs/architecture.md.
+- [ ] T006 Obtain generation/build approval before producing published artifacts.
+- [ ] T007 Independent review of the final revision before human merge. Author
+  checks are not review.
 - [ ] T008 Obtain separate publication approval if requested.
+- [ ] T009 Metadata sidecar (`<sheet>.navi.json`) preserving non-navi metadata.
+- [ ] T010 Pin a pure Go shell parser for bash/zsh/fish syntax checks.
+- [ ] T011 Later: choice lists, shared contexts, nushell raw strings.
