@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: EUPL-1.2
+name: web-e2e
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: web-e2e-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  web-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: .go-version
+          check-latest: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: tests/e2e/.node-version
+          cache: npm
+          cache-dependency-path: tests/e2e/package-lock.json
+      - name: Provision pinned development dependencies
+        run: go mod download
+      - name: Install locked private harness
+        working-directory: tests/e2e
+        run: npm ci --ignore-scripts
+      - name: Provision matching Chromium and Linux libraries
+        working-directory: tests/e2e
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Provision checksum-pinned Hugo
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat .hugo-version)" = 0.167.0
+          mkdir -p "$RUNNER_TEMP/sheetmill-hugo"
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_0.167.0_linux-amd64.tar.gz
+          echo '4d84519b9f619e6d4c3fb45a50157abeabeb724f859c60605f44c23def6e1169  '"$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" -C "$RUNNER_TEMP/sheetmill-hugo" hugo
+      - name: Verify harness boundaries
+        working-directory: tests/e2e
+        run: npm run test:harness
+      - name: Run all reader journeys (no missing-tool skips)
+        working-directory: tests/e2e
+        env:
+          GOPROXY: 'off'
+          GOSUMDB: 'off'
+          GOTOOLCHAIN: local
+        run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" npm test
+      - name: Verify tracked files remain unchanged
+        run: git diff --exit-code && git diff --check
