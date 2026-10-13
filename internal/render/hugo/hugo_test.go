@@ -280,3 +280,19 @@ func TestPinnedVersion(t *testing.T) {
 		}
 	}
 }
+
+func TestDuplicateRouteReportsEverySource(t *testing.T) {
+	a := sheet(t, "same", "Intro.")
+	b := sheet(t, "same", "Intro.")
+	a.SourceName, b.SourceName = "Same.md", "same.md"
+	_, ds := Render([]Sheet{a, b}, Options{})
+	sources := map[string]bool{}
+	for _, d := range ds {
+		if d.Code == "REN003" {
+			sources[d.Source] = true
+		}
+	}
+	if !sources["Same.md"] || !sources["same.md"] {
+		t.Fatal(ds)
+	}
+}
