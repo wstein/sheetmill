@@ -70,3 +70,15 @@ test('HTML and first state fetch cannot falsely label an older snapshot current'
     release();await current(page,'Published before first state fetch');
   }finally{release();await context.unroute('**/studio/state',intercept)}
 });
+
+test('one failed state request recovers while the event stream stays open',async({page,context,studio})=>{
+  await page.goto(studio.origin+'/sample/');await current(page,'Initial content');
+  let fail=true,release,failed;const blocked=new Promise(resolve=>{release=resolve}),failure=new Promise(resolve=>{failed=resolve});
+  const intercept=async route=>{if(fail){fail=false;failed();await route.abort('connectionreset')}else{await blocked;await route.fallback()}};
+  await context.route('**/studio/state',intercept);
+  try{
+    await writeFile(studio.path,source('First saved revision'));await failure;await expect(page.locator('#studio-status > strong')).toHaveText('Disconnected — freshness unknown');
+    const before=(await studio.readState()).published;await writeFile(studio.path,source('Recovered state request'));await expect.poll(async()=> (await studio.readState()).published).toBeGreaterThan(before);
+    release();await current(page,'Recovered state request');
+  }finally{release();await context.unroute('**/studio/state',intercept)}
+});
