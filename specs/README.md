@@ -8,6 +8,7 @@
 | [004](004-hugo-renderer/spec.md) | Hugo reference website | Implement + local generation; no deployment |
 | [005](005-typst-renderer/spec.md) | Typst multi-page PDFs | Specs only |
 | [006](006-navi-renderer/spec.md) | Safe annotated command export | Specs only |
+| [007](007-live-preview/spec.md) | Studio local live preview; first slice GFM → Hugo → browser E2E | Specification only |
 
 Public source compatibility is defined in `docs/format`, not redefined per feature.
 Each feature has spec, plan and tasks. Use `SPECIFY_FEATURE_DIRECTORY=specs/001-core-foundation`
@@ -15,3 +16,8 @@ Each feature has spec, plan and tasks. Use `SPECIFY_FEATURE_DIRECTORY=specs/001-
 `codex/NNN-*` branch (for example `codex/004-hugo-renderer`). Feature 004 is explicitly authorized; features 005–006 still record future
 work without implementation approval. Multiple focused conventional commits keep current work
 reviewable. Independent review remains pending until separately recorded.
+
+[Studio roadmap](../docs/studio-roadmap.md) records proposed 008 visual editing,
+009 disposable playground and 010 static online playground. These feature directories
+have not been created. The active feature is recorded in `.specify/feature.json`;
+007 planning can proceed independently of the deferred 005/006 renderers.
