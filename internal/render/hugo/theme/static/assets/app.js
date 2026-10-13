@@ -44,7 +44,7 @@
     icon.setAttribute('stroke-linecap', 'round'); icon.setAttribute('stroke-linejoin', 'round'); icon.setAttribute('aria-hidden', 'true');
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); icon.append(path);
     const feedback = document.createElement('span'); feedback.className = 'copy-feedback'; feedback.setAttribute('role', 'status');
-    button.append(icon, feedback);
+    button.append(icon);
     const states = {
       idle: ['Copy code', 'M9 9h11v11H9z M5 15H4V4h11v1', ''],
       copied: ['Copied', 'm5 12 4 4L19 6', 'Code copied'],
@@ -64,5 +64,7 @@
       reset = setTimeout(() => { show('idle'); }, 2000);
     });
     code.parentElement.insertBefore(button, code);
+    // Keep the live region outside the button's presentational descendants.
+    code.parentElement.insertBefore(feedback, code);
   });
 })();
