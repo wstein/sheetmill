@@ -41,8 +41,11 @@ Depends on: accepted core/Reference import (001–003)
   - `REN103` (warning): unresolved internal link (target not a selected sheet, or
     fragment matching no section/card ID); kept as written.
 - FR-005: Keep deterministic source/project/search bytes independent of input order,
-  clocks and absolute host paths. Pin Hugo 0.167.0; compare actual built file bytes.
-- FR-006: Preserve all metadata in JSON and show source/license attribution on pages.
+  clocks and absolute host paths. Pin Hugo 0.167.0 (single source: `.hugo-version`, checked by CI); the integration
+  test refuses any other `hugo version` output, allowing only `-`/`+` build suffixes.
+  Compare actual built file bytes.
+- FR-006: Preserve all metadata in JSON (`data/ir/<sheet>.json`, including unknown
+  frontmatter keys) and show source/license attribution on pages.
 - FR-007: Provide responsive layout, progressive local search, visible keyboard focus,
   semantic navigation, code copy, dark mode and print-friendly CSS.
 - FR-008: Use original embedded templates/styles/scripts and local licensed brand/font
