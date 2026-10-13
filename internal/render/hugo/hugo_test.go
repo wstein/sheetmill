@@ -435,3 +435,115 @@ func TestUnknownMetadataReachesIR(t *testing.T) {
 		t.Fatal("unknown metadata lost", ir.Metadata)
 	}
 }
+
+func TestBasePath(t *testing.T) {
+	a := sheet(t, "a", "## S\n### C\n[Other](b.md#target) [Top](#ref) [Ext](https://example.com/x)\n### Ref {#ref}\nText.\n")
+	b := sheet(t, "b", "## S\n### Target {#target}\nText.\n")
+	p, ds := Render([]Sheet{a, b}, Options{BasePath: "/sheetmill/"})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "a")
+	for _, want := range []string{`href="/sheetmill/b/#ref-target"`, `href="#ref-ref"`, `href="https://example.com/x"`} {
+		if !strings.Contains(got, want) {
+			t.Error(want, got)
+		}
+	}
+	for file, want := range map[string]string{
+		"data/library.json":  `"url": "/sheetmill/a/"`,
+		"static/search.json": `"url": "/sheetmill/a/#ref-c"`,
+		"hugo.json":          `"base": "/sheetmill/"`,
+		"content/a/index.md": `"url":"/a/"`,
+		"data/sheets/a.json": `"url": "/sheetmill/a/"`,
+	} {
+		if !strings.Contains(string(p.Files[file]), want) {
+			t.Errorf("%s lacks %s", file, want)
+		}
+	}
+	// Default output keeps the origin root.
+	root, ds := Render([]Sheet{a, b}, Options{})
+	if len(ds) > 0 || !strings.Contains(string(root.Files["hugo.json"]), `"base": "/"`) || !strings.Contains(body(t, root, "a"), `href="/b/#ref-target"`) {
+		t.Fatal("default base path changed", ds)
+	}
+}
+
+func TestThemeHasNoRootRelativeURLs(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "Intro.")}, Options{BasePath: "/sheetmill/"})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	for name, b := range p.Files {
+		if !strings.HasPrefix(name, "layouts/") && !strings.HasPrefix(name, "static/assets/") {
+			continue
+		}
+		for _, bad := range []string{`href="/`, `src="/`, `url('/`, `url("/`, `fetch('/`, `fetch("/`} {
+			if bytes.Contains(b, []byte(bad)) {
+				t.Errorf("%s contains root-relative %s", name, bad)
+			}
+		}
+	}
+}
+
+func TestInvalidBasePath(t *testing.T) {
+	for _, base := range []string{"sheetmill", "sheetmill/", "/sheetmill", "//host/", "/a/../", "/./", "/a b/", "/a?x/", "/a#x/", "https://x/", `/a\b/`, "/a//b/", "/%2e%2e/", "/a\x00/"} {
+		if _, ds := Render([]Sheet{sheet(t, "test", "Intro.")}, Options{BasePath: base}); len(ds) == 0 || ds[0].Code != "REN003" {
+			t.Errorf("%q accepted: %v", base, ds)
+		}
+	}
+	for _, base := range []string{"", "/", "/sheetmill/", "/a/b-c_d.e~/"} {
+		if _, ds := Render([]Sheet{sheet(t, "test", "Intro.")}, Options{BasePath: base}); len(ds) > 0 {
+			t.Errorf("%q rejected: %v", base, ds)
+		}
+	}
+}
+
+func TestHugoIntegrationBasePath(t *testing.T) {
+	binary := os.Getenv("SHEETMILL_HUGO")
+	if binary == "" {
+		t.Skip("set SHEETMILL_HUGO to explicitly authorize installed tool")
+	}
+	a := sheet(t, "a", "## S\n### C\n[Other](b.md#target)\n")
+	b := sheet(t, "b", "## S\n### Target {#target}\nText.\n")
+	p, ds := Render([]Sheet{a, b}, Options{BasePath: "/sheetmill/"})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	root := t.TempDir()
+	for path, data := range p.Files {
+		full := filepath.Join(root, path)
+		if err := os.MkdirAll(filepath.Dir(full), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, data, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out := filepath.Join(root, "public")
+	cmd := exec.Command(binary, "--source", root, "--destination", out, "--clock", "2000-01-01T00:00:00Z", "--noBuildLock", "--quiet")
+	cmd.Env = append(os.Environ(), "HUGO_CACHEDIR="+filepath.Join(root, "cache"))
+	if b, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("hugo: %v %s", err, b)
+	}
+	// Files stay at the publish root; only URLs carry the base path.
+	for _, name := range []string{"index.html", "a/index.html", "b/index.html", "search.json", "assets/site.css", "brand/favicon.svg"} {
+		if _, err := os.Stat(filepath.Join(out, name)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, name := range []string{"index.html", "a/index.html"} {
+		html, _ := os.ReadFile(filepath.Join(out, name))
+		for _, want := range []string{`data-base="/sheetmill/"`, `href="/sheetmill/assets/site.css"`, `src="/sheetmill/assets/app.js"`, `href="/sheetmill/a/"`} {
+			if !bytes.Contains(html, []byte(want)) {
+				t.Errorf("%s lacks %s", name, want)
+			}
+		}
+		for _, bad := range []string{`href="/assets`, `src="/brand`, `href="/a/"`, `href="/"`} {
+			if bytes.Contains(html, []byte(bad)) {
+				t.Errorf("%s contains root-relative %s", name, bad)
+			}
+		}
+	}
+	if html, _ := os.ReadFile(filepath.Join(out, "a", "index.html")); !bytes.Contains(html, []byte(`href="/sheetmill/b/#ref-target"`)) {
+		t.Error("cross-sheet link lacks base path")
+	}
+}

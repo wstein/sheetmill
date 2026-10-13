@@ -16,7 +16,7 @@
   const input = document.querySelector('#app-search');
   const results = document.querySelector('#app-results');
   const status = document.querySelector('#app-search-status');
-  fetch('/search.json').then(response => { if (!response.ok) throw Error('Search unavailable'); return response.json(); }).then(index => {
+  fetch(`${root.dataset.base || '/'}search.json`).then(response => { if (!response.ok) throw Error('Search unavailable'); return response.json(); }).then(index => {
     input.disabled = false;
     status.textContent = 'Search titles and card contents.';
     input.addEventListener('input', () => {

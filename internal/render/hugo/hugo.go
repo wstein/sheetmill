@@ -35,7 +35,16 @@ type Sheet struct {
 	ID, SourceName string
 	Document       *model.Document
 }
-type Options struct{ Title string }
+type Options struct {
+	Title string
+	// BasePath is the URL path the site is served under, such as "/sheetmill/".
+	// Empty means the origin root.
+	BasePath string
+}
+
+// basePath accepts "/" or "/seg/.../" with unreserved URL characters only, so the
+// value is safe in HTML attributes, CSS, JSON and JavaScript without escaping.
+var basePath = regexp.MustCompile(`^/(?:[A-Za-z0-9_~-][A-Za-z0-9._~-]*/)*$`)
 
 // Issue associates a renderer diagnostic with the explicitly selected basename.
 // The CLI resolves this identity to the selected path; host paths never enter output.
@@ -75,6 +84,13 @@ var route = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 // No partial project is returned on a fatal diagnostic.
 func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	p := Project{Files: map[string][]byte{}}
+	base := options.BasePath
+	if base == "" {
+		base = "/"
+	}
+	if !basePath.MatchString(base) || strings.Contains(base, "/../") || strings.Contains(base, "/./") {
+		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "invalid base path: " + options.BasePath}})
+	}
 	if len(sheets) == 0 {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "select at least one sheet"}})
 	}
@@ -125,7 +141,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		}
 	}
 	for _, s := range sheets {
-		r := renderer{self: s.ID, routes: routes, anchors: anchors}
+		r := renderer{self: s.ID, base: base, routes: routes, anchors: anchors}
 		title, _ := s.Document.Metadata["title"].(string)
 		var b strings.Builder
 		r.nodes(&b, s.Document.Preamble, false)
@@ -141,7 +157,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 				fmt.Fprintf(&b, `<article class="%s" id="ref-%s"><h3>%s <a class="permalink" href="#ref-%s" aria-label="Permalink to %s">#</a></h3>`, esc(class), esc(card.ID), r.heading(card.Heading), esc(card.ID), esc(card.Title))
 				r.nodes(&b, card.Content, false)
 				b.WriteString(`</article>`)
-				index = append(index, entry{card.Title, title, section.Title, plain(card.Content), "/" + s.ID + "/#ref-" + card.ID})
+				index = append(index, entry{card.Title, title, section.Title, plain(card.Content), base + s.ID + "/#ref-" + card.ID})
 			}
 			b.WriteString(`</div></section>`)
 		}
@@ -155,7 +171,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		}
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
 		errors = append(errors, issues(s.SourceName, r.errors)...)
-		page := page{title, "/" + s.ID + "/", b.String()}
+		page := page{title, base + s.ID + "/", b.String()}
 		pages = append(pages, page)
 		if e := putJSON("data/sheets/"+s.ID+".json", page); e != nil {
 			errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
@@ -166,7 +182,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		} else {
 			p.Files["data/ir/"+s.ID+".json"] = ir
 		}
-		front, _ := json.Marshal(map[string]any{"title": title, "url": page.URL, "sheetid": s.ID})
+		front, _ := json.Marshal(map[string]any{"title": title, "url": "/" + s.ID + "/", "sheetid": s.ID})
 		p.Files["content/"+s.ID+"/index.md"] = []byte("---\n" + string(front) + "\n---\n")
 		// Preamble-only sheets must also be discoverable by search.
 		index = append(index, entry{title, title, "", plain(s.Document.Preamble), page.URL})
@@ -178,7 +194,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if title == "" {
 		title = "SheetMill References"
 	}
-	config := map[string]any{"baseURL": "https://example.invalid/", "title": title, "languageCode": "en", "disableKinds": []string{"taxonomy", "term", "RSS", "sitemap"}, "enableRobotsTXT": false, "disableHugoGeneratorInject": true, "outputs": map[string]any{"home": []string{"HTML"}, "page": []string{"HTML"}}, "security": map[string]any{"enableInlineShortcodes": false, "exec": map[string]any{"allow": []string{"none"}, "osEnv": []string{"none"}}, "http": map[string]any{"methods": []string{"none"}, "urls": []string{"none"}}}}
+	config := map[string]any{"baseURL": "https://example.invalid/", "title": title, "languageCode": "en", "disableKinds": []string{"taxonomy", "term", "RSS", "sitemap"}, "enableRobotsTXT": false, "disableHugoGeneratorInject": true, "params": map[string]any{"base": base}, "outputs": map[string]any{"home": []string{"HTML"}, "page": []string{"HTML"}}, "security": map[string]any{"enableInlineShortcodes": false, "exec": map[string]any{"allow": []string{"none"}, "osEnv": []string{"none"}}, "http": map[string]any{"methods": []string{"none"}, "urls": []string{"none"}}}}
 	if err := putJSON("hugo.json", config); err != nil {
 		panic(err)
 	} // strings and literals only
@@ -207,7 +223,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 type renderer struct {
 	inLink           bool
 	routes           map[string]string
-	self             string
+	self, base       string
 	anchors          map[string]map[string]bool
 	errors, warnings []diagnostic.Diagnostic
 }
@@ -382,7 +398,7 @@ func (r *renderer) url(n model.Node, destination string) string {
 		// Anything else is kept as written and reported, never silently broken.
 		target, routed := r.self, u.Path == ""
 		if id, ok := r.routes[path.Clean(u.Path)]; ok && !routed {
-			u.Path, target, routed = "/"+id+"/", id, true
+			u.Path, target, routed = r.base+id+"/", id, true
 		}
 		unresolved := func(message string) {
 			r.warnings = append(r.warnings, diagnostic.Diagnostic{Code: "REN103", Message: message + destination, Span: n.Span})
