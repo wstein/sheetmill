@@ -80,5 +80,7 @@ No artifact upload is configured. Source-relative diagnostics use DOM text APIs.
 
 Hostile same-user software, a compromised OS/browser/toolchain and malicious local
 administrators are outside this boundary. This is not a supported public server,
-a filesystem sandbox for hostile same-user processes, or a measured performance/
-five-author usability result. See [actual checks and gaps](studio-verification.md).
+or a filesystem sandbox for hostile same-user processes. Automated performance
+results cover only the documented reference workload; they establish no universal
+performance guarantee or five-author usability result. See
+[actual checks and gaps](studio-verification.md).

@@ -1,7 +1,7 @@
 # Tasks: SheetMill Studio — Local Live Preview
 
 **Input**: `specs/007-live-preview/{spec,plan,research,data-model,quickstart}.md` and
-`contracts/{e2e,serve}.md`. MVP, US2 and read-only serve tasks are implemented as marked; T049 remains unmeasured.
+`contracts/{e2e,serve}.md`. MVP, US2 and read-only serve tasks are implemented as marked; T049 automated checks are implemented; the five-author usability study remains pending.
 **Tests**: Explicitly requested by the spec and repository test-first policy.
 **Format**: `- [ ] Tnnn [P?] [USn?] Description with exact repository-relative paths`.
 
@@ -119,6 +119,8 @@ refused/inert while an authorized local preview remains usable.
 - [X] T047 Run required `gofmt`, Go tests/race/vet/module checks, helper and browser tests plus `git diff --check`; record commands/results/gaps in `docs/e2e-verification.md` for only the delivered slice, with no optional E2E skip presented as a pass.
 - [X] T048 Reconcile `docs/cli.md`, `docs/hugo.md`, `tests/e2e/README.md` and `specs/007-live-preview/quickstart.md` with actually implemented commands; document MVP E2E first and add later `serve` guidance only after its increment passes.
 - [ ] T049 For the later server increment only, record the workstation and measure SC-002/SC-003/SC-006 in `docs/studio-verification.md`: `95 of 100` edits within `1 second`, `19 of 20` starts within `3 seconds` for `100` sheets `≤100 KiB` each, `100` latest-save sequences correct, and `four of five` authors complete recovery workflow within `five minutes`; keep these out of MVP completion claims.
+  - [X] Automated reference-workload harness: 20 starts, 100 saved edits and 100 latest-save sequences; raw samples and workstation evidence in `docs/studio-verification.md`.
+  - [ ] Five-author SC-006 usability study; do not infer human acceptance from automated tests.
 - [X] T050 Obtain independent review of the delivered slice, fix/re-review findings with focused Conventional Commits, and record exact reviewed revision/check evidence in `docs/e2e-verification.md`; create only an authorized reviewable topic PR, with no merge, deployment, release or artifact upload.
 
 ## Dependencies & Execution Order
@@ -177,5 +179,5 @@ actual default/all-corpus results. T019–T041 were subsequently authorized and 
 The user subsequently authorized T019–T041 on 2026-10-13. Read-only `smill serve`,
 freshness/diagnostics, security boundaries and desktop/mobile journeys are
 implemented and verified. See `docs/studio-verification.md` and
-`docs/studio-security.md`. T049 performance/five-author usability remains
-unchecked; editor/playground/PDF/navi/deployment are not part of this increment.
+`docs/studio-security.md`. T049 automated checks are implemented; five-author usability remains
+pending and the parent task stays unchecked; editor/playground/PDF/navi/deployment are not part of this increment.
