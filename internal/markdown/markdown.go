@@ -301,7 +301,7 @@ func (cv converter) node(n ast.Node) model.Node {
 		if x.Info != nil {
 			props["info"] = string(x.Info.Value(cv.body))
 		}
-		end = cv.fenceEnd(start, end)
+		end = cv.fenceEnd(n, start, end)
 	case *ast.CodeBlock:
 		out.Text = string(x.Lines().Value(cv.body))
 	case *ast.List:
@@ -354,8 +354,9 @@ func (cv converter) node(n ast.Node) model.Node {
 	return out
 }
 
-// Fence spans include delimiters, while Text is the exact literal content.
-func (cv converter) fenceEnd(start, contentEnd int) int {
+// Fence spans include explicit delimiters. Parsed content determines where an
+// implicit container closure ends; unrelated later source cannot extend the span.
+func (cv converter) fenceEnd(n ast.Node, start, contentEnd int) int {
 	if start >= len(cv.body) {
 		return contentEnd
 	}
@@ -375,25 +376,35 @@ func (cv converter) fenceEnd(start, contentEnd int) int {
 	if width < 3 {
 		return contentEnd
 	}
-	i := start + lineEnd + 1
-	for i < len(cv.body) {
-		j := bytes.IndexByte(cv.body[i:], '\n')
-		next := len(cv.body)
-		if j >= 0 {
-			next = i + j + 1
+	end := max(contentEnd, start+lineEnd+1)
+	limit := len(cv.body)
+	for block := n; block != nil; block = block.Parent() {
+		if next := block.NextSibling(); next != nil && next.Pos() >= 0 {
+			pos := min(next.Pos(), len(cv.body))
+			limit = bytes.LastIndexByte(cv.body[:pos], '\n') + 1
+			break
 		}
-		line := strings.TrimSpace(string(cv.body[i:next]))
-		for strings.HasPrefix(line, ">") {
-			line = strings.TrimSpace(strings.TrimPrefix(line, ">"))
-		}
-		count := 0
-		for count < len(line) && line[count] == marker {
-			count++
-		}
-		if count >= width && strings.TrimSpace(line[count:]) == "" {
-			return max(contentEnd, next)
-		}
-		i = next
 	}
-	return len(cv.body)
+	if end >= limit {
+		return end
+	}
+	// Goldmark's content segments stop immediately before an explicit closing
+	// fence. Only that next line can be the delimiter; do not scan beyond it.
+	next := len(cv.body)
+	if j := bytes.IndexByte(cv.body[end:], '\n'); j >= 0 {
+		next = end + j + 1
+	}
+	next = min(next, limit)
+	line := strings.TrimSpace(string(cv.body[end:next]))
+	for strings.HasPrefix(line, ">") {
+		line = strings.TrimSpace(strings.TrimPrefix(line, ">"))
+	}
+	count := 0
+	for count < len(line) && line[count] == marker {
+		count++
+	}
+	if count >= width && strings.TrimSpace(line[count:]) == "" {
+		return next
+	}
+	return end
 }
