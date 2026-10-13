@@ -17,14 +17,15 @@ import (
 
 func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	build := &cobra.Command{Use: "build", Short: "Export a renderer project (no tool execution)"}
-	var destination, title, base, editBase string
+	var destination, title, base, editBase, sourceBase string
 	command := &cobra.Command{Use: "hugo <file-or-directory>...", Short: "Export a self-contained Hugo project to a new directory", Args: cobra.MinimumNArgs(1), Run: func(cmd *cobra.Command, args []string) {
-		*status = runHugo(args, destination, hugo.Options{Title: title, BasePath: base, EditBaseURL: editBase}, out, errout)
+		*status = runHugo(args, destination, hugo.Options{Title: title, BasePath: base, EditBaseURL: editBase, SourceBaseURL: sourceBase}, out, errout)
 	}}
 	command.Flags().StringVar(&destination, "out", "", "new project directory; never overwritten")
 	command.Flags().StringVar(&title, "title", "SheetMill References", "reference library title")
 	command.Flags().StringVar(&base, "base-path", "/", "URL path the site is served under, such as /sheetmill/")
 	command.Flags().StringVar(&editBase, "edit-base-url", "", "GitHub edit URL base for the authored sheets (optional; never inferred from provenance)")
+	command.Flags().StringVar(&sourceBase, "source-base-url", "", "GitHub blob URL of the selection root; other relative links resolve to repository files")
 	command.MarkFlagRequired("out")
 	build.AddCommand(command)
 	build.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a renderer is required") }
@@ -47,6 +48,7 @@ func runHugo(args []string, destination string, options hugo.Options, out, errou
 		}
 	}
 	sort.Strings(files)
+	root := commonDir(files)
 	// Render identifies sheets by basename; one basename may name several paths.
 	sourcePaths := map[string][]string{}
 	var sheets []hugo.Sheet
@@ -64,7 +66,8 @@ func runHugo(args []string, destination string, options hugo.Options, out, errou
 		}
 		name := filepath.Base(path)
 		sourcePaths[name] = append(sourcePaths[name], path)
-		sheets = append(sheets, hugo.Sheet{ID: sheetID(name), SourceName: name, Document: document})
+		relative, _ := filepath.Rel(root, path)
+		sheets = append(sheets, hugo.Sheet{ID: sheetID(name), SourceName: name, Path: filepath.ToSlash(relative), Document: document})
 	}
 	if invalid {
 		return 1
@@ -100,6 +103,23 @@ func runHugo(args []string, destination string, options hugo.Options, out, errou
 		return 2
 	}
 	return 0
+}
+
+// commonDir is the deepest directory containing every selected file. Sheet paths
+// are relative to it, so links between selected subdirectories resolve and no
+// host path component reaches the output.
+func commonDir(files []string) string {
+	root := filepath.Dir(files[0])
+	for _, file := range files[1:] {
+		for rel, err := filepath.Rel(root, file); err != nil || !filepath.IsLocal(rel); rel, err = filepath.Rel(root, file) {
+			parent := filepath.Dir(root)
+			if parent == root {
+				break // different volumes: no common directory
+			}
+			root = parent
+		}
+	}
+	return root
 }
 func sheetID(name string) string {
 	name = strings.TrimSuffix(name, ".md")
