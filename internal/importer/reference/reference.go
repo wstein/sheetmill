@@ -134,10 +134,12 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 		loss(n)
 	}
 	for _, section := range parsed.Sections {
+		loss(section.Heading)
 		for _, n := range section.Content {
 			loss(n)
 		}
 		for _, card := range section.Cards {
+			loss(card.Heading)
 			for _, n := range card.Content {
 				loss(n)
 			}
