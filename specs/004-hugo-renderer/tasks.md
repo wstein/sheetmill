@@ -21,7 +21,7 @@ behavior fixes stay within the authorized 004 scope.
 
 - [x] T011 Test that unknown frontmatter keys round-trip byte-stable into
   `data/ir/<sheet>.json` (FR-006).
-- [ ] T012 Inject a write failure partway through `writeProject`; assert `IO003`,
+- [x] T012 Inject a write failure partway through `writeProject`; assert `IO003`,
   exit status 2 and that no pre-existing path is modified (FR-003).
 - [ ] T013 Keep a bare `[x](#)` link as `href="#"`; `url.String()` currently drops
   the empty fragment and renders `href=""`.
