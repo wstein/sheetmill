@@ -6,6 +6,10 @@
 
 ## Summary
 
+**Implementation status (2026-10-13)**: the user authorized and the branch implements
+T001–T018 plus MVP final checks only. Later stages remain design, not implementation.
+See [verification](../../docs/e2e-verification.md).
+
 Deliver one real `smill` reference through actual CLI validation/inspection/export,
 pinned Hugo generation and an automated browser journey before adding Studio server
 behavior. Reuse the existing Go compiler, semantic IR and Hugo renderer unchanged
@@ -79,9 +83,10 @@ never truncates silently. Limits include retained last-valid state.
 | Human publication control | This change contains planning documents only; future test executables are temporary verification tools, not distribution artifacts; no uploads/deploy/merge | Pass for planning |
 | Review evidence | Separate actual checks from planned checks; independent review remains a merge expectation | Pass |
 
-The request authorizes planning/tasks and a docs PR, not runtime implementation.
-A subsequent implementation instruction selects the MVP task boundary. Governance
-for later server implementation must reflect that instruction without changing
+The original planning request was followed by explicit implementation authorization
+for the MVP on 2026-10-13. That authorization selects T001–T018 and applicable final
+checks only. Governance for later server implementation must reflect a subsequent
+instruction without changing
 Typst/navi or publication permissions. No automatic workflow may cross that boundary.
 
 ## Project Structure

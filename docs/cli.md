@@ -51,3 +51,8 @@ building a distributable CLI binary. Parser fuzz targets run via:
 go test ./internal/frontmatter -run '^$' -fuzz FuzzParse -fuzztime 5s -parallel 2
 go test ./internal/markdown -run '^$' -fuzz FuzzParse -fuzztime 5s -parallel 2
 ```
+
+The [one-sheet E2E harness](../tests/e2e/README.md) also invokes a temporary build of
+this actual entry point, then pinned Hugo and Chromium. It validates both desktop
+and mobile reader behavior, no-JavaScript navigation and inert source variants.
+The temporary executable is verification output, never a distribution artifact.

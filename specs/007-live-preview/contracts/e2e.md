@@ -1,6 +1,6 @@
 # E2E harness contract — first slice
 
-Status: design; commands/files below are implemented by tasks, not available yet.
+Status: implemented for the one-sheet MVP; later corpus/server stages remain deferred.
 Maps to US1, FR-001/004/009/010 and SC-001/004/005.
 
 ## Invocation and prerequisites

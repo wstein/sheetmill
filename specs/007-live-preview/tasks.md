@@ -1,7 +1,7 @@
 # Tasks: SheetMill Studio — Local Live Preview
 
 **Input**: `specs/007-live-preview/{spec,plan,research,data-model,quickstart}.md` and
-`contracts/{e2e,serve}.md`. All tasks are planned and unchecked; none implemented here.
+`contracts/{e2e,serve}.md`. MVP tasks are implemented as marked; later tasks remain planned and unchecked.
 **Tests**: Explicitly requested by the spec and repository test-first policy.
 **Format**: `- [ ] Tnnn [P?] [USn?] Description with exact repository-relative paths`.
 
@@ -16,17 +16,17 @@ server dependencies. US3–US5 form one safe later server increment and must not
 
 ## Phase 1: Setup (development harness only)
 
-- [ ] T001 [P] Document the one-sheet execution boundary and fixed tool allowlist in `tests/e2e/README.md`, including offline setup versus test execution and no snippet execution/artifact uploads.
-- [ ] T002 Create private `tests/e2e/package.json`, committed `tests/e2e/package-lock.json` and `tests/e2e/.node-version` with Node `24.21.0` and exact `@playwright/test` `1.64.0`; add fixed `test` and `test:harness` scripts, no publish script, and record matching Chromium revision `1248` in `tests/e2e/README.md`.
-- [ ] T003 Configure `tests/e2e/playwright.config.mjs` for one worker, zero retries, desktop `1280×800`, mobile `390×844` and JavaScript-disabled projects; use `retain-on-failure` traces and `only-on-failure` screenshots outside public output under ignored `.local/e2e/`, adjusting `.gitignore` only if required.
+- [X] T001 [P] Document the one-sheet execution boundary and fixed tool allowlist in `tests/e2e/README.md`, including offline setup versus test execution and no snippet execution/artifact uploads.
+- [X] T002 Create private `tests/e2e/package.json`, committed `tests/e2e/package-lock.json` and `tests/e2e/.node-version` with Node `24.21.0` and exact `@playwright/test` `1.64.0`; add fixed `test` and `test:harness` scripts, no publish script, and record matching Chromium revision `1248` in `tests/e2e/README.md`.
+- [X] T003 Configure `tests/e2e/playwright.config.mjs` for one worker, zero retries, desktop `1280×800`, mobile `390×844` and JavaScript-disabled projects; use `retain-on-failure` traces and `only-on-failure` screenshots outside public output under ignored `.local/e2e/`, adjusting `.gitignore` only if required.
 
 ## Phase 2: Foundational (MVP-only prerequisites)
 
 **Purpose**: Own process/output boundaries without introducing any product server.
 
-- [ ] T004 Write failing Node tests in `tests/e2e/harness.test.mjs` for direct executable arrays, prerequisite/version failures, per-command deadlines, bounded logs, complete file-map comparison, unknown routes and cleanup after failed setup; follow the values in `data-model.md` rather than executing source snippets.
-- [ ] T005 [P] Implement `tests/e2e/helpers/process.mjs` to satisfy T004 using `shell:false`, fixed executable identities/argument arrays, per-command logs `≤1 MiB`, tool build deadline `120 s`, Hugo deadline `30 s`, CLI deadline `15 s` after compilation, redaction and termination/await of known children only.
-- [ ] T006 [P] Implement `tests/e2e/helpers/site.mjs` to satisfy T004: preload sorted regular output files, reject symlinks/non-regular entries, compare full path sets/bytes and serve a generated-file allowlist on `127.0.0.1:0` with MIME types/index routes; no directory listing, filesystem request traversal or existing-server reuse.
+- [X] T004 Write failing Node tests in `tests/e2e/harness.test.mjs` for direct executable arrays, prerequisite/version failures, per-command deadlines, bounded logs, complete file-map comparison, unknown routes and cleanup after failed setup; follow the values in `data-model.md` rather than executing source snippets.
+- [X] T005 [P] Implement `tests/e2e/helpers/process.mjs` to satisfy T004 using `shell:false`, fixed executable identities/argument arrays, per-command logs `≤1 MiB`, tool build deadline `120 s`, Hugo deadline `30 s`, CLI deadline `15 s` after compilation, redaction and termination/await of known children only.
+- [X] T006 [P] Implement `tests/e2e/helpers/site.mjs` to satisfy T004: preload sorted regular output files, reject symlinks/non-regular entries, compare full path sets/bytes and serve a generated-file allowlist on `127.0.0.1:0` with MIME types/index routes; no directory listing, filesystem request traversal or existing-server reuse.
 
 **Checkpoint**: Harness helpers are testable without authoring Studio or changing the compiler.
 
@@ -38,21 +38,21 @@ for mobile/no-JavaScript checks, with explicit installed `SHEETMILL_HUGO`. No `s
 
 ### Tests first
 
-- [ ] T007 [US1] Write the failing complete journey in `tests/e2e/smill.spec.mjs` against the real expected title/cards/search/copy/attribution and missing fixture; assert observable navigation and clipboard contents, never merely a “Copied” label.
+- [X] T007 [US1] Write the failing complete journey in `tests/e2e/smill.spec.mjs` against the real expected title/cards/search/copy/attribution and missing fixture; assert observable navigation and clipboard contents, never merely a “Copied” label.
 
 ### Implementation and integration
 
-- [ ] T008 [US1] Author `examples/sheets/smill.md` as a concise useful reference for currently implemented commands, verifying each example against CLI help/docs at a recorded full source revision; include stable IDs, code/table examples and EUPL attribution, without documenting future `serve` as available.
-- [ ] T009 [US1] Create `tests/e2e/corpus.json` with exactly one case `smill`, `input: examples/sheets/smill.md`, a nonempty exact title/query, expected stable card anchors, verified product identity/attribution and explicit expected multiline copy text that preserves whitespace/trailing newline; reject duplicate IDs, traversal, absolute paths and symlinks when loading it.
-- [ ] T010 [US1] Implement `tests/e2e/helpers/fixtures.mjs` with setup allowance `300 s` and reader-test allowance `120 s`: verify pins, resolve system-temp symlinks, build the real `cmd/smill` to an owned temporary test executable, run fixed version/check/inspect/export arguments, generate two sites using explicit pinned Hugo/fixed clock, compare all output bytes and source hashes, start the owned fixture server, and register failure-safe teardown from the beginning.
-- [ ] T011 [P] [US1] Implement `tests/e2e/helpers/network.mjs` to install a context-wide exact-origin request allowlist before navigation, set `serviceWorkers: block`, record every off-origin attempt and fail on any violation instead of silently masking it.
-- [ ] T012 [US1] Complete shared scripted reader assertions in `tests/e2e/smill.spec.mjs`: home → search → Tab focus → Enter card fragment → exact displayed code → sentinel-seeded actual clipboard readback, light/dark applied state plus reload persistence, stable card links, visible provenance and no horizontal page overflow; use semantic locators/condition-based assertions without clipboard mocks or sleeps.
-- [ ] T013 [US1] Run the complete T012 scripted journey at both desktop `1280×800` and mobile `390×844` in `tests/e2e/smill.spec.mjs`, including search/keyboard links, exact copy, appearance persistence and zero page overflow in both; add a separate `javaScriptEnabled:false` context whose only exemptions are enhancement controls, still requiring ordinary content/navigation; keep the same single `smill` corpus case.
-- [ ] T014 [US1] Add `tests/e2e/inert.spec.mjs` using temporary adversarial variants of the same source (not another real-product corpus entry) to prove raw HTML/shortcodes/snippets stay inert, external image attempts are not fetched, source hashes remain unchanged and the fixed subprocess log contains no promoted example command.
-- [ ] T015 [US1] Extend `tests/e2e/harness.test.mjs` with failing setup/timeout/interruption fault-injection cases, then correct `tests/e2e/helpers/fixtures.mjs` teardown so contexts/listener/known children always close, owned temp data is removed and separate failure evidence survives; no broad process kill or deletion of user paths.
-- [ ] T016 [US1] Add `.github/workflows/e2e.yml` with contents-read permission, existing pinned checkout/setup-go conventions, verified SHA-pinned Node setup for `24.21.0`, explicit `npm ci`/matching Chromium setup and checksum-pinned Hugo `0.167.0`; run helper tests and all browser contexts as required tests, with no artifact upload, release, deployment or permissive missing-tool skip.
-- [ ] T017 [US1] Run the one-sheet journey twice from independent owned roots with prerequisites already installed; require identical public file lists/bytes, unchanged source, zero off-origin attempts and all desktop/mobile/no-JavaScript assertions, recording actual environment/results and local evidence locations in `docs/e2e-verification.md`.
-- [ ] T018 [US1] Reconcile actual first-slice commands/evidence in `tests/e2e/README.md`, `docs/e2e-verification.md` and `specs/007-live-preview/quickstart.md`; explicitly leave `serve`, sibling sheets, live latency and five-author usability results unimplemented/unmeasured, and enforce the MVP stop before later phases.
+- [X] T008 [US1] Author `examples/sheets/smill.md` as a concise useful reference for currently implemented commands, verifying each example against CLI help/docs at a recorded full source revision; include stable IDs, code/table examples and EUPL attribution, without documenting future `serve` as available.
+- [X] T009 [US1] Create `tests/e2e/corpus.json` with exactly one case `smill`, `input: examples/sheets/smill.md`, a nonempty exact title/query, expected stable card anchors, verified product identity/attribution and explicit expected multiline copy text that preserves whitespace/trailing newline; reject duplicate IDs, traversal, absolute paths and symlinks when loading it.
+- [X] T010 [US1] Implement `tests/e2e/helpers/fixtures.mjs` with setup allowance `300 s` and reader-test allowance `120 s`: verify pins, resolve system-temp symlinks, build the real `cmd/smill` to an owned temporary test executable, run fixed version/check/inspect/export arguments, generate two sites using explicit pinned Hugo/fixed clock, compare all output bytes and source hashes, start the owned fixture server, and register failure-safe teardown from the beginning.
+- [X] T011 [P] [US1] Implement `tests/e2e/helpers/network.mjs` to install a context-wide exact-origin request allowlist before navigation, set `serviceWorkers: block`, record every off-origin attempt and fail on any violation instead of silently masking it.
+- [X] T012 [US1] Complete shared scripted reader assertions in `tests/e2e/smill.spec.mjs`: home → search → Tab focus → Enter card fragment → exact displayed code → sentinel-seeded actual clipboard readback, light/dark applied state plus reload persistence, stable card links, visible provenance and no horizontal page overflow; use semantic locators/condition-based assertions without clipboard mocks or sleeps.
+- [X] T013 [US1] Run the complete T012 scripted journey at both desktop `1280×800` and mobile `390×844` in `tests/e2e/smill.spec.mjs`, including search/keyboard links, exact copy, appearance persistence and zero page overflow in both; add a separate `javaScriptEnabled:false` context whose only exemptions are enhancement controls, still requiring ordinary content/navigation; keep the same single `smill` corpus case.
+- [X] T014 [US1] Add `tests/e2e/inert.spec.mjs` using temporary adversarial variants of the same source (not another real-product corpus entry) to prove raw HTML/shortcodes/snippets stay inert, external image attempts are not fetched, source hashes remain unchanged and the fixed subprocess log contains no promoted example command.
+- [X] T015 [US1] Extend `tests/e2e/harness.test.mjs` with failing setup/timeout/interruption fault-injection cases, then correct `tests/e2e/helpers/fixtures.mjs` teardown so contexts/listener/known children always close, owned temp data is removed and separate failure evidence survives; no broad process kill or deletion of user paths.
+- [X] T016 [US1] Add `.github/workflows/e2e.yml` with contents-read permission, existing pinned checkout/setup-go conventions, verified SHA-pinned Node setup for `24.21.0`, explicit `npm ci`/matching Chromium setup and checksum-pinned Hugo `0.167.0`; run helper tests and all browser contexts as required tests, with no artifact upload, release, deployment or permissive missing-tool skip.
+- [X] T017 [US1] Run the one-sheet journey twice from independent owned roots with prerequisites already installed; require identical public file lists/bytes, unchanged source, zero off-origin attempts and all desktop/mobile/no-JavaScript assertions, recording actual environment/results and local evidence locations in `docs/e2e-verification.md`.
+- [X] T018 [US1] Reconcile actual first-slice commands/evidence in `tests/e2e/README.md`, `docs/e2e-verification.md` and `specs/007-live-preview/quickstart.md`; explicitly leave `serve`, sibling sheets, live latency and five-author usability results unimplemented/unmeasured, and enforce the MVP stop before later phases.
 
 **MVP STOP**: One `smill` sheet and one complete automated GFM → Hugo → browser journey.
 Apply only MVP verification/review portions of final tasks. Later phases do not block
@@ -116,10 +116,10 @@ refused/inert while an authorized local preview remains usable.
 
 ## Phase 8: Polish and cross-cutting checks (apply to the selected increment only)
 
-- [ ] T047 Run required `gofmt`, Go tests/race/vet/module checks, helper and browser tests plus `git diff --check`; record commands/results/gaps in `docs/e2e-verification.md` for only the delivered slice, with no optional E2E skip presented as a pass.
-- [ ] T048 Reconcile `docs/cli.md`, `docs/hugo.md`, `tests/e2e/README.md` and `specs/007-live-preview/quickstart.md` with actually implemented commands; document MVP E2E first and add later `serve` guidance only after its increment passes.
+- [X] T047 Run required `gofmt`, Go tests/race/vet/module checks, helper and browser tests plus `git diff --check`; record commands/results/gaps in `docs/e2e-verification.md` for only the delivered slice, with no optional E2E skip presented as a pass.
+- [X] T048 Reconcile `docs/cli.md`, `docs/hugo.md`, `tests/e2e/README.md` and `specs/007-live-preview/quickstart.md` with actually implemented commands; document MVP E2E first and add later `serve` guidance only after its increment passes.
 - [ ] T049 For the later server increment only, record the workstation and measure SC-002/SC-003/SC-006 in `docs/studio-verification.md`: `95 of 100` edits within `1 second`, `19 of 20` starts within `3 seconds` for `100` sheets `≤100 KiB` each, `100` latest-save sequences correct, and `four of five` authors complete recovery workflow within `five minutes`; keep these out of MVP completion claims.
-- [ ] T050 Obtain independent review of the delivered slice, fix/re-review findings with focused Conventional Commits, and record exact reviewed revision/check evidence in `docs/e2e-verification.md`; create only an authorized reviewable topic PR, with no merge, deployment, release or artifact upload.
+- [X] T050 Obtain independent review of the delivered slice, fix/re-review findings with focused Conventional Commits, and record exact reviewed revision/check evidence in `docs/e2e-verification.md`; create only an authorized reviewable topic PR, with no merge, deployment, release or artifact upload.
 
 ## Dependencies & Execution Order
 
@@ -164,5 +164,8 @@ select T001–T018 and MVP-only final checks explicitly. Later tasks must stay u
 Install dependencies/tools/browser prerequisites explicitly; then run tests offline.
 Keep tool execution fixed and content inert. Preserve the same Go compiler/IR/Hugo
 path and use manual browser QA only as complementary evidence, not the automated gate.
-No source changes, dependencies, browser downloads, new server or runtime features are
-created by this planning/tasks invocation itself.
+MVP implementation was authorized on 2026-10-13. The private test package and
+matching browser were provisioned explicitly; tests themselves download nothing.
+No product server or later runtime feature was implemented. Independent source
+re-review is clear; final documentation is reviewed at handoff. See
+`docs/e2e-verification.md`.
