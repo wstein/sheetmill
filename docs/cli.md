@@ -11,7 +11,7 @@ category: reference
 | `smill import reference <file> [options]` | [Controlled conversion](imports.md), dry-run and loss reports |
 | `smill serve [file-or-directory] [--open] [--port 0..65535] [--hugo /absolute/path]` | Authenticated read-only local live preview through installed Hugo 0.167.0 |
 | `smill build hugo <file-or-directory>... --out <new-project> [--title <name>] [--base-path </path/>] [--edit-base-url <GitHub-edit-directory>] [--source-base-url <GitHub-blob-directory>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
-| `smill build navi <file-or-directory>... --out <new-dir> [--shell bash\|zsh\|fish\|nu] [--root <dir>]` | Export `{.navi #id}` cards as [navi `.cheat` files](format/navi-profile.md); never runs navi or any command |
+| `smill build navi <file-or-directory>... --out <new-dir> [--shell bash\|zsh\|fish\|nu] [--root <dir>] [--strict]` | Export `{.navi #id}` cards as [navi `.cheat` files](format/navi-profile.md); never runs navi or any command |
 
 Cobra v1.10.2 parses commands and flags. `--help` works at every command level;
 top-level help (`smill --help`, `smill help`) ends with a notice pointing AI agents
@@ -49,8 +49,8 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `IO001`, `IO002`, `IO003` | Input access/selection; stdout failure; output creation/write |
 | `REN001`, `REN002`, `REN003` | Unsupported IR; unsafe URL; invalid/ambiguous route or base path |
 | `REN101`, `REN102`, `REN103` | Inert raw HTML; images retained as unfetched links; unresolved internal link (warnings) |
-| `NAV001`, `NAV006`–`NAV008` | navi export errors: profile; metadata; conflicting declarations; navi identity collision |
-| `NAV101`–`NAV106` | navi export warnings: card skipped (shape, command text, placeholder, declarations); license; empty sheet. See [navi export](format/navi-profile.md) |
+| `NAV000`, `NAV001`, `NAV006`, `NAV008` | navi export errors: `--strict` with warnings; profile; metadata; navi identity collision (`NAV007` is retired) |
+| `NAV101`–`NAV107` | navi export warnings: card skipped (shape, command text, placeholder, declarations); license; empty sheet; frontmatter not exported. See [navi export](format/navi-profile.md) |
 | `IMP001`–`IMP104` | See [import diagnostic codes](imports.md) |
 
 Go package tests exercise the same `Run` entrypoint as the executable, without

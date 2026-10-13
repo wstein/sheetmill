@@ -3,7 +3,7 @@ title: "navi export"
 description: "Explicit cards and free-input parameters exported as navi .cheat files."
 category: reference
 ---
-`smill build navi <file-or-directory>... --out <new-dir> [--shell bash|zsh|fish|nu] [--root <dir>]`
+`smill build navi <file-or-directory>... --out <new-dir> [--shell bash|zsh|fish|nu] [--root <dir>] [--strict]`
 writes one `<sheet>.cheat` file per sheet to a new directory. It generates text
 only: SheetMill never runs navi, a shell or any exported command, and a lint test
 keeps the renderer free of `os/exec`, `syscall`, `plugin` and network imports.
@@ -64,7 +64,8 @@ smill check "<sheet>"
 
 A card that is marked but cannot be exported is **skipped with a warning**; the
 rest of the build continues and the warning names the card. Metadata, profile and
-batch-identity problems are errors: nothing is written.
+batch-identity problems are errors: nothing is written. For automation, `--strict`
+turns any warning into a failure (exit 1) before anything is written.
 
 ## Shell profiles
 
@@ -84,6 +85,14 @@ otherwise). Build each shell into its own directory.
 Cards in other languages are skipped with `NAV101`, never reinterpreted. Commands
 with a heredoc skip the quote check because the payload is free text.
 
+`bash` is the primary profile. `zsh`, `fish` and `nu` apply the same structural
+checks with their own fence languages and quoting rules, and are **experimental**:
+their fixtures are synthetic and have not been verified against real shells.
+
+The quote check understands nested command substitutions (`$( )` and backticks,
+also inside double quotes) and only ever reports an unterminated quote; it does
+not validate shell syntax. A pinned pure Go shell parser is planned.
+
 ## Metadata schema
 
 | Location | Value |
@@ -92,9 +101,9 @@ with a heredoc skip the quote check because the payload is free text.
 | `.cards.<id>` | Keyed by an explicit `.navi` card ID; mapping with only `params` |
 | `.params.<name>` | `type` (`string`, `int` or `path`; required) and `description` (optional single-line string) |
 
-Names match `[a-z][a-z0-9_]{0,31}` and are local to one card. Unknown keys, a card
-ID that refers to no card, and unsupported types are `NAV006`. A parameter name
-declared with different definitions in two cards of one sheet is `NAV007`.
+Names match `[a-z][a-z0-9_]{0,31}` and are local to one card, which has its own
+navi context, so one name may be declared differently in different cards. Unknown
+keys, a card ID that refers to no card, and unsupported types are `NAV006`.
 `type` and `description` are SheetMill metadata; **navi does not enforce them**.
 Defaults, choice lists, suggestion commands, previews, multi-selection and shared
 contexts are not generated yet, and `$` provider lines are never emitted.
@@ -102,9 +111,11 @@ contexts are not generated yet, and `$` provider lines are never emitted.
 ## Placeholders
 
 `<name>` with a lowercase name as above is a placeholder, and every placeholder
-needs a declaration which must be used. Text such as `<Name>` or `<a-b>`, which
-navi would treat as a variable but this grammar rejects, skips the card
-(`NAV103`); there is no escape for a literal placeholder. Redirections
+needs a declaration which must be used. navi's own token syntax is wider: its
+regex `\\?<(\w[\w\d\-_]*)>` (Unicode `\w`) also reads `<1>`, `<_x>`, `<a-b>`,
+`<Name>`, `<ünï>` and the escaped form `\<name>`. SheetMill matches navi's syntax
+first, then rejects whatever its narrower grammar does not allow: the card is
+skipped (`NAV103`). There is no escape for a literal placeholder. Redirections
 (`< in > out`), heredocs (`<<EOF`) and spaced angle brackets are ordinary shell.
 SheetMill adds no quoting: quote placeholders as you want them in the command.
 
@@ -130,7 +141,9 @@ context so tags and titles cannot concatenate into another card's text. `tool`
 and root `tags` follow, in source order, for filtering. Before writing, every entry's
 pinned item hash is computed across the batch; equal hashes are `NAV008` (error).
 Titles, tags and header values are collapsed to one line, so they cannot create a
-navi line; a tag with a comma, a line break or U+2800 is `NAV006`. The generated
+navi line. A title that is empty after that (for example only U+200B) or contains
+U+2800 skips the card, because navi ignores entries without a description. A tag
+with a comma, a line break or U+2800 is `NAV006`. The generated
 `; card:` comment records the card ID.
 
 ## Free input is trusted shell text
@@ -148,7 +161,7 @@ an exported template in navi is a separate user action.
 | --- | --- | --- |
 | `NAV001` | error | Unsupported shell profile |
 | `NAV006` | error | Invalid or unknown `cheatsheet.navi` metadata, dangling card ID, wrong `shell`, unusable tag |
-| `NAV007` | error | One parameter name declared differently within a sheet |
+| `NAV007` | retired | Was a sheet-wide parameter conflict; parameters are now card-local |
 | `NAV008` | error | Two entries share a pinned navi identity hash |
 | `NAV101` | warning | Card skipped: no explicit ID, not exactly one code block, or language outside the profile |
 | `NAV102` | warning | Card skipped: unsafe or unbalanced command text or title |
@@ -156,6 +169,8 @@ an exported template in navi is a separate user action.
 | `NAV104` | warning | Card skipped: placeholders and declarations disagree |
 | `NAV105` | warning | License not stated; the header says so |
 | `NAV106` | warning | Sheet exported nothing, so no file is written for it. If no sheet exports, the build fails and writes nothing |
+| `NAV107` | warning | Frontmatter the `.cheat` file does not carry (anything besides title, license, attribution, tags, `cheatsheet.tool`/`schema`/`navi`), listed by key; a sidecar is not implemented yet |
+| `NAV000` | error | `--strict` and at least one warning; nothing is written |
 
 `REN001` and `IO003` apply as for the other renderers. The output directory must
 not exist.
@@ -164,6 +179,9 @@ not exist.
 
 Table-driven negative tests, golden bytes, a pure Go model of navi's line grammar
 and entry deduplication, a fuzz target over command text, CLI tests and the
-no-execution lint. Not done: running navi (never, by policy) and a metadata sidecar.
-Quote analysis is heuristic compared with a real shell parser. Re-check the
+no-execution lint. The item hash model is pinned by fixed vectors
+(`itemHash("") = 0x1c9d3adb639f298e`, `itemHash("abc") = 0x64372d1c87d01e7c`) that an
+independent review calculated from the Rust hash input. Not done: running navi
+(never, by policy) and a metadata sidecar; unexported metadata is diagnosed with
+`NAV107` instead. Quote analysis is heuristic compared with a real shell parser. Re-check the
 upstream source when moving to another navi version.

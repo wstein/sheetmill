@@ -39,20 +39,26 @@ navi has been run.
   line, a trailing continuation backslash, an unterminated quote and a leading
   `navi` word (`NAV102`). Nothing is indented or hidden to evade navi's parser.
 - S4 Parameters: `<name>` with `[a-z][a-z0-9_]{0,31}`; declared per card under
-  `cheatsheet.navi.cards.<id>.params`; every declaration used. Look-alike
-  placeholders skip the card (`NAV103`, `NAV104`). Redirections are shell, not
+  `cheatsheet.navi.cards.<id>.params`; every declaration used. Placeholders are
+  recognized with navi's own broader regex first (`\\?<(\w[\w\d\-_]*)>`, Unicode
+  `\w`, so `<1>`, `<ünï>` and `\<name>` count), then rejected when outside the
+  narrower grammar (`NAV103`, `NAV104`). Redirections are shell, not
   placeholders. There is no literal-placeholder escape in this version.
 - S5 Metadata: closed schema, `type` in `string|int|path`, optional single-line
-  `description`. Unknown keys, dangling card IDs and unsupported types are `NAV006`;
-  inconsistent declarations of a name in one sheet are `NAV007`. Defaults, choice
+  `description`. Unknown keys, dangling card IDs and unsupported types are `NAV006`.
+  Parameters are card-local (`NAV007`, the sheet-wide conflict, is retired because
+  each card has its own context). Defaults, choice
   lists, providers, previews, multi-selection and shared contexts are out of scope;
   no `$` lines are emitted.
 - S6 Never execute: tests compare bytes and use a pure Go model of navi's line
   grammar and entry deduplication; a lint test forbids `os/exec`, `syscall`,
   `plugin` and network imports in the package.
-- S7 Preservation: consume schema-1 IR without reparsing Markdown. Metadata outside
-  the navi namespace is **not yet preserved**: the planned versioned
-  `<sheet>.navi.json` sidecar is a remaining task.
+- S7 Preservation: consume schema-1 IR without reparsing Markdown. Frontmatter the
+  `.cheat` file does not carry is **diagnosed, not dropped silently** (`NAV107`,
+  listing the keys); the versioned `<sheet>.navi.json` sidecar that would preserve
+  it is a remaining task.
+- S9 Automation: `--strict` makes any warning fail the build (`NAV000`) before
+  writing. zsh, fish and nu are experimental until verified against real shells.
 - S8 Identity and provenance: each card gets a unique first tag
   `sheetmill:<path>#<id>!` (percent-encoded, terminated), followed by `tool` and
   `tags`. The batch is checked for equal pinned item hashes (`NAV008`) because navi
@@ -78,14 +84,21 @@ types are not enforced. Generated headers and the format page state this.
 | `<Name>`, `<a-b>`, undeclared, unused | `NAV103` / `NAV104` warning |
 | Redirections, heredocs, comments with quotes, leading dash, Unicode | Exported unchanged |
 | Unknown metadata, dangling card, bad type, wrong `shell`, bad tag | `NAV006` error |
-| Conflicting declarations; unsupported profile | `NAV007`; `NAV001` |
+| Same parameter name declared differently in two cards | Allowed; parameters are card-local |
+| Unsupported profile; `--strict` with any warning | `NAV001`; `NAV000`, nothing written |
+| `<1>`, `\<name>`, `<ünï>`, `<_x>` | `NAV103` warning |
+| Title empty after normalization (U+200B only) | `NAV102` warning |
+| `echo "$(printf '"')"`, backtick and nested substitutions | Exported; a real open quote is still `NAV102` |
+| Unexported frontmatter such as `description` | `NAV107` warning listing keys |
+| `itemHash("")`, `itemHash("abc")` | `0x1c9d3adb639f298e`, `0x64372d1c87d01e7c` |
 | Header value with newline or `%` | Collapsed to one line, no new entry |
 | Input order and host path | Same bytes; no absolute path in output |
 | Sheet or selection with nothing exportable | `NAV106` warning; build fails if no file results |
 
 ## Diagnostics
 
-`NAV001`, `NAV006`, `NAV007`, `NAV008` errors; `NAV101`–`NAV106` warnings; shared
+`NAV000` (`--strict`), `NAV001`, `NAV006`, `NAV008` errors; `NAV007` retired;
+`NAV101`–`NAV107` warnings; shared
 `REN001`, `IO001` and `IO003` apply. Meanings are in the format page.
 
 ## Remaining work
