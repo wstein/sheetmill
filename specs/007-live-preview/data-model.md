@@ -4,24 +4,30 @@ This introduces no database or canonical source/IR schema change. All session/ru
 models below are internal contracts. Stable diagnostic codes and source metadata
 remain owned by the existing compiler.
 
-## CorpusCase (US1, later US2)
+## CorpusCase (implemented US1/US2)
 
-- `id`: unique lowercase ASCII slug; MVP has exactly one case, `smill`.
+- `id`: unique lowercase ASCII slug; cases are `smill`, `bdock`, `whr`.
+  Default selection chooses only `smill`; explicit `all` chooses all three.
 - `input`: repository-relative regular `.md` path; reject absolute paths, traversal
   and symlinks. MVP: `examples/sheets/smill.md`.
 - `product`: display name and immutable verified source revision (full commit ID)
-  or released version; unknown/missing identity is a fixture validation failure.
+  with exactly 40 lowercase hexadecimal characters; unknown/missing identity is
+  a fixture validation failure.
 - `title`: nonempty exact expected page title.
 - `search`: nonempty query, expected card ID, expected result label.
 - `cards`: explicit expected stable anchors and representative semantic assertions.
 - `copy`: selected card and explicit expected multiline text; preserve whitespace
   and trailing newline; do not trim or derive the oracle from generated output.
+- `permalink`: required selected card ID and exact accessible link label.
 - `attribution`: exact visible license/attribution expectations.
-- `crossLinks`: later-only selected source/destination card pairs; empty in MVP.
+- `crossLinks`: array of `{label, sheet, card}` targets. Each target must identify
+  a card in the selected corpus; missing targets fail before browser startup.
+  Empty for `smill`; BundleDock links to SheetMill semantic inspection, and
+  WorkHarbor links to BundleDock volume options.
 - Relationship: one case selects one source sheet; source frontmatter records its
   provenance. `corpus.json` is test configuration, never a new editable sheet format.
 
-## JourneyRun (US1)
+## JourneyRun (US1/US2)
 
 - `runID`: internal identifier for owned temporary/evidence locations; excluded
   from site generation and canonical IR.
