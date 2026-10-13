@@ -52,6 +52,9 @@ type Options struct {
 	EditBaseURL string
 	// Description introduces the library on the home page.
 	Description string
+	// SiteURL is the canonical https://host/<base path>/ of the published site.
+	// It enables canonical links, og:url/og:image and a sitemap.
+	SiteURL string
 	// SourceBaseURL is an explicit GitHub /owner/repository/blob/ref/directory/ base
 	// for the selection root. Relative links that name no selected sheet resolve to
 	// the repository file instead of being reported as unresolved.
@@ -163,6 +166,10 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "select at least one sheet"}})
 	}
 	editBase, err := githubBase(options.EditBaseURL, "edit")
+	if err != nil {
+		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: err.Error()}})
+	}
+	origin, err := siteOrigin(options.SiteURL, base)
 	if err != nil {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: err.Error()}})
 	}
@@ -315,6 +322,16 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		title = "SheetMill References"
 	}
 	params := map[string]any{"base": base, "description": options.Description}
+	if origin != "" {
+		params["origin"] = origin
+		var sitemap strings.Builder
+		sitemap.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n")
+		for _, loc := range append([]string{base}, urls(pages)...) {
+			fmt.Fprintf(&sitemap, "<url><loc>%s</loc></url>\n", esc(origin+loc))
+		}
+		sitemap.WriteString("</urlset>\n")
+		p.Files["static/sitemap.xml"] = []byte(sitemap.String())
+	}
 	config := map[string]any{"baseURL": "https://example.invalid/", "title": title, "languageCode": "en", "disableKinds": []string{"taxonomy", "term", "RSS", "sitemap"}, "enableRobotsTXT": false, "disableHugoGeneratorInject": true, "params": params, "outputs": map[string]any{"home": []string{"HTML"}, "page": []string{"HTML"}}, "security": map[string]any{"enableInlineShortcodes": false, "exec": map[string]any{"allow": []string{"none"}, "osEnv": []string{"none"}}, "http": map[string]any{"methods": []string{"none"}, "urls": []string{"none"}}}}
 	// Every remaining file is required; never return a partial project.
 	copyTree := func(files fs.FS, from, to string) error {
@@ -730,6 +747,30 @@ func (r *renderer) heading(n model.Node) string {
 }
 
 // Operator-controlled edit links are intentionally separate from metadata.source.
+// siteOrigin validates an explicit https site URL whose path is the base path and
+// returns its scheme and host.
+func siteOrigin(raw, base string) (string, error) {
+	if raw == "" {
+		return "", nil
+	}
+	u, err := url.Parse(raw)
+	if err == nil && u.Path == "" {
+		u.Path = "/"
+	}
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || u.Path != base {
+		return "", fmt.Errorf("site URL must be https://host%s without credentials, query or fragment", base)
+	}
+	return u.Scheme + "://" + u.Host, nil
+}
+
+func urls(pages []page) []string {
+	out := make([]string, 0, len(pages))
+	for _, p := range pages {
+		out = append(out, p.URL)
+	}
+	return out
+}
+
 // githubBase validates an explicit https://github.com/owner/repository/<kind>/ref/
 // URL with an optional directory, and returns it with one trailing slash.
 func githubBase(raw, kind string) (string, error) {

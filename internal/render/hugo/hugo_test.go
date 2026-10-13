@@ -1087,3 +1087,62 @@ func TestPerformanceBudget(t *testing.T) {
 		t.Errorf("search index is %d bytes for %d source bytes; budget is 2x", index, sources)
 	}
 }
+
+func TestSiteURLSitemapAndValidation(t *testing.T) {
+	sheets := []Sheet{sheet(t, "a&b", "Intro."), sheet(t, "c", "Intro.")}
+	sheets[0].ID = "ab"
+	p, ds := Render(sheets, Options{BasePath: "/sheetmill/", SiteURL: "https://wstein.github.io/sheetmill/"})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	want := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n<url><loc>https://wstein.github.io/sheetmill/</loc></url>\n<url><loc>https://wstein.github.io/sheetmill/ab/</loc></url>\n<url><loc>https://wstein.github.io/sheetmill/c/</loc></url>\n</urlset>\n"
+	if got := string(p.Files["static/sitemap.xml"]); got != want {
+		t.Fatalf("%q", got)
+	}
+	if !strings.Contains(string(p.Files["hugo.json"]), `"origin": "https://wstein.github.io"`) || len(p.Files["static/brand/social-preview.png"]) == 0 {
+		t.Fatal("missing origin param or social image")
+	}
+	if p, _ := Render(sheets, Options{}); p.Files["static/sitemap.xml"] != nil {
+		t.Fatal("no sitemap without a canonical origin")
+	}
+	for _, bad := range []string{"http://wstein.github.io/sheetmill/", "https://wstein.github.io/other/", "https://wstein.github.io/sheetmill/?x", "https://user@wstein.github.io/sheetmill/", "https:///sheetmill/", "wstein.github.io/sheetmill/"} {
+		if _, ds := Render(sheets, Options{BasePath: "/sheetmill/", SiteURL: bad}); len(ds) == 0 || ds[0].Code != "REN003" {
+			t.Error(bad, ds)
+		}
+	}
+}
+
+func TestHugoIntegrationSocialMetadata(t *testing.T) {
+	binary := os.Getenv("SHEETMILL_HUGO")
+	if binary == "" {
+		t.Skip("set SHEETMILL_HUGO to explicitly authorize installed tool")
+	}
+	p, ds := Render([]Sheet{
+		described(t, "git", "title: Git\ndescription: Track \"changes\" & <more>.\n", "## S\n### C\nText.\n"),
+		described(t, "misc", "title: Misc\n", "Intro.\n"),
+	}, Options{Title: "Library", Description: "Site intro.", BasePath: "/sheetmill/", SiteURL: "https://wstein.github.io/sheetmill/"})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	out := hugoBuild(t, binary, p)
+	page, _ := os.ReadFile(filepath.Join(out, "git", "index.html"))
+	for _, want := range []string{
+		`<meta name="description" content="Track &#34;changes&#34; &amp; &lt;more&gt;.">`,
+		`<meta property="og:title" content="Git · Library">`,
+		`<link rel="canonical" href="https://wstein.github.io/sheetmill/git/">`,
+		`<meta property="og:url" content="https://wstein.github.io/sheetmill/git/">`,
+		`<meta property="og:image" content="https://wstein.github.io/sheetmill/brand/social-preview.png">`,
+	} {
+		if !bytes.Contains(page, []byte(want)) {
+			t.Errorf("page lacks %s", want)
+		}
+	}
+	misc, _ := os.ReadFile(filepath.Join(out, "misc", "index.html"))
+	home, _ := os.ReadFile(filepath.Join(out, "index.html"))
+	if !bytes.Contains(misc, []byte(`<meta name="description" content="Site intro.">`)) || !bytes.Contains(home, []byte(`<link rel="canonical" href="https://wstein.github.io/sheetmill/">`)) {
+		t.Error("fallback description or home canonical missing")
+	}
+	if _, err := os.Stat(filepath.Join(out, "sitemap.xml")); err != nil {
+		t.Error(err)
+	}
+}
