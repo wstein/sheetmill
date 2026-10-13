@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -260,5 +261,35 @@ func TestCheckStrict(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "site")); !os.IsNotExist(err) {
 		t.Fatal("strict check must not write a project")
+	}
+}
+
+// Every diagnostic code the sources can emit must be documented.
+func TestDiagnosticsCatalogueIsComplete(t *testing.T) {
+	code := regexp.MustCompile(`"((?:SRC|FM|VAL|MD|ATTR|ID|IO|REN|IMP)[0-9]{3})"`)
+	documented := ""
+	for _, doc := range []string{"diagnostics.md", "imports.md"} {
+		b, err := os.ReadFile(filepath.Join("..", "..", "docs", doc))
+		if err != nil {
+			t.Fatal(err)
+		}
+		documented += string(b)
+	}
+	found := 0
+	err := filepath.WalkDir(filepath.Join("..", ".."), func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return err
+		}
+		b, err := os.ReadFile(path)
+		for _, m := range code.FindAllStringSubmatch(string(b), -1) {
+			found++
+			if !strings.Contains(documented, "`"+m[1]+"`") && !strings.Contains(documented, m[1]+"`–") && !strings.Contains(documented, "–`"+m[1]) {
+				t.Errorf("%s emits undocumented %s", path, m[1])
+			}
+		}
+		return err
+	})
+	if err != nil || found == 0 {
+		t.Fatal(err, found)
 	}
 }
