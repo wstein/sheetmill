@@ -100,7 +100,25 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 	if ds := validate.Metadata(fm.Metadata, fm.Locations); len(ds) > 0 {
 		return failed(ds)
 	}
-	parsed, ds := markdown.ParseDecoded(src, fm)
+	// Remove unsupported attribute syntax. The shadow keeps every byte offset, so
+	// validation and findings use ORIGINAL source locations.
+	shadow, clean, removed := rewriteAttributes(fm.Body)
+	var archived []any
+	for _, x := range removed {
+		span := s.Span(fm.BodyOffset+x.start, fm.BodyOffset+x.end)
+		archived = append(archived, map[string]any{"line": span.Start.Line, "text": x.text})
+		if x.heading {
+			warn("IMP108", "unsupported heading attribute "+x.text+" removed and archived", span)
+		} else {
+			warn("IMP109", "standalone attribute line "+x.text+" removed and archived", span)
+		}
+	}
+	if len(archived) > 0 {
+		original["removed_attributes"] = archived
+	}
+	shadowSource := append(append([]byte(nil), src[:fm.BodyOffset]...), shadow...)
+	fm.Body = shadow
+	parsed, ds := markdown.ParseDecoded(shadowSource, fm)
 	if len(ds) > 0 {
 		return failed(ds)
 	}
@@ -161,7 +179,7 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 	// JSON is a strict YAML subset. Sorted JSON keys make conversion reproducible.
 	r.Markdown = append([]byte("---\n"), header...)
 	r.Markdown = append(r.Markdown, []byte("\n---\n")...)
-	r.Markdown = append(r.Markdown, fm.Body...)
+	r.Markdown = append(r.Markdown, clean...)
 	if _, ds = markdown.Parse(r.Markdown); len(ds) > 0 {
 		return fail("IMP003", "converted source failed canonical validation: "+ds[0].Message)
 	}
@@ -223,4 +241,116 @@ func mapLegacyMetadata(fm frontmatter.Result, original map[string]any, warn func
 			warn("IMP107", "invalid tags dropped; original tags archived", fm.Locations["tags"])
 		}
 	}
+}
+
+type removal struct {
+	start, end int
+	text       string
+	heading    bool
+}
+
+var (
+	headingGroup    = regexp.MustCompile(`^( {0,3})(#{1,6})([ \t]+.*?)[ \t]*(\{[.#][^{}]*\})[ \t]*$`)
+	standaloneGroup = regexp.MustCompile(`^[ \t]*\{[.#][^{}]*\}[ \t]*$`)
+	fenceOpen       = regexp.MustCompile(`^ {0,3}(` + "`" + `{3,}|~{3,})`)
+)
+
+// rewriteAttributes removes attribute syntax SheetMill does not support: tokens
+// in heading groups and whole standalone {.x} lines. Fenced code is untouched.
+// shadow blanks removed bytes with spaces (offsets intact); clean trims them.
+func rewriteAttributes(body []byte) (shadow, clean []byte, removed []removal) {
+	shadow = append([]byte(nil), body...)
+	var out strings.Builder
+	fence := ""
+	for start := 0; start < len(body); {
+		end := len(body)
+		if i := strings.IndexByte(string(body[start:]), '\n'); i >= 0 {
+			end = start + i
+		}
+		line := string(body[start:end])
+		line, cr := strings.CutSuffix(line, "\r")
+		changed := false
+		switch {
+		case fence != "":
+			if m := fenceOpen.FindStringSubmatch(line); m != nil && m[1][0] == fence[0] && len(m[1]) >= len(fence) && strings.TrimSpace(line[len(m[0]):]) == "" {
+				fence = ""
+			}
+		case fenceOpen.MatchString(line):
+			fence = fenceOpen.FindStringSubmatch(line)[1]
+		case standaloneGroup.MatchString(line):
+			removed = append(removed, removal{start, start + len(line), strings.TrimSpace(line), false})
+			blank(shadow, start, start+len(line))
+			changed = true
+		default:
+			m := headingGroup.FindStringSubmatchIndex(line)
+			if m == nil || escaped(line, m[8]) {
+				break
+			}
+			group := line[m[8]:m[9]]
+			kept := []string{}
+			for _, token := range strings.Fields(group[1 : len(group)-1]) {
+				if supported(len(line[m[4]:m[5]]), token) {
+					kept = append(kept, token)
+					continue
+				}
+				at := m[8] + strings.Index(group, token)
+				removed = append(removed, removal{start + at, start + at + len(token), token, true})
+			}
+			if len(kept) == len(strings.Fields(group[1:len(group)-1])) {
+				break
+			}
+			replacement := ""
+			if len(kept) > 0 {
+				replacement = "{" + strings.Join(kept, " ") + "}"
+			}
+			from := start + m[8]
+			if replacement == "" {
+				from = start + m[7] // also drop the space before an emptied group
+			}
+			copy(shadow[from:], replacement)
+			blank(shadow, from+len(replacement), start+m[9])
+			changed = true
+		}
+		text := string(shadow[start : start+len(line)])
+		if changed {
+			text = strings.TrimRight(text, " \t")
+		}
+		out.WriteString(text)
+		if cr {
+			out.WriteByte('\r')
+		}
+		if end < len(body) {
+			out.WriteByte('\n')
+		}
+		start = end + 1
+	}
+	return shadow, []byte(out.String()), removed
+}
+
+func blank(b []byte, from, to int) {
+	for i := from; i < to; i++ {
+		b[i] = ' '
+	}
+}
+
+func escaped(s string, at int) bool {
+	n := 0
+	for i := at - 1; i >= 0 && s[i] == '\\'; i-- {
+		n++
+	}
+	return n%2 == 1
+}
+
+var spanToken = regexp.MustCompile(`^\.(col|row)-span-([1-9]|1[0-2])$`)
+
+// supported reports whether SheetMill accepts token on a heading of this level.
+func supported(level int, token string) bool {
+	id := strings.HasPrefix(token, "#") && len(token) > 1
+	switch level {
+	case 2:
+		return id || regexp.MustCompile(`^\.cols-[1-6]$`).MatchString(token)
+	case 3:
+		return id || spanToken.MatchString(token) || token == ".note" || token == ".tip" || token == ".warning" || token == ".navi" || token == ".wrap"
+	}
+	return false
 }

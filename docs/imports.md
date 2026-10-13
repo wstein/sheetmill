@@ -31,7 +31,9 @@ refused rather than overwritten.
 
 ## Conversion and loss report
 
-The Markdown body is preserved byte-for-byte. The frontmatter is serialized as
+The Markdown body is preserved byte-for-byte, except unsupported attribute syntax,
+which is removed and archived under `source.original_metadata.removed_attributes`
+with its original line (`IMP108`, `IMP109`). The frontmatter is serialized as
 sorted, indented JSON inside YAML delimiters; JSON is valid YAML. Known fields and
 unknown data survive, with the following legacy behavior archived under
 `source.original_metadata`:
@@ -48,11 +50,17 @@ unknown data survive, with the following legacy behavior archived under
 | `IMP105` | `intro` mapped to `description` unless one is set; original archived (warning) |
 | `IMP106` | First usable `categories` entry mapped to `category` unless set; list archived (warning) |
 | `IMP107` | Invalid `tags` (non-array, null or empty entries) dropped; original archived (warning) |
+| `IMP108` | Unsupported token removed from a heading group, e.g. `.secondary`; supported ones such as `.cols-2` stay (warning) |
+| `IMP109` | Standalone attribute line such as `{.shortcuts}` or `{.marker-none}` removed (warning) |
 | Core diagnostic codes | Unsupported structural attrs/YAML/GFM+ contract errors |
 
 Code blocks/code spans are excluded from directive scanning. This is an explicit
-limited adapter, not a complete Hexo/plugin-language analyzer. Unsupported heading
-attributes fail before writing. The resulting canonical document is revalidated.
+limited adapter, not a complete Hexo/plugin-language analyzer. Supported heading
+tokens are kept: `#id` and `.cols-1`–`.cols-6` on sections; `#id`, spans 1–12,
+`.note`, `.tip`, `.warning`, `.navi` and `.wrap` on cards. Fenced code is never
+rewritten. Validation runs on a copy whose removed bytes are blanked, so every
+finding and core diagnostic keeps its original line and column. Malformed or
+conflicting groups that remain still fail before writing. The resulting canonical document is revalidated.
 
 `--report json` requests a schema-1 JSON report on stdout with explicit provenance,
 input/output hashes and source-positioned findings. Conversion failures also return
@@ -70,7 +78,10 @@ The pinned Reference Python file at the example revision was read into scratch
 storage and passed through the adapter: **17 sections, 119 cards, two findings**
 (disabled plugins and inert background configuration). Input SHA-256:
 `e56491b4bbe22d6e58b259b02cd62bfea136cbe79f2704a1631d3b919db8d1d5`.
-No upstream authored sheet is bundled. Run the optional benchmark against that
+A dry run over a 2026-10-14 snapshot of all 216 upstream posts, held only in
+scratch storage, converts 210; the six failures are genuine source defects
+(three without frontmatter, a card before any section, an empty title, two
+attribute groups on one heading). No upstream authored sheet is bundled. Run the optional benchmark against that
 exact supplied file with `SHEETMILL_REFERENCE_PYTHON=/absolute/path/python.md go test
 ./internal/importer/reference -run TestPinnedPython -v`; its hash is checked first.
 Ordinary CI uses synthetic fixtures and golden conversion/report snapshots, without

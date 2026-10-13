@@ -78,10 +78,18 @@ func TestInvalidProvenance(t *testing.T) {
 		})
 	}
 }
+// Unsupported classes are archived (TestLegacyMapping); malformed or
+// conflicting groups that remain still fail before anything is written.
 func TestUnsupportedFails(t *testing.T) {
-	b := bytes.Replace(sample, []byte(".col-span-2"), []byte(".unknown-plugin"), 1)
-	if _, ds := Convert(b, provenance()); len(ds) == 0 || ds[0].Code != "ATTR001" {
-		t.Fatal(ds)
+	for _, tt := range []struct{ from, to, code string }{
+		{".col-span-2", ".col-span-2 .col-span-3", "ATTR002"},
+		{"### Literal {.col-span-2 .row-span-3}", "### Literal {.col-span-2 .row-span-3", "ATTR001"},
+		{"### Literal", "### Literal {.tip} {.note}", "ATTR001"},
+	} {
+		b := bytes.Replace(sample, []byte(tt.from), []byte(tt.to), 1)
+		if _, ds := Convert(b, provenance()); len(ds) == 0 || ds[0].Code != tt.code {
+			t.Errorf("%s: want %s, got %v", tt.to, tt.code, ds)
+		}
 	}
 }
 func TestLegacyMetadataPreserved(t *testing.T) {
@@ -195,11 +203,12 @@ func TestLossReports(t *testing.T) {
 	}
 }
 func TestErrorReport(t *testing.T) {
-	r, ds := Convert([]byte("---\ntitle: X\n---\n## S\n### C {.unsupported}\n"), provenance())
+	r, ds := Convert([]byte("---\ntitle: X\n---\n## S\n### C {.tip\n"), provenance())
 	if len(ds) == 0 || len(r.Report.Findings) != 1 || r.Report.Findings[0].Severity != "error" || r.Report.Findings[0].Code != "ATTR001" || len(r.Markdown) != 0 {
 		t.Fatal(r, ds)
 	}
 }
+
 func TestHeadingLossReports(t *testing.T) {
 	b := []byte("---\ntitle: X\n---\n## <script>x</script>\n### {% plugin x %}\n\nBody.\n\n### `{% literal %}`\n")
 	r, ds := Convert(b, provenance())
@@ -228,6 +237,64 @@ func TestHeadingLossReports(t *testing.T) {
 	}
 	if html == 0 || directives != 1 {
 		t.Fatalf("missing heading findings or code literal scanned: %+v", r.Report.Findings)
+	}
+}
+
+// Independently written fixture using Reference conventions that SheetMill
+// does not support natively.
+var legacy = []byte("---\ntitle: Tool\nintro: A short intro.\ncategories: [Linux Command, Other]\ntags: [cli, null, \"\"]\n---\n## Basics {.cols-2}\n### Keys {.col-span-2 .secondary}\n| Key | Action |\n| --- | --- |\n| `x` | cut |\n{.shortcuts}\n\n- one\n{.marker-none}\n\n#### Sub {.left-text}\n\n```text\n{.keep-in-code}\n```\n### Plain {.row-span-2 .tip}\nText.\n")
+
+func TestLegacyMapping(t *testing.T) {
+	r, ds := Convert(legacy, provenance())
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	d, ds := markdown.Parse(r.Markdown)
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	if d.Metadata["description"] != "A short intro." || d.Metadata["category"] != "Linux Command" {
+		t.Fatal(d.Metadata)
+	}
+	if tags := d.Metadata["tags"].([]any); len(tags) != 1 || tags[0] != "cli" {
+		t.Fatal("invalid tags must be dropped", tags)
+	}
+	original := d.Metadata["source"].(map[string]any)["original_metadata"].(map[string]any)
+	if original["intro"] != "A short intro." || len(original["categories"].([]any)) != 2 || len(original["tags"].([]any)) != 3 {
+		t.Fatal("original values must be archived", original)
+	}
+	removed := original["removed_attributes"].([]any)
+	if len(removed) != 4 {
+		t.Fatal(removed)
+	}
+	if first := removed[0].(map[string]any); first["line"] != int64(8) || first["text"] != ".secondary" {
+		t.Fatal(first)
+	}
+	body := string(r.Markdown[bytes.Index(r.Markdown, []byte("## Basics")):])
+	for _, want := range []string{"## Basics {.cols-2}\n", "### Keys {.col-span-2}\n", "#### Sub\n", "{.keep-in-code}", "### Plain {.row-span-2 .tip}\n"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %q in %s", want, body)
+		}
+	}
+	for _, gone := range []string{".secondary", "{.shortcuts}", "{.marker-none}", ".left-text"} {
+		if strings.Contains(body, gone) {
+			t.Errorf("%s survived in %s", gone, body)
+		}
+	}
+	codes := map[string]int{}
+	for _, f := range r.Report.Findings {
+		codes[f.Code]++
+		if f.Severity != "warning" {
+			t.Error(f)
+		}
+	}
+	if codes["IMP105"] != 1 || codes["IMP106"] != 1 || codes["IMP107"] != 1 || codes["IMP108"] != 2 || codes["IMP109"] != 2 {
+		t.Fatal(codes, r.Report.Findings)
+	}
+	for _, f := range r.Report.Findings {
+		if f.Code == "IMP109" && f.Span.Start.Line != 12 && f.Span.Start.Line != 15 {
+			t.Error("findings must point at original lines", f)
+		}
 	}
 }
 
