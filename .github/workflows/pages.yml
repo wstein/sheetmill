@@ -44,8 +44,8 @@ jobs:
           set -euo pipefail
           hugo() { HUGO_CACHEDIR="$RUNNER_TEMP/hugo-cache" "$RUNNER_TEMP/sheetmill-hugo/hugo" --source "$1" --destination "$2" --clock 2000-01-01T00:00:00Z --noBuildLock --quiet; }
           mapfile -t pages < <(grep -v -e '^#' -e '^$' docs/manual-pages.txt)
-          go run ./cmd/smill build hugo "${pages[@]}" --out "$RUNNER_TEMP/manual" --title 'SheetMill Manual' --base-path /sheetmill/ --source-base-url https://github.com/wstein/sheetmill/blob/main/docs/ --edit-base-url https://github.com/wstein/sheetmill/edit/main/docs/
-          go run ./cmd/smill build hugo examples/sheets --out "$RUNNER_TEMP/demo" --title 'SheetMill Demo' --base-path /sheetmill/demo/ --edit-base-url https://github.com/wstein/sheetmill/edit/main/examples/sheets/
+          go run ./cmd/smill build hugo "${pages[@]}" --out "$RUNNER_TEMP/manual" --title 'SheetMill Manual' --description 'How to write, check and publish reference sheets with SheetMill.' --base-path /sheetmill/ --source-base-url https://github.com/wstein/sheetmill/blob/main/docs/ --edit-base-url https://github.com/wstein/sheetmill/edit/main/docs/
+          go run ./cmd/smill build hugo examples/sheets --out "$RUNNER_TEMP/demo" --title 'SheetMill Demo' --description 'Example reference sheets, independently authored and compiled with SheetMill.' --base-path /sheetmill/demo/ --edit-base-url https://github.com/wstein/sheetmill/edit/main/examples/sheets/
           hugo "$RUNNER_TEMP/manual" "$RUNNER_TEMP/public"
           # The demo is mounted below the manual; refuse to merge over a manual page.
           test ! -e "$RUNNER_TEMP/public/demo"
