@@ -61,5 +61,12 @@ jobs:
           GOTOOLCHAIN: local
           SHEETMILL_E2E_CORPUS: all
         run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" npm test
+      - name: Verify authenticated read-only Studio journeys (no traces)
+        working-directory: tests/e2e
+        env:
+          GOPROXY: 'off'
+          GOSUMDB: 'off'
+          GOTOOLCHAIN: local
+        run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" npm run test:studio
       - name: Verify tracked files remain unchanged
         run: git diff --exit-code && git diff --check

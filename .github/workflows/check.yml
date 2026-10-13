@@ -38,6 +38,8 @@ jobs:
           tar -xzf "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" -C "$RUNNER_TEMP/sheetmill-hugo" hugo
       - name: Verify actual local Hugo output
         run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" go test ./internal/render/hugo -run TestHugoIntegration -count=1
+      - name: Verify actual Hugo Studio lifecycle and boundaries
+        run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" go test -race ./internal/studio -count=1
       - run: go test ./internal/frontmatter -run '^$' -fuzz FuzzParse -fuzztime 5s -parallel 2
       - run: go test ./internal/markdown -run '^$' -fuzz FuzzParse -fuzztime 5s -parallel 2
       - run: go test ./internal/importer/reference -run '^$' -fuzz FuzzConvert -fuzztime 5s -parallel 2
