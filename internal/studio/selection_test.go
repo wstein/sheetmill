@@ -2,9 +2,11 @@
 package studio
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -90,5 +92,62 @@ func TestSelectionFileAndAggregateCeilings(t *testing.T) {
 	}
 	if s.Read().Error == "" {
 		t.Fatal("file ceiling truncated")
+	}
+}
+
+func TestAggregateRejectedBeforeReadingAllFiles(t *testing.T) {
+	path := fixture(t, "one.md", validSource)
+	dir := filepath.Dir(path)
+	for i := 0; i < 99; i++ {
+		f, _ := os.Create(filepath.Join(dir, fmt.Sprintf("large-%d.md", i)))
+		f.Truncate(maxSource)
+		f.Close()
+	}
+	s, e := OpenSelection(dir)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	snapshot := s.Read()
+	runtime.ReadMemStats(&after)
+	if snapshot.Error == "" {
+		t.Fatal("aggregate ceiling absent")
+	}
+	if after.TotalAlloc-before.TotalAlloc > 160<<20 {
+		t.Fatal("allocated across the full oversized selection")
+	}
+}
+func TestInPlaceWritesNeverAcceptMixedSnapshot(t *testing.T) {
+	a, b := bytes.Repeat([]byte{'a'}, maxSource), bytes.Repeat([]byte{'b'}, maxSource)
+	path := fixture(t, "one.md", string(a))
+	s, e := OpenSelection(path)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	f, _ := os.OpenFile(path, os.O_WRONLY, 0600)
+	defer f.Close()
+	stop := make(chan struct{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				f.WriteAt(a, 0)
+				f.WriteAt(b, 0)
+			}
+		}
+	}()
+	defer func() { close(stop); <-done }()
+	for i := 0; i < 20; i++ {
+		entry := s.Read().Entries[0]
+		if entry.Error == "" && !bytes.Equal(entry.Bytes, a) && !bytes.Equal(entry.Bytes, b) {
+			t.Fatal("accepted torn in-place read")
+		}
 	}
 }
