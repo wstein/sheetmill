@@ -58,7 +58,7 @@ export function run(executable, args, { cwd, env = process.env, timeoutMs = 15_0
 
 export class OwnedWorkspace {
   static async create() { return new OwnedWorkspace(await mkdtemp(join(await realpath(tmpdir()),'sheetmill-e2e-'))); }
-  constructor(root) { this.root=root;this.controller=new AbortController();this.pending=new Set();this.disposers=[]; }
+  constructor(root) { this.root=root;this.controller=new AbortController();this.pending=new Set();this.disposers=[];this.closedCallbacks=[]; }
   run(executable,args,options={}) {
     const result=run(executable,args,{...options,signal:this.controller.signal});
     this.pending.add(result);result.then(()=>this.pending.delete(result),()=>this.pending.delete(result));
@@ -68,12 +68,17 @@ export class OwnedWorkspace {
   close() {
     if (this.closing) return this.closing;
     this.closing=(async()=>{
+      try {
       this.controller.abort();
       await Promise.allSettled([...this.pending]);
       const errors=[];
       for (const dispose of this.disposers.reverse()) try { await dispose(); } catch (e) { errors.push(e); }
       await rm(this.root,{recursive:true,force:true});
       if (errors.length) throw new AggregateError(errors,'owned resource cleanup failed');
+      } finally {
+        this.closed=true;
+        for(const callback of this.closedCallbacks)callback();
+      }
     })();
     return this.closing;
   }
@@ -84,6 +89,7 @@ const interruptHandlers = new Map();
 let interrupting = false;
 
 export function registerInterruptCleanup(owner) {
+  if(owner.closed)return ()=>{};
   interruptOwners.add(owner);
   if (!interruptHandlers.size) for (const signal of ['SIGINT','SIGTERM']) {
     const handler=()=>{
@@ -102,5 +108,6 @@ export function registerInterruptCleanup(owner) {
       interruptHandlers.clear();
     }
   };
-  owner.defer(remove);return remove;
+  // Keep closing owners registered until their temporary tree is removed too.
+  owner.closedCallbacks.push(remove);return remove;
 }
