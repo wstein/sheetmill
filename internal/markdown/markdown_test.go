@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"github.com/wstein/sheetmill/internal/model"
 	"os"
 	"path/filepath"
 	"strings"
@@ -171,6 +172,48 @@ func TestEscapedHeadingAttributes(t *testing.T) {
 			c := d.Sections[0].Cards[0]
 			if c.Title != tt.title || len(c.Classes) != tt.classes {
 				t.Fatalf("title=%q classes=%v", c.Title, c.Classes)
+			}
+		})
+	}
+}
+
+func TestImplicitFenceContainerBoundary(t *testing.T) {
+	for name, body := range map[string]string{
+		"quote":       "## S\n### C\n> ```sh\n> literal\n\nOutside.\n\n### D\nend\n",
+		"list":        "## S\n### C\n- ```sh\n  literal\n\nOutside.\n\n### D\nend\n",
+		"empty quote": "## S\n### C\n> ```sh\n\nOutside.\n\n### D\nend\n",
+		"later fence": "## S\n### C\n> ```sh\n> literal\n\nOutside.\n\n```\nunrelated\n```\n\n### D\nend\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			src := []byte("---\ntitle: X\n---\n" + body)
+			d, ds := Parse(src)
+			if len(ds) > 0 {
+				t.Fatal(ds)
+			}
+			if len(d.Sections[0].Cards) != 2 {
+				t.Fatal("lost card boundary")
+			}
+			first := d.Sections[0].Cards[0].Content[0]
+			boundary := bytes.Index(src, []byte("Outside."))
+			if first.Span.End.Offset > boundary {
+				t.Fatalf("container overlaps outside content: %+v", first.Span)
+			}
+			found := false
+			var walk func(n model.Node)
+			walk = func(n model.Node) {
+				if n.Kind == "FencedCodeBlock" {
+					found = true
+					if n.Span.End.Offset > boundary || n.Span.End.Offset <= n.Span.Start.Offset {
+						t.Fatalf("invalid fence span: %+v", n.Span)
+					}
+				}
+				for _, c := range n.Children {
+					walk(c)
+				}
+			}
+			walk(first)
+			if !found {
+				t.Fatal("missing code node")
 			}
 		})
 	}
