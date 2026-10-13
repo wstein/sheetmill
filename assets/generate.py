@@ -91,11 +91,13 @@ def main():
 
     for name, dark in [("icon.svg", False), ("icon-dark.svg", True)]:
         (ROOT / name).write_text(svg("SheetMill", "Three staggered reference sheets in coral, pale coral and periwinkle.", 64, 64, icon(dark)))
+    variants = {}
     for name,small,mono in [("icon-small.svg",True,False),("favicon.svg",True,False),("icon-mono.svg",False,True)]:
         content=icon(small=small,mono=mono)
         if mono:
             # Knockout lines retain three distinct sheets in monochrome.
             content=content.replace('<rect x="15"', '<rect stroke="#FFFFFF" stroke-width="1.5" x="15"').replace('<rect x="9"','<rect stroke="#FFFFFF" stroke-width="1.5" x="9"')
+        variants[name] = content
         (ROOT/name).write_text(svg("SheetMill", "Editorial Stack optical or monochrome variant.",64,64,content))
     (ROOT/"apple-touch-icon.svg").write_text(svg("SheetMill", "Opaque square icon for platform masking.",64,64,f'<rect width="64" height="64" fill="{colors["dark-surface"]}"/>'+icon()))
     c = tokens["wordmark"]["capHeight"]
@@ -120,12 +122,14 @@ def main():
         lockups[name] = (mark + "\n" + word, width, height)
         (ROOT / name).write_text(svg("SheetMill", "Editorial Stack symbol beside the single joined SheetMill wordmark.", width, height, mark + "\n" + word))
 
+    exports = {}
     for name,width,height,logo_scale,x,y,dark in [("banner.svg",1000,220,1.4,35,24,False),("social-preview.svg",1280,640,2.3,180,150,True)]:
         content,_,_=lockups["logo-dark.svg" if dark else "logo.svg"]
         background=colors["dark-surface"] if dark else colors["mist-50"]
         tagline,advance=lettering("One source. Every reference.", x+word_x*logo_scale, y+baseline*logo_scale+42*logo_scale, (0.43*c*logo_scale)/sans_set[3],colors["dark-text"] if dark else colors["slate-600"],sans=True)
-        (ROOT/name).write_text(svg("SheetMill — One source. Every reference.","Editorial Stack identity with an outlined IBM Plex Sans tagline.",width,height,f'<rect width="{width}" height="{height}" fill="{background}"/><g transform="translate({x} {y}) scale({logo_scale})">{content}</g>'+tagline))
-    board = [f'<rect width="1200" height="650" fill="{colors["mist-50"]}"/>']
+        exports[name] = f'<rect width="{width}" height="{height}" fill="{background}"/><g transform="translate({x} {y}) scale({logo_scale})">{content}</g>'+tagline
+        (ROOT/name).write_text(svg("SheetMill — One source. Every reference.","Editorial Stack identity with an outlined IBM Plex Sans tagline.",width,height,exports[name]))
+    board = [f'<rect width="1200" height="1070" fill="{colors["mist-50"]}"/>']
     def label(text, x, y, fill="ink-900", size=22):
         paths, _ = lettering(text, x, y, size / cap, colors[fill])
         board.append(paths)
@@ -148,7 +152,13 @@ def main():
         board.append(f'<rect x="{x}" y="548" width="170" height="32" rx="6" fill="{colors[name]}"/>')
         label(name, x, 607, size=12)
         label(colors[name], x, 632, "slate-600", 12)
-    (ROOT / "preview.svg").write_text(svg("SheetMill brand masters", "Light and dark outlined wordmarks, icon size samples and updated coral/periwinkle palette. Master geometry is subject to the recorded review.", 1200, 650, "\n".join(board)))
+    label("README banner / 1000 × 220", 42, 690, size=18)
+    label("Social card / 1280 × 640", 700, 690, size=18)
+    board.append(f'<g transform="translate(42 710) scale(0.62)">{exports["banner.svg"]}</g>')
+    board.append(f'<g transform="translate(700 710) scale(0.35)">{exports["social-preview.svg"]}</g>')
+    label("Monochrome / three distinct sheets", 42, 950, size=18)
+    board.append(f'<g transform="translate(42 975)">{variants["icon-mono.svg"]}</g>')
+    (ROOT / "preview.svg").write_text(svg("SheetMill brand masters", "Light and dark outlined wordmarks, icon size samples and updated coral/periwinkle palette. Master geometry is subject to the recorded review.", 1200, 1070, "\n".join(board)))
 
 
 if __name__ == "__main__":

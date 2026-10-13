@@ -26,7 +26,8 @@ master below 32 px. Subsequent geometry changes require review.
   outside the repository; its [copyright/OFL notice](licenses/BricolageGrotesque-OFL.txt)
   is retained here. Original SheetMill drawing/generator uses EUPL-1.2.
 
-Obtain that exact font separately, then use an isolated tool environment:
+The tagline uses the separately pinned IBM Plex Sans variable source described in
+[font provenance](fonts/README.md), at `wdth=100`, `wght=400`. Obtain both exact fonts separately, then use an isolated tool environment:
 
 ```sh
 uv venv --python 3.15 /private/tmp/sheetmill-brand-venv
@@ -36,11 +37,11 @@ uv pip install --python /private/tmp/sheetmill-brand-venv/bin/python -r assets/r
 
 The generator downloads nothing and fails on a mismatched font hash or tool
 version. Never use an implicit host font fallback. `tokens.json` records the
-candidate geometry and color inputs; changes must agree with `BRAND.md`.
+implemented geometry and color inputs; changes must agree with `BRAND.md`.
 
 ## Verification performed
 
-- The six SVG outputs reproduced byte-for-byte on a second generation.
+- All twelve SVG outputs reproduced byte-for-byte on a second generation.
 - Parsed every SVG as XML; each has role, title and description, with no live
   text, scripts, external images, foreign objects, uses or resource links.
 - Rendered the comparison board with Inkscape 1.4.4 (`dcaf3e7`, 2026-05-05) and
@@ -58,3 +59,16 @@ not the rounded-tile variant. `python3 -m unittest discover -s assets -p
 'test_*.py'` verifies dimensions, optical variants, color tokens and resource
 independence. Font provenance is recorded in `fonts/README.md`. No deployment or
 PDF/navi output is produced by this work.
+
+The extended 1200 × 1070 comparison board includes banner/social/monochrome
+variants. Final masters were independently reproduced by Sol with no brand
+findings on 2026-10-13; the board remains available for human visual acceptance.
+Raster reproduction commands (Inkscape 1.4.4):
+
+```sh
+inkscape assets/favicon.svg --export-width=16 --export-height=16 --export-filename=assets/favicon-16.png
+inkscape assets/favicon.svg --export-width=32 --export-height=32 --export-filename=assets/favicon-32.png
+inkscape assets/apple-touch-icon.svg --export-width=180 --export-height=180 --export-filename=assets/apple-touch-icon.png
+inkscape assets/banner.svg --export-filename=assets/banner.png
+inkscape assets/social-preview.svg --export-filename=assets/social-preview.png
+```
