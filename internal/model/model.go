@@ -34,7 +34,10 @@ type Section struct {
 	Cards   []Card          `json:"cards"`
 }
 type Card struct {
-	ID            string          `json:"id"`
+	ID string `json:"id"`
+	// IDExplicit records that the heading carried {#id}; otherwise ID was generated
+	// from the title and changes when the title does.
+	IDExplicit    bool            `json:"id_explicit,omitempty"`
 	Title         string          `json:"title"`
 	Span          diagnostic.Span `json:"span"`
 	Heading       Node            `json:"heading"`
