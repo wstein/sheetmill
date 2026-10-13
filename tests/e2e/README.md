@@ -92,3 +92,10 @@ unit tests via `npm run test:harness`; machine-dependent timing thresholds are
 opt-in and are not presented as hosted-runner or universal performance guarantees.
 The five-author SC-006 usability study is separate and remains pending. See
 [Studio verification](../../docs/studio-verification.md) for methods and results.
+
+## Compact code copying
+
+`copy.spec.mjs` verifies that the copy control reserves no header row and overlaps
+no code, including a long unbroken token on desktop/mobile. It checks keyboard
+activation, exact clipboard contents, fixed-size success/failure feedback and
+readable source without JavaScript. It runs in default and all-corpus selections.
