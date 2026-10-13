@@ -25,3 +25,6 @@
 # Python tool caches
 __pycache__/
 *.pyc
+
+# Explicit local Hugo previews (never deployed by this repository)
+/.local/
