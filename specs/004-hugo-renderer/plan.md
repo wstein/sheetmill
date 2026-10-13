@@ -25,4 +25,5 @@ an explicit system monospace stack; no PDF font selection is implemented.
 
 Verification: failing behavior tests, semantic fidelity assertions and deterministic project-byte comparison, optional actual
 Hugo integration gated by explicit SHEETMILL_HUGO (skip if absent), repeated output
-hashes, browser desktop/mobile/search checks, race/vet/fuzz and Sol exact-SHA review.
+hashes, browser desktop/mobile/search checks, race/vet/fuzz and exact-SHA review by a separately assigned independent reviewer (recorded in
+docs/hugo-verification.md); human approval remains required before merge.
