@@ -41,7 +41,7 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `ID001` | Duplicate explicit/reserved ID |
 | `IO001`, `IO002`, `IO003` | Input access/selection; stdout failure; output creation/write |
 | `REN001`, `REN002`, `REN003` | Unsupported IR; unsafe URL; invalid/ambiguous route |
-| `REN101`, `REN102` | Inert raw HTML; images retained as unfetched links (warnings) |
+| `REN101`, `REN102`, `REN103` | Inert raw HTML; images retained as unfetched links; unresolved internal link (warnings) |
 | `IMP001`–`IMP104` | See [import diagnostic codes](imports.md) |
 
 Go package tests exercise the same `Run` entrypoint as the executable, without

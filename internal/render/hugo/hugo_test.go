@@ -345,3 +345,46 @@ func TestEmptyLinkLabels(t *testing.T) {
 		}
 	}
 }
+
+func TestUnresolvedInternalLinks(t *testing.T) {
+	other := sheet(t, "other", "## S\n### Target {#target}\nText.\n")
+	for _, tt := range []struct {
+		name, link, href string
+		warn             bool
+	}{
+		{"local card", "[x](#select)", `href="#ref-select"`, false},
+		{"local section", "[x](#s)", `href="#ref-s"`, false},
+		{"cross sheet card", "[x](other.md#target)", `href="/other/#ref-target"`, false},
+		{"cross sheet page", "[x](other.md)", `href="/other/"`, false},
+		{"external", "[x](https://example.com/#usage)", `href="https://example.com/#usage"`, false},
+		{"empty fragment", "[x](#)", `href=""`, false},
+		{"missing local fragment", "[x](#usage)", `href="#usage"`, true},
+		{"fragment of other sheet", "[x](#target)", `href="#target"`, true},
+		{"missing cross sheet fragment", "[x](other.md#install-notes)", `href="/other/#install-notes"`, true},
+		{"unselected relative sheet", "[x](../net/dns.md)", `href="../net/dns.md"`, true},
+		{"site path", "[x](/elsewhere/)", `href="/elsewhere/"`, true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			s := sheet(t, "test", "## S {#s}\n### Select {#select}\n"+tt.link+"\n")
+			p, ds := Render([]Sheet{s, other}, Options{})
+			if len(ds) > 0 {
+				t.Fatal(ds)
+			}
+			if got := body(t, p, "test"); !strings.Contains(got, tt.href) {
+				t.Fatal(tt.href, got)
+			}
+			found := false
+			for _, w := range p.Warnings {
+				if w.Code == "REN103" {
+					found = true
+					if w.Source != "test.md" || w.Span.Start.Line != 8 {
+						t.Fatal("wrong origin", w)
+					}
+				}
+			}
+			if found != tt.warn {
+				t.Fatal("REN103 reported:", found, p.Warnings)
+			}
+		})
+	}
+}
