@@ -46,12 +46,15 @@ If a retained snapshot's membership is stale, its aggregate library/search is
 withheld while selected published pages remain available.
 
 Hugo has fixed arguments, a fixed clock, controlled renderer configuration, isolated
-HOME/cache/temp and no inherited HUGO/proxy environment. Its version check is
-bounded to 5 seconds, generation to 30 seconds, combined output to 1 MiB and
-publisher/snapshot byte budget to 64 MiB including retained prior output/IR.
+HOME/cache/temp and no inherited HUGO/proxy environment. Its version-check/generation deadlines are
+5/30 seconds, followed by bounded owned-child termination. Combined output is
+limited to 1 MiB and the
+publisher/snapshot byte budget is 64 MiB including retained prior output/IR.
 Cancellation targets the owned child group with bounded escalation; no broad kill.
 Session shutdown closes watcher, listener, root handles and SSE streams and removes
-only owned temporary state. Go lifecycle tests verify the 5-second cleanup bound.
+only owned temporary state. HTTP graceful shutdown has a 5-second deadline, then
+owned workers are awaited. Tested lifecycle cases completed cleanup within
+5 seconds; this is not a universal end-to-end wall-clock or RSS guarantee.
 
 Private state contains relative source names, compiler spans/codes/messages,
 monotonic state/source/publication identities and freshness, not credentials or
