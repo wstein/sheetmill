@@ -14,8 +14,11 @@ Create `.local` first (`mkdir -p .local`). Hugo resolves the relative destinatio
 under its source directory. Browse <http://127.0.0.1:1313/>. The local server binds
 only to loopback. This is local generation, with no deployment/release/upload.
 Opening `index.html` as `file:` is insufficient for local search; serve the root.
-The v0.1 project uses root-relative URLs and must be served at the origin root;
-subpath deployment is not supported by this milestone.
+By default the site is served at the origin root. To serve it under a path, pass
+`--base-path /sheetmill/` (leading and trailing `/`, unreserved URL characters
+only; invalid values fail with `REN003`). Every generated link, asset, search URL
+and permalink then carries the prefix; the published file layout stays the same,
+so the host maps the prefix to the `public` directory.
 
 All inputs are explicitly selected, regular `.md` files or one-level directories.
 Validation completes before creating output. Existing destinations (including
@@ -60,10 +63,19 @@ Without `SHEETMILL_HUGO`, Go tests do not invoke Hugo. The integration test comp
 all built file bytes across two independent source/output directories with a fixed
 clock. Unit tests cover semantic fidelity, escaping, unsafe URLs, unknown IR,
 deterministic input ordering and output boundaries. CI installs only the pinned,
-checksum-verified development tool and uploads no generated site artifacts.
+checksum-verified development tool; the check workflow uploads no site artifacts.
 
 The [007 MVP harness](../tests/e2e/README.md) selects only
 `examples/sheets/smill.md`, exports two fresh projects through the actual CLI,
 compares every built public file byte, and automates desktop/mobile/no-JavaScript
 reader journeys. This complements the renderer integration test without adding a
 product preview server. See [actual E2E verification](e2e-verification.md).
+
+## GitHub Pages
+
+Authorized on 2026-10-13 for the independently authored `examples/sheets` only
+(AGENTS.md, specs/012). `.github/workflows/pages.yml` runs on pushes to `main` and
+manual dispatch: it repeats the core checks, exports the demo with
+`--base-path /sheetmill/`, builds with the pinned Hugo and deploys to
+<https://wstein.github.io/sheetmill/> through the `github-pages` environment,
+which accepts `main` only. Other sheets need the 012 redistribution gate first.
