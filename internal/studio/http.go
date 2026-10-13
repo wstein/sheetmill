@@ -44,10 +44,30 @@ func (s *Session) handler() http.Handler {
 		s.mu.RLock()
 		data, exists := s.files[name]
 		published := s.state.Published
+		allowed := map[string]bool{}
 		for _, sheet := range s.state.Sheets {
-			if name == sheet.ID+"/index.html" && (sheet.Status == "removed" || sheet.Published == 0) {
-				exists = false
+			if sheet.Status != "removed" && sheet.Published > 0 {
+				allowed[sheet.ID] = true
 			}
+		}
+		changedMembership := false
+		for file := range s.files {
+			parts := strings.Split(file, "/")
+			if len(parts) == 2 && parts[1] == "index.html" && !allowed[parts[0]] {
+				changedMembership = true
+			}
+		}
+		parts := strings.Split(name, "/")
+		if len(parts) == 2 && parts[1] == "index.html" && !allowed[parts[0]] {
+			exists = false
+		}
+		if changedMembership && name == "search.json" {
+			data = []byte("[]")
+			exists = true
+		}
+		if changedMembership && name == "index.html" {
+			data = []byte(`<!doctype html><html><head><meta charset="utf-8"><title>SheetMill Studio</title></head><body><main><h1>SheetMill Studio</h1><p>The library snapshot is stale. Use the Studio reference links for selected output.</p></main></body></html>`)
+			exists = true
 		}
 		s.mu.RUnlock()
 		status := http.StatusOK
