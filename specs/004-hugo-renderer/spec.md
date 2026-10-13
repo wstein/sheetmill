@@ -1,6 +1,6 @@
 # 004 — Hugo renderer
 
-Created: 2026-10-13 · Status: authorized, implementation in progress
+Created: 2026-10-13 · Status: implemented; merged via PR #3 (see tasks.md)
 Depends on: accepted core/Reference import (001–003)
 
 ## User scenarios and acceptance
@@ -40,5 +40,6 @@ Depends on: accepted core/Reference import (001–003)
 
 Semantic and negative tests pass. New-output boundaries preserve existing files.
 Project and actual Hugo output hashes match across repeated generation. Local site
-is visually checked at desktop/mobile, with search/navigation exercised. Sol performs
-an independent review of the exact final revision; findings are fixed and re-reviewed.
+is visually checked at desktop/mobile, with search/navigation exercised. a separately assigned independent reviewer (recorded in docs/hugo-verification.md)
+reviews the exact final revision; findings are fixed and re-reviewed. Human approval
+remains required before any merge.
