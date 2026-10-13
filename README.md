@@ -12,8 +12,9 @@ web references, Typst PDFs, and interactive navi commands.
 **Status:** foundation, parser, validation, deterministic JSON inspection and
 controlled Reference import and self-contained Hugo project export are implemented.
 Local website generation and read-only live preview are supported with pinned
-Hugo 0.167.0. PDF and navi
-remain planned for later milestones.
+Hugo 0.167.0. `smill build navi` exports explicitly marked command cards as
+navi `.cheat` files (text only; navi is never run). PDF output
+remains planned for a later milestone.
 Read the [SheetMill manual](https://wstein.github.io/sheetmill/), itself built
 with SheetMill from `docs/`, and try the [live demo library](https://wstein.github.io/sheetmill/demo/),
 generated from the independently authored example sheets.
