@@ -89,10 +89,14 @@ type entry struct {
 	URL      string   `json:"url"`
 	Tags     []string `json:"tags,omitempty"`
 	Category string   `json:"category,omitempty"`
+	License  string   `json:"license,omitempty"`
 }
 
 // sheetMetadata reads the displayed fields; validation already enforced their types.
-func sheetMetadata(m map[string]any) (description, category string, tags []string) {
+func sheetMetadata(m map[string]any) (description, category, license string, tags []string) {
+	if source, ok := m["source"].(map[string]any); ok {
+		license, _ = source["license"].(string)
+	}
 	description, _ = m["description"].(string)
 	category, _ = m["category"].(string)
 	if list, ok := m["tags"].([]any); ok {
@@ -102,7 +106,7 @@ func sheetMetadata(m map[string]any) (description, category string, tags []strin
 			}
 		}
 	}
-	return description, category, tags
+	return description, category, license, tags
 }
 
 type page struct {
@@ -111,6 +115,7 @@ type page struct {
 	Description string   `json:"description,omitempty"`
 	Category    string   `json:"category,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
+	License     string   `json:"license,omitempty"`
 	Body        string   `json:"body"`
 	EditURL     string   `json:"edit_url,omitempty"`
 }
@@ -224,7 +229,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	for _, s := range sheets {
 		r := renderer{self: s.ID, path: paths[s.ID], base: base, source: sourceBase, routes: routes, anchors: anchors}
 		title, _ := s.Document.Metadata["title"].(string)
-		description, category, tags := sheetMetadata(s.Document.Metadata)
+		description, category, license, tags := sheetMetadata(s.Document.Metadata)
 		var b strings.Builder
 		r.nodes(&b, s.Document.Preamble, false)
 		for _, section := range s.Document.Sections {
@@ -251,7 +256,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 				}
 				r.nodes(&b, card.Content, false)
 				b.WriteString(`</article>`)
-				index = append(index, entry{Title: card.Title, Sheet: title, Section: section.Title, Text: plain(card.Content), URL: base + s.ID + "/#ref-" + card.ID, Tags: tags, Category: category})
+				index = append(index, entry{Title: card.Title, Sheet: title, Section: section.Title, Text: plain(card.Content), URL: base + s.ID + "/#ref-" + card.ID, Tags: tags, Category: category, License: license})
 			}
 			b.WriteString(`</div></section>`)
 		}
@@ -273,7 +278,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		}
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
 		errors = append(errors, issues(s.SourceName, r.errors)...)
-		page := page{Title: title, URL: base + s.ID + "/", Description: description, Category: category, Tags: tags, Body: b.String()}
+		page := page{Title: title, URL: base + s.ID + "/", Description: description, Category: category, Tags: tags, License: license, Body: b.String()}
 		if editBase != "" {
 			page.EditURL = editBase + escapePath(paths[s.ID])
 		}
@@ -290,7 +295,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		front, _ := json.Marshal(map[string]any{"title": title, "url": "/" + s.ID + "/", "sheetid": s.ID})
 		p.Files["content/"+s.ID+"/index.md"] = []byte("---\n" + string(front) + "\n---\n")
 		// Preamble-only sheets must also be discoverable by search.
-		index = append(index, entry{Title: title, Sheet: title, Text: plain(s.Document.Preamble), URL: page.URL, Tags: tags, Category: category})
+		index = append(index, entry{Title: title, Sheet: title, Text: plain(s.Document.Preamble), URL: page.URL, Tags: tags, Category: category, License: license})
 	}
 	if len(errors) > 0 {
 		return Project{}, errors

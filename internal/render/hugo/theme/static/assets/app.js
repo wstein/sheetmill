@@ -102,7 +102,9 @@ if (typeof document !== 'undefined') (() => {
         const link = document.createElement('a');
         link.href = item.url;
         link.append(...highlighted(`${item.sheet} · ${item.title}`, wanted));
-        li.append(link); results.append(li);
+        li.append(link);
+        if (item.license) { const license = document.createElement('span'); license.className = 'result-license'; license.textContent = item.license; li.append(' ', license); }
+        results.append(li);
       }
       status.textContent = `${matches.length} results${matches.length > 30 ? ' (first 30 shown)' : ''}.${matches.length ? ' Use the arrow keys to move between them.' : ''}`;
     });
