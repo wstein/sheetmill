@@ -43,6 +43,7 @@ func (s *Session) handler() http.Handler {
 		}
 		s.mu.RLock()
 		data, exists := s.files[name]
+		published := s.state.Published
 		for _, sheet := range s.state.Sheets {
 			if name == sheet.ID+"/index.html" && (sheet.Status == "removed" || sheet.Published == 0) {
 				exists = false
@@ -61,7 +62,7 @@ func (s *Session) handler() http.Handler {
 		}
 		w.Header().Set("Content-Type", mime.TypeByExtension(path.Ext(name)))
 		if strings.HasSuffix(name, ".html") {
-			injection := []byte(`<link rel="stylesheet" href="/studio/status.css"><script src="/studio/client.js" defer></script>`)
+			injection := []byte(fmt.Sprintf(`<link rel="stylesheet" href="/studio/status.css"><script src="/studio/client.js" data-published="%d" defer></script>`, published))
 			data = bytes.Replace(data, []byte("</head>"), append(injection, []byte("</head>")...), 1)
 		}
 		w.WriteHeader(status)

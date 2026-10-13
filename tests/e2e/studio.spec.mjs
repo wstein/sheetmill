@@ -57,3 +57,16 @@ test.describe('invalid startup',()=>{
     await page.goto(studio.origin+'/sample/');await current(page,'Startup repaired');
   });
 });
+
+test('HTML and first state fetch cannot falsely label an older snapshot current',async({page,context,studio})=>{
+  let release;const blocked=new Promise(resolve=>{release=resolve});
+  const intercept=async route=>{await blocked;await route.fallback()};
+  await context.route('**/studio/state',intercept);
+  try{
+    await page.goto(studio.origin+'/sample/');await expect(live(page)).toContainText('Initial content');
+    const before=(await studio.readState()).published;
+    await writeFile(studio.path,source('Published before first state fetch'));
+    await expect.poll(async()=> (await studio.readState()).published).toBeGreaterThan(before);
+    release();await current(page,'Published before first state fetch');
+  }finally{release();await context.unroute('**/studio/state',intercept)}
+});
