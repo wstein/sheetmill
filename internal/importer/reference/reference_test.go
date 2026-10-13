@@ -200,7 +200,6 @@ func TestErrorReport(t *testing.T) {
 		t.Fatal(r, ds)
 	}
 }
-
 func TestHeadingLossReports(t *testing.T) {
 	b := []byte("---\ntitle: X\n---\n## <script>x</script>\n### {% plugin x %}\n\nBody.\n\n### `{% literal %}`\n")
 	r, ds := Convert(b, provenance())
@@ -229,5 +228,19 @@ func TestHeadingLossReports(t *testing.T) {
 	}
 	if html == 0 || directives != 1 {
 		t.Fatalf("missing heading findings or code literal scanned: %+v", r.Report.Findings)
+	}
+}
+
+func TestLegacyMappingKeepsExplicitFields(t *testing.T) {
+	r, ds := Convert([]byte("---\ntitle: T\ndescription: Kept.\nintro: Other.\ncategory: kept\ncategories: [x]\ntags: solo\n---\n## S\n"), provenance())
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	d, _ := markdown.Parse(r.Markdown)
+	if d.Metadata["description"] != "Kept." || d.Metadata["category"] != "kept" {
+		t.Fatal(d.Metadata)
+	}
+	if _, ok := d.Metadata["tags"]; ok {
+		t.Fatal("a non-array tags value must be archived, not kept", d.Metadata)
 	}
 }
