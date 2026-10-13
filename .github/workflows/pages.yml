@@ -38,12 +38,22 @@ jobs:
           curl --fail --location --retry 3 --output "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_0.167.0_linux-amd64.tar.gz
           echo '4d84519b9f619e6d4c3fb45a50157abeabeb724f859c60605f44c23def6e1169  '"$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" -C "$RUNNER_TEMP/sheetmill-hugo" hugo
-      - name: Export and build the demo library
+      - name: Export and build the manual and the demo library
         shell: bash
         run: |
           set -euo pipefail
-          go run ./cmd/smill build hugo examples/sheets --out "$RUNNER_TEMP/site" --base-path /sheetmill/ --edit-base-url https://github.com/wstein/sheetmill/edit/main/examples/sheets/
-          HUGO_CACHEDIR="$RUNNER_TEMP/hugo-cache" "$RUNNER_TEMP/sheetmill-hugo/hugo" --source "$RUNNER_TEMP/site" --destination "$RUNNER_TEMP/public" --clock 2000-01-01T00:00:00Z --noBuildLock --quiet
+          hugo() { HUGO_CACHEDIR="$RUNNER_TEMP/hugo-cache" "$RUNNER_TEMP/sheetmill-hugo/hugo" --source "$1" --destination "$2" --clock 2000-01-01T00:00:00Z --noBuildLock --quiet; }
+          mapfile -t pages < <(grep -v -e '^#' -e '^$' docs/manual-pages.txt)
+          go run ./cmd/smill build hugo "${pages[@]}" --out "$RUNNER_TEMP/manual" --title 'SheetMill Manual' --base-path /sheetmill/ --source-base-url https://github.com/wstein/sheetmill/blob/main/docs/ --edit-base-url https://github.com/wstein/sheetmill/edit/main/docs/
+          go run ./cmd/smill build hugo examples/sheets --out "$RUNNER_TEMP/demo" --title 'SheetMill Demo' --base-path /sheetmill/demo/ --edit-base-url https://github.com/wstein/sheetmill/edit/main/examples/sheets/
+          hugo "$RUNNER_TEMP/manual" "$RUNNER_TEMP/public"
+          # The demo is mounted below the manual; refuse to merge over a manual page.
+          test ! -e "$RUNNER_TEMP/public/demo"
+          hugo "$RUNNER_TEMP/demo" "$RUNNER_TEMP/public/demo"
+          # Plain-text resources for AI agents, linked from smill --help.
+          test ! -e "$RUNNER_TEMP/public/llms.txt" && test ! -e "$RUNNER_TEMP/public/agent-guide.md"
+          cp llms.txt "$RUNNER_TEMP/public/llms.txt"
+          cp docs/agent-guide.md "$RUNNER_TEMP/public/agent-guide.md"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: ${{ runner.temp }}/public
