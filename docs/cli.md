@@ -6,9 +6,11 @@
 | `smill check <file-or-directory>...` | Validate selected Markdown; no success output |
 | `smill inspect <file>` | Validate one file and print canonical JSON |
 | `smill import reference <file> [options]` | [Controlled conversion](imports.md), dry-run and loss reports |
+| `smill build hugo <file-or-directory>... --out <new-project> [--title <name>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
 
-Core commands have no flags; import has explicit conversion/provenance flags.
-There is no recursive mode, stdin mode or `build` command in v0.1.
+Cobra v1.10.2 parses commands and flags. `--help` works at every command level;
+import/build flags may precede or follow the positional input. Check/inspect
+have no content options. There is no recursive or stdin mode.
 Directories are scanned only one level, in sorted order, for lowercase `.md` files.
 Subdirectories and other extensions are ignored; an empty selection is an error.
 Duplicate explicitly selected paths are checked once. Selected files must be
@@ -19,7 +21,7 @@ with `os.Root` and limited to 8 MiB plus one byte for oversized-input detection.
 No implicit filesystem crawling occurs. Source symlinks are unsupported; this
 is not a sandbox against an adversary concurrently mutating all parent directories.
 
-Stdout contains only requested version/JSON data. Diagnostics use stderr:
+Stdout contains requested version/JSON/help data and a build export summary. Diagnostics use stderr:
 `path:line:column: CODE: actionable message`. Validations across explicit inputs
 continue after errors. Exit status precedence is IO/usage (2), then invalid source
 (1), then success (0). Broken stdout also produces exit 2.
@@ -37,7 +39,9 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `MD001`, `MD002` | Card without section; empty structural heading |
 | `ATTR001`, `ATTR002` | Unsupported/malformed attribute; duplicate/conflict |
 | `ID001` | Duplicate explicit/reserved ID |
-| `IO001`, `IO002`, `IO003` | Input access/selection; stdout failure; import file creation/write |
+| `IO001`, `IO002`, `IO003` | Input access/selection; stdout failure; output creation/write |
+| `REN001`, `REN002`, `REN003` | Unsupported IR; unsafe URL; invalid/ambiguous route |
+| `REN101`, `REN102` | Inert raw HTML; images retained as unfetched links (warnings) |
 | `IMP001`–`IMP104` | See [import diagnostic codes](imports.md) |
 
 Go package tests exercise the same `Run` entrypoint as the executable, without

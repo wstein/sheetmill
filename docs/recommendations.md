@@ -12,8 +12,11 @@ They are judgments, not measured adoption or guarantees.
 | TLDR adapter after the core/importer settles | 8.5/10 | Focused CLI examples; preserve placeholders and check content attribution separately |
 | Navi importer after typed command metadata is designed | 7.5/10 | Valuable, but dynamic suggestions and shell semantics add substantial safety work |
 | Broad automatic multi-ecosystem import now | 4/10 | Ambiguous recognition and conversion loss would widen the milestone too far |
-| Editorial Stack with coral/periwinkle | 9/10 | User-selected direction; use dark accent tokens for ordinary text and review SVG candidates before locking geometry |
+| Editorial Stack with coral/periwinkle | 9/10 | User-selected direction; use dark accent tokens for ordinary text and review final SVG masters before locking geometry |
 
-Recommended next implementation after review: design a narrow TLDR adapter or
-select the first renderer based on the desired user output. Do not start either
-under current authorization. Renderer features 004–006 remain specs only.
+Recommended next step: accept the finalized brand board and review the local Hugo
+library (9.5/10), then merge only after independent review and CI (9/10).
+Before public hosting, review content licenses and choose the intended base path
+(9/10). A separately authorized Typst milestone with explicit font profiles is
+next for print output (8.5/10); features 005–006 remain specs only. Deployment is
+not included in the current authorization.

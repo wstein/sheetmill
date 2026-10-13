@@ -19,7 +19,8 @@ source locations. Everything else uses the Go standard library. Dependencies are
 pinned in `go.mod`/`go.sum`; no sibling project package is imported.
 
 Future renderers consume IR and must establish their own layout and escaping
-contracts. There is deliberately no build command or renderer interface placeholder.
+contracts. The Hugo renderer consumes the semantic IR directly and exports a complete
+project; it never reparses original Markdown. See [Hugo contracts](hugo.md).
 Navi command validation/export is a separate future phase; `.navi` currently only
 records author intent.
 
