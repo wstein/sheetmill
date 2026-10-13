@@ -1031,3 +1031,24 @@ func TestKeyTables(t *testing.T) {
 		t.Error("only first-column code in .keys cards becomes keys", got)
 	}
 }
+
+func TestSectionJumpList(t *testing.T) {
+	p, ds := Render([]Sheet{
+		sheet(t, "many", "Intro.\n\n## First *steps* {#first}\n### C\nA.\n## Second\n### D\nB.\n"),
+		sheet(t, "one", "## Only\n### C\nA.\n"),
+	}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "many")
+	want := `<nav class="sheet-toc" aria-label="On this page"><ul><li><a href="#ref-first">First steps</a></li><li><a href="#ref-second">Second</a></li></ul></nav>`
+	if !strings.Contains(got, want) {
+		t.Fatal(want, got)
+	}
+	if strings.Index(got, want) > strings.Index(got, `<section`) || strings.Index(got, "Intro.") > strings.Index(got, want) {
+		t.Fatal("the jump list belongs between the preamble and the first section", got)
+	}
+	if strings.Contains(body(t, p, "one"), "sheet-toc") {
+		t.Fatal("a single section needs no jump list")
+	}
+}

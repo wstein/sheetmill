@@ -232,6 +232,14 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		description, category, license, tags := sheetMetadata(s.Document.Metadata)
 		var b strings.Builder
 		r.nodes(&b, s.Document.Preamble, false)
+		// A jump list lets readers reach any section without JavaScript.
+		if len(s.Document.Sections) > 1 {
+			b.WriteString(`<nav class="sheet-toc" aria-label="On this page"><ul>`)
+			for _, section := range s.Document.Sections {
+				fmt.Fprintf(&b, `<li><a href="#ref-%s">%s</a></li>`, esc(section.ID), esc(section.Title))
+			}
+			b.WriteString(`</ul></nav>`)
+		}
 		for _, section := range s.Document.Sections {
 			fmt.Fprintf(&b, `<section class="sheet-section" id="ref-%s"><h2>%s</h2>`, esc(section.ID), r.heading(section.Heading))
 			r.nodes(&b, section.Content, false)
