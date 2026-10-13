@@ -18,9 +18,11 @@ Version: 1.0.0 · Ratified: 2026-10-13 · Last amended: 2026-10-13
 6. **Independent product.** No runtime dependency on BundleDock, WorkHarbor or
    CrewBook. Original implementation and independently authored bundled fixtures.
 7. **Human publication control.** Current authorization covers foundation, parser,
-   Reference importer, checks and reviewable topic commits/PRs. Renderer features
-   are specification-only. Merges, tags, releases, deployments, binary builds,
-   website/PDF generation and artifact publication need separate approval.
+   Reference importer, approved brand finalization, Hugo renderer implementation,
+   local site generation, checks and reviewable topic commits/PRs. Typst/navi
+   remain specification-only. Merges, tags, releases, deployments, binary builds,
+   PDF generation and artifact publication need separate approval. Hugo local
+   site generation is explicitly authorized on 2026-10-13; deployment is not.
 8. **Review evidence.** Report actual verification and gaps. Independent review is
    expected before merge; passing author tests do not satisfy that expectation.
 

@@ -8,13 +8,14 @@ Sibling repository policies do not govern this repository.
 
 - Routine local source/document edits, dependency inspection, formatting, tests,
   fuzzing, vet and source/security checks are allowed within the requested work.
-- The current milestone is the parser, validator, deterministic JSON IR, CLI and
-  controlled Reference importer (features 001–003).
-  Do not implement web, PDF, Typst or navi renderers yet.
+- The current scope includes features 001–004: core, Reference import, finalized
+  brand assets and a Hugo renderer with local site generation (authorized by the
+  user on 2026-10-13). PDF/Typst and navi renderers remain out of scope.
 - Use `codex/` feature branches and Conventional Commits. Topic pushes and draft
   PRs belong to an authorized implementation handoff; otherwise ask before publishing.
-- Merge, tag, release, deploy, binary/distribution builds, website/PDF generation,
-  artifact publication and sibling-repository edits require separate human approval.
+- Merge, tag, release, deploy, distribution builds, PDF generation, artifact
+  publication and sibling-repository edits require separate human approval.
+  Local Hugo site generation and the approved brand exports are authorized.
 - Do not execute source snippets, fetch source-linked resources, weaken branch
   protections, add automatic merges or publish artifacts from CI.
 - Unknown source metadata must be preserved or diagnosed, never silently dropped.
@@ -38,5 +39,5 @@ not constitute independent review. Delegation is not required by this policy.
 Original code uses EUPL-1.2 SPDX headers. Keep the full license and provenance.
 Implement compatibility independently; do not copy Reference's GPL implementation,
 styles or authored sheets. The user selected the Editorial Stack direction with coral/periwinkle colors.
-`assets/BRAND.md` governs brand source; SVG geometry remains a candidate pending
-visual approval. Renderer implementation and publication gates remain in force.
+`assets/BRAND.md` governs brand source; the user approved the logo and brand finalization on 2026-10-13.
+Hugo/local generation is authorized; deployment and later renderer gates remain.

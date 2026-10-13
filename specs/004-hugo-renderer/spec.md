@@ -1,29 +1,44 @@
 # 004 — Hugo renderer
 
-Created: 2026-10-13 · Status: draft, specification only · Depends on: 003-reference-import
+Created: 2026-10-13 · Status: authorized, implementation in progress
+Depends on: accepted core/Reference import (001–003)
 
 ## User scenarios and acceptance
 
-P1: An author can produce responsive static cards, accessible navigation and search metadata from the canonical IR.
-Given identical source, configuration and pinned tools, output is deterministic.
-Unsupported content produces actionable diagnostics rather than disappearing.
+1. P1: An author exports explicitly selected sheets into a new Hugo project and
+   runs the pinned local Hugo tool to produce a browsable static reference library.
+   Navigation, section/card anchors, code, tables and source attribution survive.
+2. P1: A reader browses responsive cards or searches references entirely from local
+   assets. With JavaScript disabled, ordinary navigation and content still work.
+3. P1: An author receives source-positioned diagnostics for unsafe URLs or unsupported
+   IR nodes. Raw HTML is shown inertly and images retained as links, with warnings;
+   no source snippet, shortcode, plugin or linked resource is evaluated/fetched.
+4. P2: The approved Editorial Stack identity is finalized as reproducible light/dark,
+   favicon, small-size, banner, social and print-independent monochrome assets.
 
 ## Requirements
 
-- FR-001: Consume canonical IR; never parse external source formats directly.
-- FR-002: Define escaping, layout and output-version contracts before implementation.
-- FR-003: Require explicit output destinations; no implicit network/tool downloads.
-- FR-004: Test semantics without running source snippets or dynamic suggestions.
-- FR-005: Retain source attribution and license metadata in generated references.
-- FR-006: Obtain separate implementation/build/publication authorization.
+- FR-001: Consume schema-1 IR directly; do not reparse original Markdown or pass
+  untrusted source text through Hugo Markdown/shortcode evaluation.
+- FR-002: `smill build hugo <file-or-directory>... --out <new-project>` writes a complete
+  self-contained project. Inputs use existing explicit/nonrecursive boundaries.
+- FR-003: Require a new output directory; refuse existing/symlink destinations and
+  duplicate sheet routes. Validate all inputs before writing. No overwrite mode.
+- FR-004: Render supported GFM semantics, readable code, task state and table alignment.
+  Escape HTML, text, attrs and URLs; allow only relative/http/https/mailto links.
+- FR-005: Keep deterministic source/project/search bytes independent of input order,
+  clocks and absolute host paths. Pin Hugo 0.167.0; compare actual built file bytes.
+- FR-006: Preserve all metadata in JSON and show source/license attribution on pages.
+- FR-007: Provide responsive layout, progressive local search, visible keyboard focus,
+  semantic navigation, code copy, dark mode and print-friendly CSS.
+- FR-008: Use original embedded templates/styles/scripts and local licensed brand/font
+  assets; no remote themes, CDN, tool downloads, snippet execution or deployment.
+- FR-009: User explicitly authorizes brand exports, implementation and local site
+  generation on 2026-10-13. Merge/release/deploy and Typst/navi remain separately gated.
 
 ## Success criteria
 
-After authorization: semantic fixtures and deterministic output tests pass; a human
-reviews generated layout/behavior. Tool Hugo is explicitly pinned and its fonts,
-themes, dependencies and licenses are documented. No build or publication is
-performed under the current milestone.
-
-## Open decisions
-
-Search implementation and theme ownership; no sibling CSS copying.
+Semantic and negative tests pass. New-output boundaries preserve existing files.
+Project and actual Hugo output hashes match across repeated generation. Local site
+is visually checked at desktop/mobile, with search/navigation exercised. Sol performs
+an independent review of the exact final revision; findings are fixed and re-reviewed.
