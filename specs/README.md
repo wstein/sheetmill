@@ -11,7 +11,7 @@
 
 Public source compatibility is defined in `docs/format`, not redefined per feature.
 Each feature has spec, plan and tasks. Use `SPECIFY_FEATURE_DIRECTORY=specs/001-core-foundation`
-(or the selected feature directory) with Spec Kit scripts when working on the combined
-`codex/001-core-foundation` branch. Feature 004 is explicitly authorized; features 005–006 still record future
+(or the selected feature directory) with Spec Kit scripts. Each feature uses its own
+`codex/NNN-*` branch (for example `codex/004-hugo-renderer`). Feature 004 is explicitly authorized; features 005–006 still record future
 work without implementation approval. Multiple focused conventional commits keep current work
 reviewable. Independent review remains pending until separately recorded.
