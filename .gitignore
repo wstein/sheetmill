@@ -1,0 +1,23 @@
+# Local executables and verification output
+/smill
+/bin/
+/dist/
+/coverage/
+/coverage.out
+/fuzz-cache/
+*.test
+*.prof
+
+# Local configuration and editor state
+/.vscode/
+/.idea/
+.env
+.env.*
+!.env.example
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Source fixtures, fuzz regression seeds, golden snapshots and Spec Kit
+# project files are deliberately tracked.
