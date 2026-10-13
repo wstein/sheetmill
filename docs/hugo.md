@@ -1,5 +1,8 @@
-# Local Hugo library
-
+---
+title: "Hugo website export"
+description: "Exporting, building and hosting a reference library with Hugo."
+category: guide
+---
 `smill` exports source for **Hugo 0.167.0**. It does not install or launch Hugo.
 Use an explicitly installed tool and a **new** output directory:
 

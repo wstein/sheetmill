@@ -1,5 +1,8 @@
-# Controlled Reference import
-
+---
+title: "Reference import"
+description: "Controlled conversion of Reference sheets with provenance and loss reports."
+category: guide
+---
 `smill import reference` converts **one explicit local file** into canonical GFM+.
 It does not fetch sources, crawl repositories or detect ambiguous formats.
 

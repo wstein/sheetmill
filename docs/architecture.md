@@ -1,5 +1,8 @@
-# Architecture
-
+---
+title: "Architecture"
+description: "How the compiler pipeline and its packages fit together."
+category: project
+---
 `cmd/smill` delegates process exit to `internal/cli.Run`, which can be tested with
 in-memory stdout/stderr. The CLI selects explicit inputs and performs bounded
 reads. It never walks recursively or resolves content URLs.

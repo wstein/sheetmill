@@ -1,5 +1,8 @@
-# CLI
-
+---
+title: "CLI reference"
+description: "Commands, input selection, exit status and every diagnostic code."
+category: reference
+---
 | Command | Behavior |
 | --- | --- |
 | `smill version` | Print `smill dev` and LF |
