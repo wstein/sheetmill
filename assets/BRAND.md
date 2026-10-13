@@ -1,9 +1,9 @@
 # SheetMill brand specification
 
-**Status:** Direction and palette selected — Editorial Stack, revision 2 (2026-10-13). Logo approved by the user on 2026-10-13; final export suite authorized.
+**Status:** Direction and palette selected — Editorial Stack, revision 2 (2026-10-13). Brand direction/specification approved on 2026-10-13; final masters and optical variants require review.
 **Product:** **SheetMill** · **CLI:** `smill` · **Tagline:** **One source. Every reference.**
 
-This document records the selected brand direction and palette. The user requested the same three-sheet stack concept with updated colors and correction of the review findings on 2026-10-13. The user approved the presented logo geometry on 2026-10-13 and authorized final brand exports. The approved normal-size geometry is locked. Small-size optical adaptation and export derivatives retain the same three-sheet identity. No unseen concept-board illustration or sibling artwork was copied. Raster exports, banners, social cards and local Hugo generation are now explicitly authorized. Deployment, PDF and navi output remain separately gated.
+This document records the selected brand direction and palette. The user requested the same three-sheet stack concept with updated colors and correction of the review findings on 2026-10-13. The user approved the brand direction/specification and authorized creation of final masters and exports on 2026-10-13. The previous comparison is a concept, not an exact vector master. Newly implemented master geometry and small-size optical variants must be verified and reviewed before being treated as locked. Small-size optical adaptation and export derivatives retain the same three-sheet identity. No unseen concept-board illustration or sibling artwork was copied. Raster exports, banners, social cards and local Hugo generation are now explicitly authorized. Deployment, PDF and navi output remain separately gated.
 
 ## 1. Brand relationship and character
 
@@ -99,7 +99,7 @@ Build the master SVG on a **64 × 64 viewBox** (`viewBox="0 0 64 64"`). This gri
 - Angle: a *slight* unified lean (about 8–12 degrees) is permitted; do not use perspective distortion. Corners and edges should share a consistent angle and curvature.
 - No text, border, gradient, embossing, or decorative lines inside the symbol.
 
-**Geometry status:** the approved normal-size SVG masters use exact rectangles at (21,19), (15,14) and (9,9), all 34 × 38 with radius 4. Their order is rear, middle, front. The optional dark tile is (0,0), 64 × 64, radius 14, fill `dark-surface`. The approved normal-size geometry must not be changed silently. The small-size master uses 32 × 36 sheets at (21,20), (15,14), (9,8), radius 4; larger exposed edges preserve legibility.
+**Geometry status:** the implemented normal-size SVG masters use exact rectangles at (21,19), (15,14) and (9,9), all 34 × 38 with radius 4. Their order is rear, middle, front. The optional dark tile is (0,0), 64 × 64, radius 14, fill `dark-surface`. The implemented geometry must be reviewed as source; concept approval does not freeze exact paths. The small-size master uses 32 × 36 sheets at (21,20), (15,14), (9,8), radius 4; larger exposed edges preserve legibility.
 
 ### Small-size adaptation
 
@@ -108,7 +108,7 @@ Build the master SVG on a **64 × 64 viewBox** (`viewBox="0 0 64 64"`). This gri
 - At **16 px**, coral must remain unmistakably dominant and the stack must not collapse into a single blob.
 - Do not use different symbols across favicon, banner, README or CLI help.
 
-## 5. Logo forms — two defined families, approved logo and derived export assets
+## 5. Logo forms — two defined families, defined logo and derived export assets
 
 **A. Icon-only** for favicons, CLI/package icons, avatars and square social placements: Editorial Stack symbol, either on a light surface with safe padding or centered in a rounded dark tile. The dark tile is *not* required for every light-context icon.
 
@@ -221,5 +221,5 @@ Before locking or publishing visual assets (candidate source/preview work is all
 - **Primary:** coral `#EA877F`
 - **Secondary:** periwinkle `#7C8CFF`
 - **Typography:** Bricolage Grotesque / IBM Plex Sans / IBM Plex Mono
-- **State:** direction/palette selected; user approved the presented logo on 2026-10-13; final asset exports and local Hugo generation authorized
+- **State:** direction/palette selected; brand specification/direction approved on 2026-10-13; final master implementation, review, exports and local Hugo generation authorized
 - **Next:** verify the finalized comparison/export inventory; obtain separate approval for subsequent design changes or deployment
