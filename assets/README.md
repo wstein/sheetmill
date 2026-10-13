@@ -1,8 +1,9 @@
-# Editorial Stack source candidates
+# Editorial Stack brand assets
 
 The user selected a three-sheet stack with the coral/periwinkle palette on
-2026-10-13. [BRAND.md](BRAND.md) governs the direction. Exact SVG geometry remains
-pending human visual approval; [preview.svg](preview.svg) compares the candidates.
+2026-10-13. [BRAND.md](BRAND.md) governs the direction. The user clarified that concept approval does not freeze exact SVG paths;
+implemented masters and optical adaptations are verified below and included in
+the feature’s independent review; [preview.svg](preview.svg) compares the masters.
 
 `icon.svg` is the source mark; `icon-dark.svg` adds the defined dark tile.
 `logo.svg` and `logo-dark.svg` use outlined Bricolage Grotesque in one shaped run,
@@ -10,10 +11,10 @@ with a shared baseline and natural kerning across Sheet/Mill. The light
 `logo-accessible.svg` uses dark coral for its wordmark accent. No external fonts,
 images, scripts or linked resources are needed to display any SVG.
 
-Only these five logo/icon files and the comparison board currently exist. Small
-optical masters, favicon derivatives, banners, social cards and renderer samples
-remain future work. The preview's tiny icons are normal-master samples, not a
-claim that the separate small-size master has been approved.
+The suite now includes a separate optical small master/favicon, monochrome icon,
+opaque square Apple icon source, 16/32/180 px icons, outlined 1000 × 220 banner and
+1280 × 640 social card, and their raster derivatives. The preview uses the small
+master below 32 px. Subsequent geometry changes require review.
 
 ## Reproduction inputs
 
@@ -30,7 +31,7 @@ Obtain that exact font separately, then use an isolated tool environment:
 ```sh
 uv venv --python 3.15 /private/tmp/sheetmill-brand-venv
 uv pip install --python /private/tmp/sheetmill-brand-venv/bin/python -r assets/requirements.txt
-/private/tmp/sheetmill-brand-venv/bin/python assets/generate.py --font /absolute/path/BricolageGrotesque.ttf
+/private/tmp/sheetmill-brand-venv/bin/python assets/generate.py --font /absolute/path/BricolageGrotesque.ttf --sans-font /absolute/path/IBMPlexSans.ttf
 ```
 
 The generator downloads nothing and fails on a mismatched font hash or tool
@@ -51,6 +52,9 @@ candidate geometry and color inputs; changes must agree with `BRAND.md`.
 - Checked the contrast pairs recorded in `BRAND.md`. Display-wordmark colors
   rely on the specific logo exception, not a general text exemption.
 
-Local PNG previews live outside the repository. No production raster exports,
-PDFs, website, release, renderer or deployment were produced. Final geometry,
-monochrome identity approval and small-size optical-master work remain open.
+Final raster exports are checked in with their SVG masters. PNGs were produced
+by Inkscape 1.4.4 at the inventory dimensions; Apple source is an opaque square,
+not the rounded-tile variant. `python3 -m unittest discover -s assets -p
+'test_*.py'` verifies dimensions, optical variants, color tokens and resource
+independence. Font provenance is recorded in `fonts/README.md`. No deployment or
+PDF/navi output is produced by this work.
