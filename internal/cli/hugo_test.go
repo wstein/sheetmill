@@ -293,3 +293,20 @@ func TestDiagnosticsCatalogueIsComplete(t *testing.T) {
 		t.Fatal(err, found)
 	}
 }
+
+func TestHugoBuildSiteURL(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "sheet.md")
+	os.WriteFile(input, []byte("---\ntitle: Sheet\n---\n## S\n### C\nText.\n"), 0600)
+	var out, errout bytes.Buffer
+	if code := Run([]string{"build", "hugo", input, "--out", filepath.Join(dir, "site"), "--base-path", "/docs/", "--site-url", "https://example.org/docs/"}, &out, &errout); code != 0 {
+		t.Fatal(code, errout.String())
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, "site", "static", "sitemap.xml")); !bytes.Contains(b, []byte("<loc>https://example.org/docs/sheet/</loc>")) {
+		t.Fatal(string(b))
+	}
+	errout.Reset()
+	if code := Run([]string{"build", "hugo", input, "--out", filepath.Join(dir, "bad"), "--site-url", "https://example.org/docs/"}, &out, &errout); code != 1 || !strings.Contains(errout.String(), "REN003: site URL must be https://host/") {
+		t.Fatal(code, errout.String())
+	}
+}
