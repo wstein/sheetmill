@@ -52,4 +52,5 @@ for renderer issues. Report the exact command, input, stderr and exit status.
 
 - [Feature specifications](https://raw.githubusercontent.com/wstein/sheetmill/main/specs/README.md): implemented and planned features with authorization status
 - [Repository](https://github.com/wstein/sheetmill): issues and pull requests
-- [Live demo](https://wstein.github.io/sheetmill/): the example sheets built and deployed from `main`
+- [Manual](https://wstein.github.io/sheetmill/): these docs built with SheetMill and deployed from `main`
+- [Live demo](https://wstein.github.io/sheetmill/demo/): the example sheets built and deployed from `main`

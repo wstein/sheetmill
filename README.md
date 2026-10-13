@@ -14,8 +14,9 @@ controlled Reference import and self-contained Hugo project export are implement
 Local website generation and read-only live preview are supported with pinned
 Hugo 0.167.0. PDF and navi
 remain planned for later milestones.
-Try the [live reference demo on GitHub Pages](https://wstein.github.io/sheetmill/).
-The demo is generated from the independently authored example sheets.
+Read the [SheetMill manual](https://wstein.github.io/sheetmill/), itself built
+with SheetMill from `docs/`, and try the [live demo library](https://wstein.github.io/sheetmill/demo/),
+generated from the independently authored example sheets.
 Nothing in a source sheet is executed.
 
 The CLI executable is `smill`. Go **1.27.2** is the pinned development toolchain.

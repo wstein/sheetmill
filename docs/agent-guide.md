@@ -15,8 +15,8 @@ SheetMill compiles reference sheets ("cheatsheets") from GFM Markdown plus YAML
 frontmatter into a semantic JSON representation and a self-contained Hugo website.
 The CLI is `smill`. Nothing in a sheet is ever executed or fetched: code blocks are
 displayed text, raw HTML is shown inertly, and images stay unfetched links.
-Typst/PDF and navi output are planned, not implemented. Live demo:
-<https://wstein.github.io/sheetmill/>.
+Typst/PDF and navi output are planned, not implemented. Manual:
+<https://wstein.github.io/sheetmill/>; demo: <https://wstein.github.io/sheetmill/demo/>.
 
 ## Setting up
 

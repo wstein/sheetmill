@@ -79,12 +79,29 @@ links. See [verified corpus identities](e2e-corpus.md).
 
 ## GitHub Pages
 
-Authorized on 2026-10-13 for the independently authored `examples/sheets` only
-(AGENTS.md, specs/012). `.github/workflows/pages.yml` runs on pushes to `main` and
-manual dispatch: it repeats the core checks, exports the demo with
-`--base-path /sheetmill/`, builds with the pinned Hugo and deploys to
-<https://wstein.github.io/sheetmill/> through the `github-pages` environment,
-which accepts `main` only. Other sheets need the 012 redistribution gate first.
+Authorized on 2026-10-13 and extended on 2026-10-14 (AGENTS.md, specs/012).
+`.github/workflows/pages.yml` runs on pushes to `main` and manual dispatch. It
+repeats the core checks, then builds with the pinned Hugo:
+
+- the manual from the pages listed in `docs/manual-pages.txt`, at
+  <https://wstein.github.io/sheetmill/>, with `--source-base-url` and
+  `--edit-base-url` pointing at `docs/` on GitHub;
+- the independently authored `examples/sheets` demo at
+  <https://wstein.github.io/sheetmill/demo/>;
+- `llms.txt` and `agent-guide.md` as plain files at the site root.
+
+It deploys through the `github-pages` environment, which accepts `main` only.
+A test builds the manual pages and fails on any warning. Other sheets need the
+012 redistribution gate first.
+
+## Sheets in several directories
+
+Each selected file keeps its path relative to the deepest directory that contains
+the whole selection, so `format/gfm-plus.md#ids` or `../cli.md` resolve between
+selected directories and edit links keep subdirectories. With
+`--source-base-url https://github.com/<owner>/<repo>/blob/<ref>/<dir>/` (the
+selection root), relative links that name no selected sheet point at the
+repository file instead of raising `REN103`; links leaving the repository still do.
 
 
 ## Read-only live preview
