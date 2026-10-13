@@ -11,7 +11,9 @@ pinned Hugo generation and an automated browser journey before adding Studio ser
 behavior. Reuse the existing Go compiler, semantic IR and Hugo renderer unchanged
 unless a reproducing journey exposes a defect. Use a development-only Playwright
 harness to verify keyboard search, card navigation, actual clipboard bytes,
-light/dark behavior, mobile fit, no-JavaScript navigation and deterministic output.
+light/dark behavior, page fit, no-JavaScript navigation and deterministic output. The complete scripted
+reader journey runs unchanged in desktop and mobile viewports; only the separate
+no-JavaScript context omits enhancement assertions.
 
 The MVP ends after US1. No `serve` implementation, sibling sheets, new product API,
 PDF, navi, deployment, screenshot baseline campaign or visual editor is required
@@ -55,8 +57,8 @@ builds or publication. Tool/browser installation is an explicit setup step, not
 part of tests. Required E2E CI fails when prerequisites are absent; optional local
 Go integration skipping does not count as an E2E pass.
 
-**Scale/Scope**: One authored sheet and one complete desktop journey plus focused
-mobile/no-JavaScript contexts first. US2 adds two data cases; US3–US5 introduce
+**Scale/Scope**: One authored sheet and one complete reader journey in both scripted
+desktop/mobile contexts plus a separate no-JavaScript context first. US2 adds two data cases; US3–US5 introduce
 bounded local sessions. Source size limit remains the existing 8 MiB per file.
 Later session ceilings: 100 selected files, 32 MiB aggregate source, 64 MiB total
 generated snapshot bytes, 8 browser streams; exceeding a limit is explicit and
