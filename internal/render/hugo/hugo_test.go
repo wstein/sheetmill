@@ -540,6 +540,9 @@ func TestHugoIntegrationBasePath(t *testing.T) {
 		if name == "a/index.html" && !bytes.Contains(html, []byte(`href="https://github.com/wstein/sheetmill/edit/main/examples/sheets/a.md"`)) {
 			t.Error("built sheet lacks GitHub edit link")
 		}
+		if name == "a/index.html" && !bytes.Contains(html, []byte(`aria-label="Edit on GitHub — this cheatsheet"`)) {
+			t.Error("edit action accessible name must start with its visible label")
+		}
 		if name == "index.html" && bytes.Contains(html, []byte(`class="edit-link"`)) {
 			t.Error("home page guessed a sheet edit destination")
 		}
