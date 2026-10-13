@@ -81,6 +81,7 @@
       "cards": [
         {
           "id": "caution",
+          "id_explicit": true,
           "title": "Caution",
           "span": {
             "start": {
