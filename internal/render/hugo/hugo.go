@@ -40,6 +40,9 @@ type Options struct {
 	// BasePath is the URL path the site is served under, such as "/sheetmill/".
 	// Empty means the origin root.
 	BasePath string
+	// EditBaseURL is an explicit GitHub /owner/repository/edit/ref/directory/ base.
+	// It refers to authored sheets, never to upstream source provenance.
+	EditBaseURL string
 }
 
 // basePath accepts "/" or "/seg/.../" with unreserved URL characters only, so the
@@ -73,9 +76,10 @@ type entry struct {
 	URL     string `json:"url"`
 }
 type page struct {
-	Title string `json:"title"`
-	URL   string `json:"url"`
-	Body  string `json:"body"`
+	Title   string `json:"title"`
+	URL     string `json:"url"`
+	Body    string `json:"body"`
+	EditURL string `json:"edit_url,omitempty"`
 }
 
 var route = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
@@ -94,6 +98,10 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if len(sheets) == 0 {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "select at least one sheet"}})
 	}
+	editBase, err := githubEditBase(options.EditBaseURL)
+	if err != nil {
+		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: err.Error()}})
+	}
 	sheets = append([]Sheet(nil), sheets...)
 	sort.SliceStable(sheets, func(i, j int) bool { return sheets[i].ID < sheets[j].ID })
 	routes := map[string]string{}
@@ -110,7 +118,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		if s.Document == nil || s.Document.Schema != 1 {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN001", Message: "renderer requires schema-1 IR"}})
 		}
-		if path.Base(s.SourceName) != s.SourceName || s.SourceName == "" {
+		if path.Base(s.SourceName) != s.SourceName || s.SourceName == "" || s.SourceName == "." || s.SourceName == ".." {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "source name must be a basename"}})
 		}
 		if _, exists := routes[s.SourceName]; exists {
@@ -171,7 +179,10 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		}
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
 		errors = append(errors, issues(s.SourceName, r.errors)...)
-		page := page{title, base + s.ID + "/", b.String()}
+		page := page{Title: title, URL: base + s.ID + "/", Body: b.String()}
+		if editBase != "" {
+			page.EditURL = editBase + url.PathEscape(s.SourceName)
+		}
 		pages = append(pages, page)
 		if e := putJSON("data/sheets/"+s.ID+".json", page); e != nil {
 			errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
@@ -482,4 +493,25 @@ func (r *renderer) heading(n model.Node) string {
 		}
 	}
 	return r.children(n, false)
+}
+
+// Operator-controlled edit links are intentionally separate from metadata.source.
+func githubEditBase(raw string) (string, error) {
+	if raw == "" {
+		return "", nil
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.Host != "github.com" || u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
+		return "", fmt.Errorf("edit base must be an HTTPS github.com repository edit URL without credentials, query or fragment")
+	}
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	if len(parts) < 4 || parts[2] != "edit" {
+		return "", fmt.Errorf("edit base must name /owner/repository/edit/ref/ and an optional sheet directory")
+	}
+	for _, part := range parts {
+		if part == "" || part == "." || part == ".." || strings.Contains(part, "\\") {
+			return "", fmt.Errorf("invalid edit base path")
+		}
+	}
+	return strings.TrimRight(u.String(), "/") + "/", nil
 }
