@@ -47,7 +47,7 @@ type loadedFile struct {
 
 // loadSelection reads and parses every selected file, printing diagnostics. The
 // returned status is nonzero when the build must stop (1 invalid, 2 IO).
-func loadSelection(args []string, errout io.Writer) (selection, int) {
+func loadSelection(args []string, root string, errout io.Writer) (selection, int) {
 	seen := map[string]bool{}
 	var files []string
 	for _, arg := range args {
@@ -64,7 +64,21 @@ func loadSelection(args []string, errout io.Writer) (selection, int) {
 		}
 	}
 	sort.Strings(files)
-	root := commonDir(files)
+	if root == "" {
+		root = commonDir(files)
+	} else if abs, err := filepath.Abs(root); err != nil {
+		fmt.Fprintf(errout, "%s:1:1: IO001: %v\n", root, err)
+		return selection{}, 2
+	} else {
+		root = abs
+		for _, path := range files {
+			absPath, err := filepath.Abs(path)
+			if rel, relErr := filepath.Rel(root, absPath); err != nil || relErr != nil || !filepath.IsLocal(rel) {
+				fmt.Fprintf(errout, "%s:1:1: IO001: input is outside --root\n", path)
+				return selection{}, 2
+			}
+		}
+	}
 	// Render identifies sheets by basename; one basename may name several paths.
 	sel := selection{sourcePaths: map[string][]string{}}
 	invalid := false
@@ -90,7 +104,7 @@ func loadSelection(args []string, errout io.Writer) (selection, int) {
 	return sel, 0
 }
 func runHugo(args []string, destination string, options hugo.Options, out, errout io.Writer) int {
-	sel, status := loadSelection(args, errout)
+	sel, status := loadSelection(args, "", errout)
 	if status != 0 {
 		return status
 	}

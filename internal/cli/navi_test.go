@@ -52,3 +52,24 @@ func TestNaviBuild(t *testing.T) {
 		t.Fatal(code, e)
 	}
 }
+
+func TestNaviRootNamesCardsRelatively(t *testing.T) {
+	dir := tempDir(t)
+	sub := filepath.Join(dir, "sheets")
+	os.Mkdir(sub, 0700)
+	input := filepath.Join(sub, "a.md")
+	os.WriteFile(input, []byte("---\ntitle: A\nlicense: x\n---\n## S\n\n### C {.navi #c}\n\n```bash\necho hi\n```\n"), 0600)
+	var out, errout bytes.Buffer
+	destination := filepath.Join(dir, "cheats")
+	if code := Run([]string{"build", "navi", input, "--root", dir, "--out", destination}, &out, &errout); code != 0 {
+		t.Fatal(code, errout.String())
+	}
+	b, _ := os.ReadFile(filepath.Join(destination, "a.cheat"))
+	if !strings.Contains(string(b), "% sheetmill:sheets/a.md#c!\n") || strings.Contains(string(b), dir) {
+		t.Fatalf("%q", b)
+	}
+	other := tempDir(t)
+	if code := Run([]string{"build", "navi", input, "--root", other, "--out", filepath.Join(dir, "x")}, &out, &errout); code != 2 || !strings.Contains(errout.String(), "outside --root") {
+		t.Fatal(code, errout.String())
+	}
+}
