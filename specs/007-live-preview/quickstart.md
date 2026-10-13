@@ -1,8 +1,8 @@
 # Quickstart validation — 007 MVP
 
 The one-sheet automated GFM → CLI → Hugo → browser MVP is implemented. The
-private E2E package, `smill.md` and CI job exist; the `serve` command and later
-stages do not. Current commands below run only the MVP, with no PDF, navi or
+private E2E package, three independently authored sheets and CI job exist; the `serve` command and later
+server stages do not. Current commands below run only the MVP, with no PDF, navi or
 publication. See [actual evidence](../../docs/e2e-verification.md).
 
 ## Prerequisites
@@ -69,11 +69,15 @@ SHEETMILL_HUGO=/absolute/path/to/hugo go test ./internal/render/hugo -run TestHu
 
 A skipped optional Go integration test is not a substitute for the required E2E job.
 
-## Later stages, separately selected
+## Additional inputs: implemented US2
 
-After the one-sheet gate, add pinned/verified `bdock` and `whr` corpus cases and run
-`SHEETMILL_E2E_CORPUS=all npm test` from `tests/e2e`. Those product binaries must not
-be installed/invoked by the harness. Verify representative cross-sheet links.
+Run `SHEETMILL_E2E_CORPUS=all npm test` from `tests/e2e` for pinned/verified
+`smill`, `bdock` and `whr` references in one library. The default remains `smill`
+only. Those product binaries are not installed/invoked by the harness. The shared
+journeys verify cross-sheet/card links, search, exact copy and attribution.
+See [corpus identities and evidence](../../docs/e2e-corpus.md).
+
+## Later server stages, separately selected
 
 After the server-stage tasks, from a worktree root:
 
