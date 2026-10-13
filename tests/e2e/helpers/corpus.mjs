@@ -17,7 +17,7 @@ export async function loadCorpus(root, data, selection='smill') {
     if(!(await lstat(selected)).isFile())throw Error('corpus input must be a regular file');
     if(!nonempty(item.title)||!nonempty(item.product?.name)||!/^[a-f0-9]{40}$/.test(item.product?.revision||'')||!nonempty(item.search?.query)||!nonempty(item.search?.label)||!slug.test(item.search?.card||'')||!slug.test(item.copy?.card||'')||!nonempty(item.copy?.text)||!nonempty(item.attribution?.license)||!nonempty(item.attribution?.author))throw Error('invalid corpus oracle');
     if(!Array.isArray(item.cards)||!item.cards.length||item.cards.some(c=>!slug.test(c))||new Set(item.cards).size!==item.cards.length||!item.cards.includes(item.search.card)||!item.cards.includes(item.copy.card)||!Array.isArray(item.crossLinks))throw Error('invalid corpus card identities');
-    if(item.permalink&&(!item.cards.includes(item.permalink.card)||!nonempty(item.permalink.label)))throw Error('invalid corpus permalink');
+    if(!item.cards.includes(item.permalink?.card)||!nonempty(item.permalink?.label))throw Error('invalid corpus permalink');
     loaded.push({...item,sourcePath:selected,sourceBytes:await readFile(selected)});
   }
   for(const item of loaded)for(const link of item.crossLinks) {

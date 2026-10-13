@@ -86,7 +86,7 @@ test('corpus rejects ambiguous, missing and escaping inputs',async()=>{
   const root=await scratch();
   try {
     await writeFile(join(root,'smill.md'),'source');
-    const input={id:'smill',input:'smill.md',product:{name:'SheetMill',revision:'a'.repeat(40)},title:'SheetMill',search:{query:'query',label:'label',card:'card'},copy:{card:'card',text:'line\n'},cards:['card'],attribution:{license:'EUPL-1.2',author:'Example'},crossLinks:[]};
+    const input={id:'smill',input:'smill.md',product:{name:'SheetMill',revision:'a'.repeat(40)},title:'SheetMill',search:{query:'query',label:'label',card:'card'},copy:{card:'card',text:'line\n'},cards:['card'],permalink:{card:'card',label:'Permalink to Card'},attribution:{license:'EUPL-1.2',author:'Example'},crossLinks:[]};
     await loadCorpus(root,[input]);
     for(const invalid of [[],[input,input],[{...input,input:'../smill.md'}],[{...input,input:'/smill.md'}],[{...input,product:{}}],[{...input,cards:['card','card']}],[{...input,copy:{card:'unknown',text:'x'}}]]) {
       await assert.rejects(loadCorpus(root,invalid));
@@ -155,6 +155,7 @@ test('explicit all corpus selection validates identities and cross-card targets'
       data.map(c=>c.id==='bdock'?{...c,crossLinks:[{label:'Related',sheet:'smill',card:'missing'}]}:c),
       data.map(c=>c.id==='bdock'?{...c,crossLinks:[{label:'Related',sheet:'unknown',card:'card'}]}:c),
       data.map(c=>c.id==='bdock'?{...c,permalink:{card:'missing',label:'Permalink'}}:c),
+      data.map(c=>c.id==='bdock'?{...c,permalink:undefined}:c),
     ])await assert.rejects(loadCorpus(root,invalid,'all'));
   } finally {await rm(root,{recursive:true});}
 });
