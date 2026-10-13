@@ -22,6 +22,7 @@ import (
 	"github.com/wstein/sheetmill/internal/diagnostic"
 	"github.com/wstein/sheetmill/internal/model"
 	goldhtml "github.com/yuin/goldmark/renderer/html"
+	"go.yaml.in/yaml/v3"
 )
 
 const Version = "0.167.0"
@@ -171,7 +172,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			b.WriteString(`</div></section>`)
 		}
 		if source, ok := s.Document.Metadata["source"]; ok {
-			disclosure, e := json.MarshalIndent(source, "", "  ")
+			disclosure, e := sourceDetails(source)
 			if e != nil {
 				errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
 			} else {
@@ -183,7 +184,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 						}
 					}
 				}
-				fmt.Fprintf(&b, `Source details</summary><pre>%s</pre><p>Source attribution is preserved. Import does not grant redistribution rights.</p></details></aside>`, esc(string(disclosure)))
+				fmt.Fprintf(&b, `Source details</summary>%s<p>Source attribution is preserved. Import does not grant redistribution rights.</p></details></aside>`, disclosure)
 			}
 		}
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
@@ -252,6 +253,51 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		panic(err)
 	} // strings and literals only
 	return p, nil
+}
+
+// sourceDetails presents all source fields without exposing JSON syntax. Unknown
+// structured values retain their YAML representation; every key/value is escaped.
+func sourceDetails(source any) (string, error) {
+	// Keep the same JSON-compatible metadata contract as canonical IR exports.
+	if _, err := json.Marshal(source); err != nil {
+		return "", err
+	}
+	fields, ok := source.(map[string]any)
+	if !ok {
+		fields = map[string]any{"source": source}
+	}
+	keys := make([]string, 0, len(fields))
+	for key := range fields {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	var b strings.Builder
+	b.WriteString(`<dl class="source-metadata">`)
+	for _, key := range keys {
+		label := key
+		if key == "attribution" {
+			label = "Attribution"
+		}
+		if key == "license" {
+			label = "License"
+		}
+		value, ok := fields[key].(string)
+		if !ok {
+			var encoded bytes.Buffer
+			encoder := yaml.NewEncoder(&encoded)
+			encoder.SetIndent(2)
+			if err := encoder.Encode(fields[key]); err != nil {
+				return "", err
+			}
+			if err := encoder.Close(); err != nil {
+				return "", err
+			}
+			value = strings.TrimSuffix(encoded.String(), "\n")
+		}
+		fmt.Fprintf(&b, `<dt>%s:</dt><dd>%s</dd>`, esc(label), esc(value))
+	}
+	b.WriteString(`</dl>`)
+	return b.String(), nil
 }
 
 type renderer struct {

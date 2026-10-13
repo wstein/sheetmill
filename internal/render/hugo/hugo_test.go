@@ -600,7 +600,7 @@ func TestCompactProvenance(t *testing.T) {
 		t.Fatal(ds)
 	}
 	b := body(t, p, "test")
-	for _, want := range []string{`<details class="source-details"><summary><span class="source-facts">Contributors &lt;safe&gt;</span>`, `<span class="source-facts">EUPL-1.2</span>`, `Source details</summary>`, `&#34;retained&#34;: true`} {
+	for _, want := range []string{`<details class="source-details"><summary><span class="source-facts">Contributors &lt;safe&gt;</span>`, `<span class="source-facts">EUPL-1.2</span>`, `Source details</summary>`, `<dt>Attribution:</dt><dd>Contributors &lt;safe&gt;</dd>`, `<dt>License:</dt><dd>EUPL-1.2</dd>`, `retained: true`} {
 		if !strings.Contains(b, want) {
 			t.Errorf("missing %q", want)
 		}
@@ -685,5 +685,33 @@ func TestAssetFingerprintsTrackContent(t *testing.T) {
 	delete(files, "theme/static/assets/site.css")
 	if p, ds := Render(input, Options{}); len(ds) == 0 || ds[0].Code != "REN001" || len(p.Files) != 0 {
 		t.Fatal("missing fingerprint input must fail without a partial project", ds)
+	}
+}
+
+func TestSourceDetailsPreserveValuesAndEscapeMarkup(t *testing.T) {
+	value := map[string]any{"attribution": "<script>unsafe</script>", "license": "EXAMPLE", "note": "Line one\nLine two", "revision": "0000123", "future<key>": []any{"<img>", true, int64(9007199254740993)}, "nil": nil}
+	got, err := sourceDetails(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`<dt>Attribution:</dt><dd>&lt;script&gt;unsafe&lt;/script&gt;</dd>`, `<dt>future&lt;key&gt;:</dt>`, `&lt;img&gt;`, `9007199254740993`, `<dt>note:</dt><dd>Line one` + "\n" + `Line two</dd>`, `<dt>revision:</dt><dd>0000123</dd>`, `<dt>nil:</dt><dd>null</dd>`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %s", want, got)
+		}
+	}
+	if strings.Contains(got, "<script>") || strings.Contains(got, "<pre>") {
+		t.Fatal("unsafe or raw JSON presentation", got)
+	}
+	if strings.Index(got, "<dt>Attribution:") > strings.Index(got, "<dt>License:") {
+		t.Fatal("unstable field order")
+	}
+	for _, root := range []any{nil, []any{"first", true}, "plain"} {
+		got, err := sourceDetails(root)
+		if err != nil || !strings.Contains(got, "<dt>source:</dt>") {
+			t.Fatal("non-map metadata lost", root, err, got)
+		}
+	}
+	if _, err := sourceDetails(map[string]any{"bad": func() {}}); err == nil {
+		t.Fatal("unsupported metadata accepted")
 	}
 }
