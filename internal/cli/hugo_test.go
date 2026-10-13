@@ -56,3 +56,20 @@ func TestHugoBuildBoundaries(t *testing.T) {
 		t.Fatal(code, e)
 	}
 }
+
+func TestHugoDiagnosticOrigins(t *testing.T) {
+	dir := tempDir(t)
+	good := filepath.Join(dir, "good.md")
+	bad := filepath.Join(dir, "bad.md")
+	os.WriteFile(good, []byte("---\ntitle: Good\n---\n## S\n### C\nGood.\n"), 0600)
+	for _, tt := range []struct {
+		body, code string
+		status     int
+	}{{"[Bad](javascript:alert%281%29)", "REN002", 1}, {"<script>inert</script>", "REN101", 0}} {
+		os.WriteFile(bad, []byte("---\ntitle: Bad\n---\n## S\n### C\n"+tt.body+"\n"), 0600)
+		var out, errout bytes.Buffer
+		if code := Run([]string{"build", "hugo", good, bad, "--out", filepath.Join(dir, tt.code)}, &out, &errout); code != tt.status || !strings.Contains(errout.String(), bad+":6:1: "+tt.code) {
+			t.Fatal(code, errout.String())
+		}
+	}
+}

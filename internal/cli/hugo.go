@@ -43,6 +43,7 @@ func runHugo(args []string, destination, title string, out, errout io.Writer) in
 		}
 	}
 	sort.Strings(files)
+	sourcePaths := map[string]string{}
 	var sheets []hugo.Sheet
 	invalid := false
 	for _, path := range files {
@@ -57,6 +58,7 @@ func runHugo(args []string, destination, title string, out, errout io.Writer) in
 			invalid = true
 		}
 		name := filepath.Base(path)
+		sourcePaths[name] = path
 		sheets = append(sheets, hugo.Sheet{ID: sheetID(name), SourceName: name, Document: document})
 	}
 	if invalid {
@@ -64,13 +66,13 @@ func runHugo(args []string, destination, title string, out, errout io.Writer) in
 	}
 	project, ds := hugo.Render(sheets, hugo.Options{Title: title})
 	for _, d := range ds {
-		fmt.Fprintln(errout, d.Error())
+		fmt.Fprintf(errout, "%s:%s\n", sourcePaths[d.Source], d.Error())
 	}
 	if len(ds) > 0 {
 		return 1
 	}
 	for _, d := range project.Warnings {
-		fmt.Fprintf(errout, "warning: %s\n", d.Error())
+		fmt.Fprintf(errout, "%s:%s (warning)\n", sourcePaths[d.Source], d.Error())
 	}
 	if err := writeProject(destination, project.Files); err != nil {
 		fmt.Fprintf(errout, "%s:1:1: IO003: %v\n", destination, err)
