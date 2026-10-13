@@ -121,6 +121,42 @@ type page struct {
 	License     string   `json:"license,omitempty"`
 	Body        string   `json:"body"`
 	EditURL     string   `json:"edit_url,omitempty"`
+	Related     []link   `json:"related,omitempty"`
+}
+
+type link struct {
+	Title string `json:"title"`
+	URL   string `json:"url"`
+}
+
+// related ranks other pages by shared tags (2 points each) and a shared
+// category (1 point) and keeps the best three; ties keep route order.
+func related(pages []page, self int) []link {
+	type candidate struct{ index, score int }
+	var candidates []candidate
+	for i, other := range pages {
+		if i == self {
+			continue
+		}
+		score := 0
+		for _, tag := range other.Tags {
+			if slices.Contains(pages[self].Tags, tag) {
+				score += 2
+			}
+		}
+		if other.Category != "" && other.Category == pages[self].Category {
+			score++
+		}
+		if score > 0 {
+			candidates = append(candidates, candidate{i, score})
+		}
+	}
+	sort.SliceStable(candidates, func(a, b int) bool { return candidates[a].score > candidates[b].score })
+	var out []link
+	for _, c := range candidates[:min(3, len(candidates))] {
+		out = append(out, link{pages[c.index].Title, pages[c.index].URL})
+	}
+	return out
 }
 
 // shelf groups library pages by category for the home page.
@@ -134,7 +170,7 @@ type shelf struct {
 func shelves(pages []page) []shelf {
 	groups := map[string][]page{}
 	for _, p := range pages {
-		p.Body = ""
+		p.Body, p.Related = "", nil
 		groups[p.Category] = append(groups[p.Category], p)
 	}
 	names := make([]string, 0, len(groups))
@@ -220,6 +256,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		return e
 	}
 	var pages []page
+	var sources []string
 	var index []entry
 	var errors []Issue
 	// Anchors of every selected sheet, so cross-sheet fragments can be resolved.
@@ -300,9 +337,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			page.EditURL = editBase + escapePath(paths[s.ID])
 		}
 		pages = append(pages, page)
-		if e := putJSON("data/sheets/"+s.ID+".json", page); e != nil {
-			errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
-		}
+		sources = append(sources, s.SourceName)
 		ir, e := s.Document.JSON()
 		if e != nil {
 			errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
@@ -313,6 +348,14 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		p.Files["content/"+s.ID+"/index.md"] = []byte("---\n" + string(front) + "\n---\n")
 		// Preamble-only sheets must also be discoverable by search.
 		index = append(index, entry{Title: title, Sheet: title, Text: plain(s.Document.Preamble), URL: page.URL, Tags: tags, Category: category, License: license})
+	}
+	// Related sheets need every page, so per-sheet data is written afterwards.
+	for i := range pages {
+		pages[i].Related = related(pages, i)
+		id := strings.TrimSuffix(strings.TrimPrefix(pages[i].URL, base), "/")
+		if e := putJSON("data/sheets/"+id+".json", pages[i]); e != nil {
+			errors = append(errors, Issue{sources[i], diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
+		}
 	}
 	if len(errors) > 0 {
 		return Project{}, errors

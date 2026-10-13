@@ -56,3 +56,6 @@ kbd{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.85em}k
 /* Section jump list. */
 .sheet-toc{margin:0 0 28px;padding:12px 0;border-bottom:1px solid var(--line)}.sheet-toc ul{display:flex;flex-wrap:wrap;gap:6px 18px;list-style:none;margin:0;padding:0}.sheet-toc a{font-size:14px;text-decoration:none}.sheet-toc a:hover{text-decoration:underline}
 @media print{.sheet-toc{display:none}}
+/* Related references. */
+.related{margin-top:40px;border-top:1px solid var(--line);padding-top:12px}.related h2{font-size:16px;font-weight:600}.related ul{display:flex;flex-wrap:wrap;gap:8px 20px;list-style:none;padding:0}
+@media print{.related{display:none}}
