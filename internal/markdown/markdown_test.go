@@ -151,3 +151,27 @@ func TestNestedFenceSpan(t *testing.T) {
 		t.Fatalf("%+v", code)
 	}
 }
+
+func TestEscapedHeadingAttributes(t *testing.T) {
+	for _, tt := range []struct {
+		heading, title string
+		classes        int
+	}{
+		{`x \{.unknown}`, `x {.unknown}`, 0},
+		{`x \{.note}`, `x {.note}`, 0},
+		{`x \\{.note}`, `x \`, 1},
+		{`x \\\{.note}`, `x \{.note}`, 0},
+		{`x \{.note} {.tip}`, `x {.note}`, 1},
+	} {
+		t.Run(tt.heading, func(t *testing.T) {
+			d, ds := Parse([]byte("---\ntitle: X\n---\n## S\n### " + tt.heading + "\n"))
+			if len(ds) > 0 {
+				t.Fatal(ds)
+			}
+			c := d.Sections[0].Cards[0]
+			if c.Title != tt.title || len(c.Classes) != tt.classes {
+				t.Fatalf("title=%q classes=%v", c.Title, c.Classes)
+			}
+		})
+	}
+}
