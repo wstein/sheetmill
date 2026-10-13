@@ -28,7 +28,7 @@
 .source-details summary{cursor:pointer;width:fit-content;padding:5px 0;text-decoration:underline;text-underline-offset:3px}
 .source-details summary:focus-visible{outline:3px solid var(--link);outline-offset:4px}
 .source-metadata{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 12px;margin:12px 0;color:var(--text)}
-.source-metadata dt{font-weight:500;overflow-wrap:anywhere;max-width:12rem}
+.source-metadata dt{white-space:pre-wrap;font-weight:500;overflow-wrap:anywhere;max-width:12rem}
 .source-metadata dd{margin:0;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:480px){.source-metadata dt{max-width:30vw}}
 @media(max-width:760px){.edit-link{min-height:44px}}

@@ -715,3 +715,18 @@ func TestSourceDetailsPreserveValuesAndEscapeMarkup(t *testing.T) {
 		t.Fatal("unsupported metadata accepted")
 	}
 }
+
+func TestSourceDetailsEscapeControlCharacters(t *testing.T) {
+	got, err := sourceDetails(map[string]any{"note": "a\x00b\rc", "key\x00suffix": "value", "key\nline": "tab\tand\nnewline"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`<dt>&#34;key\0suffix&#34;:</dt>`, `<dd>&#34;a\0b\rc&#34;</dd>`, `<dt>&#34;key\nline&#34;:</dt>`, "<dd>tab\tand\nnewline</dd>"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+	if strings.ContainsAny(got, "\x00\r") {
+		t.Fatalf("HTML-normalized controls leaked: %q", got)
+	}
+}

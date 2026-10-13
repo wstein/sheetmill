@@ -129,7 +129,8 @@ Rendered pages show attribution, license and **Source details** together in one
 compact disclosure summary, wrapping only when needed. Full source metadata and the rights note remain inside the closed disclosure.
 Metadata renders as escaped key/value rows, with Attribution and License labels.
 Nested values use readable YAML text, so unknown fields are preserved without a
-JSON block. Values remain display text; repository URLs are not fetched. The native disclosure works without
+JSON block. Nonprinting controls use explicit YAML escapes to avoid HTML
+normalization; ordinary multiline values remain readable. Values remain display text; repository URLs are not fetched. The native disclosure works without
 JavaScript. The generated **Edit on GitHub** action appears alongside the reference
 navigation, with an accessible label identifying the cheatsheet edit destination.
 Neither presentation changes cheatsheet Markdown or provenance values.
