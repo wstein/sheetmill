@@ -131,3 +131,23 @@ including unknown fields, and the rights note remain inside the closed disclosur
 JavaScript. The generated **Edit on GitHub** action appears alongside the reference
 navigation, with an accessible label identifying the cheatsheet edit destination.
 Neither presentation changes cheatsheet Markdown or provenance values.
+
+### Fingerprinted CSS and JavaScript
+
+Each export names its bundled stylesheet and script with the full SHA-256 digest
+of their exact bytes: `assets/site.<digest>.css` and `assets/app.<digest>.js`.
+Hugo templates use those paths from generated configuration, prefixed by the
+selected base path. Unversioned `site.css` and `app.js` aliases are not exported.
+Changing either bundled asset produces a new URL for that asset; unchanged bytes
+keep the same URL across sheets, export directories and site prefixes. Fonts
+remain local and CSS-relative font URLs keep working.
+
+This prevents newly loaded HTML from reusing an older cached asset under the same
+URL. It does not force already open tabs or cached HTML to refresh, and it does
+not configure the host's cache headers. No additional tools or dependencies are
+needed; hashing happens in the Go renderer before Hugo runs.
+
+Browser verification covers root and `/sheetmill/` mounts on desktop, mobile and
+without JavaScript: URLs match the downloaded bytes, resources return successfully,
+fonts load, and home/sheet pages reference the same assets. Existing real-sheet
+journeys continue to verify search, appearance and code-copy behavior.
