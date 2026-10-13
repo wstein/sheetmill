@@ -160,3 +160,19 @@ func TestStreamCeilingAndShutdown(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestListenerFailureIsFatalAndCleansOwnedState(t *testing.T) {
+	path := fixture(t, "one.md", validSource)
+	s, e := Start(context.Background(), Options{Input: path, Hugo: testTool(t)})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	s.listener.Close()
+	if e = s.Wait(); e == nil {
+		t.Fatal("listener failure hidden")
+	}
+	if e = s.Close(); e != nil {
+		t.Fatal(e)
+	}
+}

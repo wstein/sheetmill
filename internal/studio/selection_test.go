@@ -151,3 +151,28 @@ func TestInPlaceWritesNeverAcceptMixedSnapshot(t *testing.T) {
 		}
 	}
 }
+
+func TestDefaultSelectionAndRetainedRootReplacement(t *testing.T) {
+	base := t.TempDir()
+	base, _ = filepath.EvalSymlinks(base)
+	dir := filepath.Join(base, "selected")
+	os.Mkdir(dir, 0700)
+	os.WriteFile(filepath.Join(dir, "one.md"), []byte(validSource), 0600)
+	t.Chdir(dir)
+	s, e := OpenSelection("")
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	os.Chdir(base)
+	original := filepath.Join(base, "original")
+	os.Rename(dir, original)
+	outside := filepath.Join(base, "outside")
+	os.Mkdir(outside, 0700)
+	os.WriteFile(filepath.Join(outside, "one.md"), []byte("UNSELECTED"), 0600)
+	os.Symlink(outside, dir)
+	snap := s.Read()
+	if len(snap.Entries) != 1 || string(snap.Entries[0].Bytes) != validSource {
+		t.Fatal("retained root followed replaced directory path")
+	}
+}
