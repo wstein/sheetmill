@@ -14,7 +14,7 @@ category: reference
 
 Cobra v1.10.2 parses commands and flags. `--help` works at every command level;
 top-level help (`smill --help`, `smill help`) ends with a notice pointing AI agents
-to the [agent guide](agent-guide.md) and [llms.txt](../llms.txt) on `main`;
+to the [agent guide](agent-guide.md) and [llms.txt](../llms.txt) published with the manual;
 import/build flags may precede or follow the positional input. Check/inspect
 have no content options. There is no recursive or stdin mode.
 Directories are scanned only one level, in sorted order, for lowercase `.md` files.

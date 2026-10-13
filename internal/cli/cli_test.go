@@ -243,7 +243,14 @@ func TestAgentResourcesExist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	urls := []string{agentGuideURL, llmsURL}
+	// The Pages workflow copies these two files to the site root.
+	published := map[string]string{agentGuideURL: "docs/agent-guide.md", llmsURL: "llms.txt"}
+	for u, file := range published {
+		if _, err := os.Stat(filepath.Join("..", "..", filepath.FromSlash(file))); err != nil {
+			t.Errorf("%s: %v", u, err)
+		}
+	}
+	var urls []string
 	for _, field := range strings.FieldsFunc(string(llms), func(r rune) bool { return r == '(' || r == ')' || r == ' ' || r == '\n' }) {
 		if strings.HasPrefix(field, "https://") {
 			urls = append(urls, field)

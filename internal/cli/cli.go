@@ -16,10 +16,10 @@ import (
 
 const Version = "dev"
 
-// Agent resources live on main so the notice stays valid for every build.
+// Agent resources are published as plain files with the manual from main.
 const (
-	agentGuideURL = "https://raw.githubusercontent.com/wstein/sheetmill/main/docs/agent-guide.md"
-	llmsURL       = "https://raw.githubusercontent.com/wstein/sheetmill/main/llms.txt"
+	agentGuideURL = "https://wstein.github.io/sheetmill/agent-guide.md"
+	llmsURL       = "https://wstein.github.io/sheetmill/llms.txt"
 	agentHelp     = `
 Are you an AI? Use these resources ONLY IF your task specifically asks you to:
   Help a human understand or set up SheetMill, or author SheetMill sheets:
