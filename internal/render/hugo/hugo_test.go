@@ -388,3 +388,18 @@ func TestUnresolvedInternalLinks(t *testing.T) {
 		})
 	}
 }
+
+func TestSystemDarkModeWithoutScript(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "Intro.")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	css := string(p.Files["static/assets/site.css"])
+	explicit := css[strings.Index(css, ":root[data-theme=dark]{"):]
+	explicit = explicit[len(":root[data-theme=dark]") : strings.Index(explicit, "}")+1]
+	for _, want := range []string{"@media(prefers-color-scheme:dark){:root:not([data-theme=light])" + explicit, ":root:not([data-theme=light]) .logo-light{display:none!important}", ":root:not([data-theme=light]) .logo-dark{display:block!important}"} {
+		if !strings.Contains(css, want) {
+			t.Error("missing", want)
+		}
+	}
+}
