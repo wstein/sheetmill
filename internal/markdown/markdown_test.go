@@ -281,3 +281,29 @@ func TestStrayAttributeGroups(t *testing.T) {
 		}
 	}
 }
+
+func TestSectionColumns(t *testing.T) {
+	d, ds := Parse([]byte("---\ntitle: Test\n---\n## Two {.cols-2 #two}\n### C\n## Default\n"))
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	if d.Sections[0].Columns != 2 || d.Sections[0].ID != "two" || d.Sections[1].Columns != 0 {
+		t.Fatal(d.Sections)
+	}
+	b, _ := d.JSON()
+	if !bytes.Contains(b, []byte(`"columns": 2`)) || bytes.Count(b, []byte(`"columns"`)) != 1 {
+		t.Fatal("section columns must be present only when set", string(b))
+	}
+	for body, code := range map[string]string{
+		"## S {.cols-0}":             "ATTR001",
+		"## S {.cols-7}":             "ATTR001",
+		"## S {.cols-02}":            "ATTR001",
+		"## S {.cols-2 .cols-3}":     "ATTR002",
+		"## S\n### C {.cols-2}":      "ATTR001",
+		"## S {.cols-2 .col-span-2}": "ATTR001",
+	} {
+		if _, ds := Parse([]byte("---\ntitle: Test\n---\n" + body + "\n")); len(ds) == 0 || ds[0].Code != code {
+			t.Errorf("%q: want %s, got %v", body, code, ds)
+		}
+	}
+}

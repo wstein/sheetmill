@@ -30,8 +30,10 @@ type Section struct {
 	Title   string          `json:"title"`
 	Span    diagnostic.Span `json:"span"`
 	Heading Node            `json:"heading"`
-	Content []Node          `json:"content"`
-	Cards   []Card          `json:"cards"`
+	// Columns is the optional {.cols-N} grid hint (1–6); zero means the default.
+	Columns int    `json:"columns,omitempty"`
+	Content []Node `json:"content"`
+	Cards   []Card `json:"cards"`
 }
 type Card struct {
 	ID            string          `json:"id"`

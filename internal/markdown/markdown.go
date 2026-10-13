@@ -86,15 +86,18 @@ func Parse(src []byte) (*model.Document, []diagnostic.Diagnostic) {
 			if h.Level == 2 {
 				closeSection(node.Span.Start)
 				if attrs.Layout.Columns != 0 || attrs.Layout.Rows != 0 || len(attrs.Classes) > 0 || len(attrs.Compatibility) > 0 {
-					ds = append(ds, diagnostic.Diagnostic{Code: "ATTR001", Message: "section headings support only an explicit #id", Span: node.Span})
+					ds = append(ds, diagnostic.Diagnostic{Code: "ATTR001", Message: "section headings support only an explicit #id and .cols-N", Span: node.Span})
 				}
-				d.Sections = append(d.Sections, model.Section{ID: contentID, Title: title, Span: node.Span, Heading: node, Content: []model.Node{}, Cards: []model.Card{}})
+				d.Sections = append(d.Sections, model.Section{ID: contentID, Title: title, Span: node.Span, Heading: node, Columns: attrs.SectionColumns, Content: []model.Node{}, Cards: []model.Card{}})
 				section = &d.Sections[len(d.Sections)-1]
 			} else {
 				closeCard(node.Span.Start)
 				if section == nil {
 					ds = append(ds, diagnostic.Diagnostic{Code: "MD001", Message: "a ### card requires a preceding ## section", Span: node.Span})
 					continue
+				}
+				if attrs.SectionColumns != 0 {
+					ds = append(ds, diagnostic.Diagnostic{Code: "ATTR001", Message: ".cols-N applies to ## sections; use .col-span-N on cards", Span: node.Span})
 				}
 				section.Cards = append(section.Cards, model.Card{ID: contentID, Title: title, Span: node.Span, Heading: node, Layout: attrs.Layout, Classes: attrs.Classes, Compatibility: attrs.Compatibility, Content: []model.Node{}})
 				card = &section.Cards[len(section.Cards)-1]
@@ -210,6 +213,7 @@ func slug(s string) string {
 
 type attributes struct {
 	ID                     string
+	SectionColumns         int
 	Layout                 model.Layout
 	Classes, Compatibility []string
 }
@@ -269,6 +273,13 @@ func heading(h *ast.Heading, body []byte, cv converter, span diagnostic.Span) (s
 				return bad("ATTR001", "ID must start with an ASCII letter and contain letters, digits, _ or -")
 			}
 			a.ID = token[1:]
+		case strings.HasPrefix(token, ".cols-"):
+			key = "section-columns"
+			v, err := strconv.Atoi(strings.TrimPrefix(token, ".cols-"))
+			if err != nil || v < 1 || v > 6 || strconv.Itoa(v) != strings.TrimPrefix(token, ".cols-") {
+				return bad("ATTR001", "section columns must be a decimal integer from 1 to 6")
+			}
+			a.SectionColumns = v
 		case strings.HasPrefix(token, ".col-span-") || strings.HasPrefix(token, ".row-span-"):
 			prefix := ".col-span-"
 			key = "columns"
