@@ -300,6 +300,16 @@ func (r *renderer) node(b *strings.Builder, n model.Node, header bool) {
 		if n.Kind == "Image" {
 			r.warnings = append(r.warnings, diagnostic.Diagnostic{Code: "REN102", Message: "image retained as a link; resource not fetched", Span: n.Span})
 		}
+		if r.inLink && n.Kind != "Image" {
+			// Image alternative text may contain parsed links. Keep its visible label
+			// inside the surrounding image/ordinary link without nesting anchors.
+			if n.Kind == "AutoLink" {
+				b.WriteString(esc(n.Text))
+			} else {
+				r.nodes(b, n.Children, header)
+			}
+			return
+		}
 		if n.Kind == "Image" && r.inLink {
 			b.WriteString(`<span class="image-reference">`)
 			r.nodes(b, n.Children, header)
@@ -332,7 +342,7 @@ func (r *renderer) url(n model.Node, destination string) string {
 	// this text result; never treat it as HTML markup.
 	destination = html.UnescapeString(normal(destination))
 	u, e := url.Parse(destination)
-	invalid := e != nil || strings.HasPrefix(destination, "//") || strings.Contains(destination, "\\") || strings.TrimSpace(destination) != destination || strings.IndexFunc(destination, func(c rune) bool { return unicode.IsControl(c) }) >= 0
+	invalid := e != nil || strings.HasPrefix(destination, "//") || strings.Contains(destination, "\\") || strings.IndexFunc(destination, func(c rune) bool { return unicode.IsControl(c) }) >= 0
 	if e == nil {
 		scheme := strings.ToLower(u.Scheme)
 		invalid = invalid || (u.Opaque != "" && strings.IndexFunc(u.Opaque, unicode.IsSpace) >= 0)
