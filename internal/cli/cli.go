@@ -24,6 +24,9 @@ func Run(args []string, out, errout io.Writer) int {
 	helpOut := &checkedWriter{Writer: out}
 	root.SetOut(helpOut)
 	root.SetErr(errout)
+	if args == nil {
+		args = []string{} // Cobra reads os.Args for nil.
+	}
 	root.SetArgs(args)
 	root.CompletionOptions.DisableDefaultCmd = true
 	root.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a command is required") }
