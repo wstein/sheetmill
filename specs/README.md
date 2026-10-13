@@ -7,7 +7,7 @@
 | [003](003-reference-import/spec.md) | Controlled Reference conversion and provenance | Implement |
 | [004](004-hugo-renderer/spec.md) | Hugo reference website | Implement + local generation; no deployment |
 | [005](005-typst-renderer/spec.md) | Typst multi-page PDFs | Specs only |
-| [006](006-navi-renderer/spec.md) | Safe annotated command export | Specs only |
+| [006](006-navi-renderer/spec.md) | Safe annotated command export | Implement (user, 2026-10-14); no navi execution or publication |
 | [007](007-live-preview/spec.md) | Studio local live preview; first slice GFM → Hugo → browser E2E | Specification only |
 | 008–010 | Studio editor and playgrounds ([roadmap](../docs/studio-roadmap.md)) | Reserved; not created |
 | [011](011-heading-attribute-ir/spec.md) | Parser-owned heading title nodes in the IR | Specs only |
