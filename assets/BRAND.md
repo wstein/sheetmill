@@ -1,6 +1,6 @@
 # SheetMill brand specification
 
-**Status:** Direction and palette selected — Editorial Stack, revision 2 (2026-10-13). SVG candidates await visual approval.  
+**Status:** Direction and palette selected — Editorial Stack, revision 2 (2026-10-13). SVG candidates await visual approval.
 **Product:** **SheetMill** · **CLI:** `smill` · **Tagline:** **One source. Every reference.**
 
 This document records the selected brand direction and palette. The user requested the same three-sheet stack concept with updated colors and correction of the review findings on 2026-10-13. Original SVG candidates are checked in for review; their geometry is not yet locked. No unseen concept-board illustration or sibling artwork was copied. Raster exports, banners, social cards and renderer output are not implied by this source change.
@@ -189,8 +189,8 @@ The product identity must serve the content, not overwhelm it.
 
 ## 9. Copy and tone
 
-Preferred headline: **SheetMill**.  
-Primary tagline: **One source. Every reference.**  
+Preferred headline: **SheetMill**.
+Primary tagline: **One source. Every reference.**
 Long descriptor: “Compile Git-native Markdown cheatsheets into web, print, and terminal references.”
 
 Prefer concise, factual, technical copy. Avoid claims such as “pixel-perfect across every output” or “automatically executable” unless independently demonstrated. The browser, PDF and navi backends have different capabilities.
