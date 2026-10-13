@@ -43,6 +43,14 @@ export async function readerJourney({ page, context, site, corpus, corpusCases }
   await permalink.click();await expect(page).toHaveURL(site.origin+`/${corpus.id}/#ref-${corpus.permalink.card}`);
   await expect(page.locator('.provenance')).toContainText(corpus.attribution.license);
   await expect(page.locator('.provenance')).toContainText(corpus.attribution.author);
+  const sourceDetails = page.locator('.source-details');
+  await expect(sourceDetails).not.toHaveAttribute('open', '');
+  await expect(sourceDetails.locator('pre')).not.toBeVisible();
+  await sourceDetails.locator('summary').click();
+  await expect(sourceDetails.locator('pre')).toBeVisible();
+  await expect(sourceDetails.locator('pre')).toContainText(corpus.attribution.license);
+  await sourceDetails.locator('summary').click();
+  await expect(sourceDetails.locator('pre')).not.toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth)).toBe(true);
   for(const link of corpus.crossLinks) {
     await page.getByRole('link',{name:link.label,exact:true}).click();
