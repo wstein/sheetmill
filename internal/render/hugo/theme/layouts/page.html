@@ -1,0 +1,6 @@
+{{ define "main" }}
+{{ $sheet := index .Site.Data.sheets .Params.sheetid }}
+<div class="page-heading"><a class="eyebrow" href="/">← ALL REFERENCES</a><h1>{{ .Title }}</h1><p>Keep the essentials within reach.</p></div>
+{{/* Only renderer-owned, pre-escaped IR HTML crosses this boundary. No source Markdown is rendered by Hugo. */}}
+{{ $sheet.body | safe.HTML }}
+{{ end }}
