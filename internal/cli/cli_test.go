@@ -208,3 +208,12 @@ func TestNilArgsMeansNoArguments(t *testing.T) {
 		t.Fatal(code, errout.String())
 	}
 }
+
+func TestImportUsageOnParseErrors(t *testing.T) {
+	for _, args := range [][]string{{"import"}, {"import", "reference"}, {"import", "reference", "x.md", "--unknown"}, {"import", "reference", "a.md", "b.md"}} {
+		var out, errout bytes.Buffer
+		if code := Run(args, &out, &errout); code != 2 || !strings.Contains(errout.String(), importUsage) {
+			t.Fatal(args, code, errout.String())
+		}
+	}
+}

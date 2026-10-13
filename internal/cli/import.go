@@ -22,7 +22,15 @@ type importOptions struct {
 
 func referenceCommand(out, errout io.Writer, status *int) *cobra.Command {
 	var options importOptions
-	cmd := &cobra.Command{Use: "reference <file>", Short: "Convert a Reference sheet with explicit provenance", Args: cobra.ExactArgs(1), Run: func(cmd *cobra.Command, args []string) { *status = runImport(args[0], options, out, errout) }}
+	cmd := &cobra.Command{Use: "reference <file>", Short: "Convert a Reference sheet with explicit provenance", Run: func(cmd *cobra.Command, args []string) { *status = runImport(args[0], options, out, errout) }}
+	// Parse errors keep the provenance flag guidance from the import usage.
+	cmd.Args = func(cmd *cobra.Command, args []string) error {
+		if err := cobra.ExactArgs(1)(cmd, args); err != nil {
+			return usageError{err, importUsage}
+		}
+		return nil
+	}
+	cmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error { return usageError{err, importUsage} })
 	flags := cmd.Flags()
 	flags.StringVar(&options.provenance.Repository, "repository", "", "source repository HTTPS URL")
 	flags.StringVar(&options.provenance.Path, "source-path", "", "relative repository source path")
