@@ -1,5 +1,8 @@
-# Compatibility boundary
-
+---
+title: "Compatibility boundary"
+description: "What SheetMill supports from other reference formats, and what it does not."
+category: reference
+---
 SheetMill implements its own limited source contract inspired by Markdown reference
 card conventions. This is **not** full compatibility with Fechin/reference, its
 Hexo plugins, Tailwind classes or theme layout. GFM support comes from Goldmark;

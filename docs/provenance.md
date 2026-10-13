@@ -1,5 +1,8 @@
-# Source and dependency provenance
-
+---
+title: "Dependencies and provenance"
+description: "Why each dependency was chosen and how it is licensed."
+category: project
+---
 - `LICENSE`: complete EUPL-1.2 text retrieved from the
   [SPDX license data](https://github.com/spdx/license-list-data/blob/main/text/EUPL-1.2.txt).
   [European Commission license portal](https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12).

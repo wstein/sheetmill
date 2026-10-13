@@ -1,5 +1,8 @@
-# SheetMill guide for AI agents
-
+---
+title: "Agent guide"
+description: "Setup, authoring rules and the check, inspect and build loop for AI agents."
+category: guide
+---
 You are reading this because a human asked you to help them understand or set up
 SheetMill, or to write SheetMill reference sheets. Agents are first-class SheetMill
 authors: the format is plain Markdown with YAML frontmatter, every rule below is

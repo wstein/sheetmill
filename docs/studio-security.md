@@ -1,5 +1,8 @@
-# SheetMill Studio: read-only local boundary
-
+---
+title: "Live preview"
+description: "The read-only local smill serve preview and its security boundary."
+category: guide
+---
 `smill serve` previews saved GFM+ through the existing Go compiler and installed
 Hugo 0.167.0. It binds only assigned `127.0.0.1:<port>`; there is no public bind
 flag. It provides no project writes, terminal, Git operation, source command

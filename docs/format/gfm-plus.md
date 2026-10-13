@@ -1,5 +1,8 @@
-# Source format v0.1
-
+---
+title: "Source format v0.1"
+description: "Frontmatter, sections, cards, heading attributes, IDs and the JSON IR."
+category: reference
+---
 Input is a UTF-8, lowercase `.md` file, at most 8 MiB. No BOM or text may precede
 frontmatter. LF and CRLF are accepted and preserved. The opening and closing
 YAML delimiters must each be exactly `---` on their own line; the opening needs
