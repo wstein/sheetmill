@@ -40,7 +40,7 @@ unknown/malformed paths. No request-triggered filesystem traversal. Never reuse
 
 ## Browser journey and oracles
 
-Desktop flow in order:
+Shared scripted flow in both desktop and mobile projects, using the same oracle:
 
 1. Load generated home; assert title and the single reference link.
 2. Enter the corpus query; assert the expected result and accessible result label.
@@ -51,14 +51,17 @@ Desktop flow in order:
    expected multiline bytes. Do not stub clipboard APIs or accept only a toast.
 5. Switch light/dark modes; inspect the actual applied state and reload to prove
    preference persistence; navigate a stable card link and verify its destination.
-6. Verify attribution, no browser errors, unchanged source and an empty forbidden-
-   request list. Do not execute copied text.
+6. Verify attribution, no browser errors, unchanged source, an empty forbidden-
+   request list and `documentElement.scrollWidth <= documentElement.clientWidth`.
+   Do not execute copied text.
 
-Mobile 390×844 repeats representative content/navigation and measures
-`documentElement.scrollWidth <= documentElement.clientWidth`. A distinct
-`javaScriptEnabled:false` context verifies the real sheet/card content and ordinary
-links, without expecting search/copy/live refresh enhancements. Initial desktop
-viewport is 1280×800. No pixel-baseline test is required for the MVP.
+The complete shared flow above MUST pass at both desktop 1280×800 and mobile
+390×844: search, keyboard result activation, exact clipboard bytes, appearance
+change/reload persistence, card links and page overflow are not desktop-only
+checks. A distinct `javaScriptEnabled:false` context verifies the real sheet/card
+content and ordinary links without expecting search/copy/live refresh enhancements.
+Only that no-JavaScript context receives enhancement exemptions; the scripted
+mobile project receives none. No pixel-baseline test is required for the MVP.
 
 Before any navigation, context routing permits only the exact fixture origin;
 service workers are blocked. Every blocked off-origin request is also recorded

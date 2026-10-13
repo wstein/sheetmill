@@ -33,14 +33,16 @@ npm test
 
 `node --version` must report v24.21.0. Dependency/browser installation above is
 explicit setup; subsequent `npm test` runs must not access the network for downloads.
-The desktop command proves the complete one-sheet reader journey. The full command
-adds mobile and no-JavaScript contexts. Corpus selection defaults to `smill` only.
+The desktop command proves the complete one-sheet reader journey at desktop size.
+The full command repeats every scripted reader assertion at mobile size and adds
+a separate no-JavaScript context. Corpus selection defaults to `smill` only.
 Do not replace the fixture with the user-facing server already running on port 1313.
 
 Expected outcomes: check/inspect/export run through the actual CLI; two complete
 Hugo outputs match byte-for-byte; source bytes are unchanged; search and Tab/Enter
 reach the expected card; actual copied bytes match the oracle; appearance survives
-reload; mobile has no page overflow; basic no-JavaScript navigation works; no
+reload; both scripted viewports pass search, keyboard activation, exact copy, appearance
+persistence and no page overflow; basic no-JavaScript navigation works; no
 external requests or example executions occur. The runner cleans owned processes
 and temporary directories. See [E2E contract](contracts/e2e.md) for exact assertions.
 
