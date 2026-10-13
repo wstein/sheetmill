@@ -1,5 +1,9 @@
 # Additional reference corpus
 
+This records the US2 baseline delivered in PR #11. The subsequent live-preview
+increment updates the `smill` and BundleDock sheets; see
+[Studio verification](studio-verification.md) for current checks and source hashes.
+
 T042–T046 extend the same GFM → CLI → Hugo → browser harness. The default
 selection remains `smill`; `SHEETMILL_E2E_CORPUS=all` selects the three explicit
 references. Sibling CLIs are neither installed nor invoked. Source inspection is
