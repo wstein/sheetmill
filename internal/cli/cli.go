@@ -28,7 +28,7 @@ Are you an AI? Use these resources ONLY IF your task specifically asks you to:
     ` + llmsURL + `
 `
 )
-const usage = "usage: smill serve [file-or-directory] [options] | smill version | smill check <file-or-directory>... | smill inspect <file> | smill import reference <file> [options] | smill build hugo <file-or-directory>... --out <new-project>"
+const usage = "usage: smill serve [file-or-directory] [options] | smill version | smill check <file-or-directory>... | smill inspect <file> | smill import reference <file> [options] | smill build hugo <file-or-directory>... --out <new-project> | smill build navi <file-or-directory>... --out <new-dir>"
 
 // Run constructs a fresh command tree for each invocation, keeping flag state and
 // writers isolated for embedders and tests. Cobra owns all command/flag parsing.
