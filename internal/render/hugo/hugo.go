@@ -33,9 +33,25 @@ type Sheet struct {
 	Document       *model.Document
 }
 type Options struct{ Title string }
+
+// Issue associates a renderer diagnostic with the explicitly selected basename.
+// The CLI resolves this identity to the selected path; host paths never enter output.
+type Issue struct {
+	Source string
+	diagnostic.Diagnostic
+}
+
+func issues(source string, ds []diagnostic.Diagnostic) []Issue {
+	out := make([]Issue, 0, len(ds))
+	for _, d := range ds {
+		out = append(out, Issue{source, d})
+	}
+	return out
+}
+
 type Project struct {
 	Files    map[string][]byte
-	Warnings []diagnostic.Diagnostic
+	Warnings []Issue
 }
 type entry struct {
 	Title   string `json:"title"`
@@ -54,10 +70,10 @@ var route = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 // Render does not open files, execute tools or evaluate source Markdown.
 // No partial project is returned on a fatal diagnostic.
-func Render(sheets []Sheet, options Options) (Project, []diagnostic.Diagnostic) {
+func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	p := Project{Files: map[string][]byte{}}
 	if len(sheets) == 0 {
-		return Project{}, []diagnostic.Diagnostic{{Code: "REN003", Message: "select at least one sheet"}}
+		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "select at least one sheet"}})
 	}
 	sheets = append([]Sheet(nil), sheets...)
 	sort.Slice(sheets, func(i, j int) bool { return sheets[i].ID < sheets[j].ID })
@@ -65,16 +81,16 @@ func Render(sheets []Sheet, options Options) (Project, []diagnostic.Diagnostic) 
 	ids := map[string]bool{}
 	for _, s := range sheets {
 		if !route.MatchString(s.ID) || ids[s.ID] || s.ID == "assets" || s.ID == "brand" {
-			return Project{}, []diagnostic.Diagnostic{{Code: "REN003", Message: "invalid, reserved or duplicate sheet route: " + s.ID}}
+			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "invalid, reserved or duplicate sheet route: " + s.ID}})
 		}
 		if s.Document == nil || s.Document.Schema != 1 {
-			return Project{}, []diagnostic.Diagnostic{{Code: "REN001", Message: "renderer requires schema-1 IR"}}
+			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN001", Message: "renderer requires schema-1 IR"}})
 		}
 		if path.Base(s.SourceName) != s.SourceName || s.SourceName == "" {
-			return Project{}, []diagnostic.Diagnostic{{Code: "REN003", Message: "source name must be a basename"}}
+			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "source name must be a basename"}})
 		}
 		if _, exists := routes[s.SourceName]; exists {
-			return Project{}, []diagnostic.Diagnostic{{Code: "REN003", Message: "ambiguous source basename: " + s.SourceName}}
+			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "ambiguous source basename: " + s.SourceName}})
 		}
 		routes[s.SourceName] = s.ID
 		ids[s.ID] = true
@@ -88,7 +104,7 @@ func Render(sheets []Sheet, options Options) (Project, []diagnostic.Diagnostic) 
 	}
 	var pages []page
 	var index []entry
-	var errors []diagnostic.Diagnostic
+	var errors []Issue
 	for _, s := range sheets {
 		r := renderer{routes: routes, anchors: map[string]bool{}}
 		for _, section := range s.Document.Sections {
@@ -109,7 +125,7 @@ func Render(sheets []Sheet, options Options) (Project, []diagnostic.Diagnostic) 
 				for _, c := range card.Classes {
 					class += " " + c
 				}
-				fmt.Fprintf(&b, `<article class="%s" id="ref-%s"><h3><a href="#ref-%s">%s</a></h3>`, esc(class), esc(card.ID), esc(card.ID), r.heading(card.Heading))
+				fmt.Fprintf(&b, `<article class="%s" id="ref-%s"><h3>%s <a class="permalink" href="#ref-%s" aria-label="Permalink to %s">#</a></h3>`, esc(class), esc(card.ID), r.heading(card.Heading), esc(card.ID), esc(card.Title))
 				r.nodes(&b, card.Content, false)
 				b.WriteString(`</article>`)
 				index = append(index, entry{card.Title, title, section.Title, plain(card.Content), "/" + s.ID + "/#ref-" + card.ID})
@@ -119,21 +135,21 @@ func Render(sheets []Sheet, options Options) (Project, []diagnostic.Diagnostic) 
 		if source, ok := s.Document.Metadata["source"]; ok {
 			disclosure, e := json.MarshalIndent(source, "", "  ")
 			if e != nil {
-				errors = append(errors, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()})
+				errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
 			} else {
 				fmt.Fprintf(&b, `<aside class="provenance"><h2>Source &amp; license</h2><pre>%s</pre><p>Source attribution is preserved. Import does not grant redistribution rights.</p></aside>`, esc(string(disclosure)))
 			}
 		}
-		p.Warnings = append(p.Warnings, r.warnings...)
-		errors = append(errors, r.errors...)
+		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
+		errors = append(errors, issues(s.SourceName, r.errors)...)
 		page := page{title, "/" + s.ID + "/", b.String()}
 		pages = append(pages, page)
 		if e := putJSON("data/sheets/"+s.ID+".json", page); e != nil {
-			errors = append(errors, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()})
+			errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
 		}
 		ir, e := s.Document.JSON()
 		if e != nil {
-			errors = append(errors, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()})
+			errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
 		} else {
 			p.Files["data/ir/"+s.ID+".json"] = ir
 		}
@@ -177,6 +193,7 @@ func Render(sheets []Sheet, options Options) (Project, []diagnostic.Diagnostic) 
 }
 
 type renderer struct {
+	inLink           bool
 	routes           map[string]string
 	anchors          map[string]bool
 	errors, warnings []diagnostic.Diagnostic
@@ -283,13 +300,22 @@ func (r *renderer) node(b *strings.Builder, n model.Node, header bool) {
 		if n.Kind == "Image" {
 			r.warnings = append(r.warnings, diagnostic.Diagnostic{Code: "REN102", Message: "image retained as a link; resource not fetched", Span: n.Span})
 		}
+		if n.Kind == "Image" && r.inLink {
+			b.WriteString(`<span class="image-reference">`)
+			r.nodes(b, n.Children, header)
+			fmt.Fprintf(b, " (image: %s)</span>", esc(destination))
+			return
+		}
 		fmt.Fprintf(b, `<a href="%s" title="%s">`, esc(destination), title)
+		previous := r.inLink
+		r.inLink = true
 		if n.Kind == "AutoLink" {
 			b.WriteString(esc(n.Text))
 		} else {
 			r.nodes(b, n.Children, header)
 		}
 		b.WriteString("</a>")
+		r.inLink = previous
 	case "RawHTML", "HTMLBlock":
 		r.warnings = append(r.warnings, diagnostic.Diagnostic{Code: "REN101", Message: "raw HTML displayed inertly", Span: n.Span})
 		tag := "code"
@@ -306,9 +332,11 @@ func (r *renderer) url(n model.Node, destination string) string {
 	// this text result; never treat it as HTML markup.
 	destination = html.UnescapeString(normal(destination))
 	u, e := url.Parse(destination)
-	invalid := e != nil || strings.HasPrefix(destination, "//") || strings.Contains(destination, "\\") || strings.IndexFunc(destination, func(c rune) bool { return unicode.IsSpace(c) || unicode.IsControl(c) }) >= 0
+	invalid := e != nil || strings.HasPrefix(destination, "//") || strings.Contains(destination, "\\") || strings.TrimSpace(destination) != destination || strings.IndexFunc(destination, func(c rune) bool { return unicode.IsControl(c) }) >= 0
 	if e == nil {
 		scheme := strings.ToLower(u.Scheme)
+		invalid = invalid || (u.Opaque != "" && strings.IndexFunc(u.Opaque, unicode.IsSpace) >= 0)
+		u.RawQuery = strings.ReplaceAll(u.RawQuery, " ", "%20")
 		invalid = invalid || (scheme != "" && scheme != "http" && scheme != "https" && scheme != "mailto")
 	}
 	if invalid {
@@ -319,7 +347,7 @@ func (r *renderer) url(n model.Node, destination string) string {
 		if u.Path == "" && r.anchors[u.Fragment] {
 			u.Fragment = "ref-" + u.Fragment
 		}
-		if id, ok := r.routes[u.Path]; ok {
+		if id, ok := r.routes[path.Clean(u.Path)]; ok {
 			u.Path = "/" + id + "/"
 			if u.Fragment != "" {
 				u.Fragment = "ref-" + u.Fragment

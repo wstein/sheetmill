@@ -182,3 +182,67 @@ func TestStructuralHeadingPresentation(t *testing.T) {
 		t.Fatal("rendered parsed attributes", b)
 	}
 }
+
+func TestLinkedCardHeadingAndDotRoute(t *testing.T) {
+	a := sheet(t, "a", "## S\n### [Guide](https://example.com) {#guide}\n[Other](./b.md#target)\n")
+	b := sheet(t, "b", "## S\n### Target {#target}\nText.\n")
+	p, ds := Render([]Sheet{a, b}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "a")
+	if strings.Contains(got, `<h3><a href="#ref-guide"><a`) || !strings.Contains(got, `href="/b/#ref-target"`) {
+		t.Fatal(got)
+	}
+	if !strings.Contains(got, `class="permalink"`) {
+		t.Fatal("missing separate permalink", got)
+	}
+}
+func TestLargeLayoutHints(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### Four {.col-span-4 .row-span-4}\nText.\n### Twelve {.col-span-12 .row-span-12}\nText.\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	css := string(p.Files["static/assets/site.css"])
+	for _, selector := range []string{".col-span-4", ".col-span-12", ".row-span-4", ".row-span-12"} {
+		if !strings.Contains(css, selector) {
+			t.Error("missing responsive hint", selector)
+		}
+	}
+}
+
+func TestLinkedImage(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### C\n[![Alt](https://img.example/a.png)](https://example.com)\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	b := body(t, p, "test")
+	if !strings.Contains(b, `href="https://example.com"`) || strings.Contains(b, `href="https://img.example/a.png"`) || !strings.Contains(b, "Alt (image: https://img.example/a.png)") {
+		t.Fatal(b)
+	}
+	if len(p.Warnings) == 0 {
+		t.Fatal("missing image warning")
+	}
+}
+
+func TestURLSpacesAndUnsafeSchemes(t *testing.T) {
+	a := sheet(t, "a", "## S\n### C\n[Space](<https://example.com/a b?q=a b#c d>) [Selected](<./Sheet One.md#target>)\n")
+	b := sheet(t, "sheet-one", "## S\n### Target {#target}\nText.\n")
+	b.SourceName = "Sheet One.md"
+	p, ds := Render([]Sheet{a, b}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "a")
+	for _, want := range []string{`href="https://example.com/a%20b?q=a%20b#c%20d"`, `href="/sheet-one/#ref-target"`} {
+		if !strings.Contains(got, want) {
+			t.Error(want, got)
+		}
+	}
+	for _, destination := range []string{"javascript&colon;alert(1)", "file:///private/secret", "https://exam ple.com", "mailto:a b@example.com"} {
+		s := sheet(t, "test", "## S\n### C\n[x](<"+destination+">)\n")
+		if _, ds := Render([]Sheet{s}, Options{}); len(ds) == 0 || ds[0].Code != "REN002" {
+			t.Fatal(destination, ds)
+		}
+	}
+}
