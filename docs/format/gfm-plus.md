@@ -41,7 +41,10 @@ and before its first card belongs to that section. A card ends at the next
 root-level section/card or EOF. Order and nesting are retained. Code block text
 retains literal bytes after CommonMark's container indentation handling, including
 newlines and shorter fences. The complete original Markdown body is also stored.
-Raw HTML is inert data; no renderer exists. Future renderers must sanitize it.
+Email autolink destinations include the `mailto:` scheme so the IR preserves
+mail-link semantics independently of Goldmark. Ordinary URL destinations keep
+their schemes. Raw HTML is inert data; no renderer exists. Future renderers must
+sanitize it.
 
 ## Heading attributes
 

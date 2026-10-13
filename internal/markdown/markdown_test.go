@@ -8,6 +8,7 @@ import (
 	"github.com/wstein/sheetmill/internal/model"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -216,5 +217,29 @@ func TestImplicitFenceContainerBoundary(t *testing.T) {
 				t.Fatal("missing code node")
 			}
 		})
+	}
+}
+
+func TestEmailAutolinkDestinations(t *testing.T) {
+	d, ds := Parse([]byte("---\ntitle: X\n---\n<a@example.com> user@example.com <mailto:other@example.com> <https://example.com>\n"))
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	var got []string
+	var walk func(model.Node)
+	walk = func(n model.Node) {
+		if n.Kind == "AutoLink" {
+			got = append(got, n.Properties["destination"].(string))
+		}
+		for _, c := range n.Children {
+			walk(c)
+		}
+	}
+	for _, n := range d.Preamble {
+		walk(n)
+	}
+	want := []string{"mailto:a@example.com", "mailto:user@example.com", "mailto:other@example.com", "https://example.com"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("destinations %v; want %v", got, want)
 	}
 }
