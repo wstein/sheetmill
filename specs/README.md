@@ -10,8 +10,8 @@
 | [006](006-navi-renderer/spec.md) | Safe annotated command export | Specs only |
 
 Public source compatibility is defined in `docs/format`, not redefined per feature.
-Each feature has spec, plan and tasks. Use `SPECIFY_FEATURE=001-core-foundation`
-(or the selected feature name) with Spec Kit scripts when working on the combined
+Each feature has spec, plan and tasks. Use `SPECIFY_FEATURE_DIRECTORY=specs/001-core-foundation`
+(or the selected feature directory) with Spec Kit scripts when working on the combined
 `codex/001-core-foundation` branch. Renderer task lists record future work, not
 approval to execute it. Multiple focused conventional commits keep current work
 reviewable. Independent review remains pending until separately recorded.
