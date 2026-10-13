@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: EUPL-1.2
+# Authorized 2026-10-13 (AGENTS.md, specs/012): publish only the independently
+# authored examples/sheets to https://wstein.github.io/sheetmill/.
+name: pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: .go-version
+          check-latest: false
+      # Deploy only a revision that passes the core checks.
+      - run: test -z "$(gofmt -l cmd internal assets)"
+      - run: go mod verify
+      - run: go vet ./...
+      - run: go test -race ./...
+      - name: Install pinned Hugo
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat .hugo-version)" = 0.167.0
+          mkdir -p "$RUNNER_TEMP/sheetmill-hugo"
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_0.167.0_linux-amd64.tar.gz
+          echo '4d84519b9f619e6d4c3fb45a50157abeabeb724f859c60605f44c23def6e1169  '"$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" -C "$RUNNER_TEMP/sheetmill-hugo" hugo
+      - name: Export and build the demo library
+        shell: bash
+        run: |
+          set -euo pipefail
+          go run ./cmd/smill build hugo examples/sheets --out "$RUNNER_TEMP/site" --base-path /sheetmill/
+          HUGO_CACHEDIR="$RUNNER_TEMP/hugo-cache" "$RUNNER_TEMP/sheetmill-hugo/hugo" --source "$RUNNER_TEMP/site" --destination "$RUNNER_TEMP/public" --clock 2000-01-01T00:00:00Z --noBuildLock --quiet
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/public
+  deploy:
+    name: deploy
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
