@@ -1,7 +1,7 @@
-# E2E harness contract — first slice
+# E2E harness contract — MVP and additional inputs
 
-Status: implemented for the one-sheet MVP; later corpus/server stages remain deferred.
-Maps to US1, FR-001/004/009/010 and SC-001/004/005.
+Status: implemented for the one-sheet MVP and US2 additional-input corpus.
+Server stages remain deferred. Maps to US1/US2, FR-001/004/009/010 and SC-001/004/005.
 
 ## Invocation and prerequisites
 
@@ -12,9 +12,13 @@ checked before running; browser comes from the matching installed Playwright cac
 `SHEETMILL_HUGO` must be an absolute path to the installed Hugo 0.167.0 executable.
 No download/install is performed by tests; missing prerequisites fail clearly.
 
-MVP `corpus.json` contains exactly `smill`, mapped to `examples/sheets/smill.md`.
-Later US2 adds cases without changing the first journey's assertions or introducing
-runtime dependencies on sibling products. Each case follows [data-model.md](../data-model.md).
+`corpus.json` contains three independently authored cases: `smill`, `bdock` and
+`whr`, mapped to their files under `examples/sheets/`. The default selection is
+exactly `smill`; `SHEETMILL_E2E_CORPUS=all npm test` selects all three together.
+Other selection values fail. Every selected case uses the same shared reader
+assertions, with explicit per-case copy/permalink oracles and cross-card targets.
+No sibling runtime dependency is introduced. Each case follows
+[data-model.md](../data-model.md).
 
 ## Process and filesystem boundary
 
@@ -30,8 +34,8 @@ Allowed tool invocations are fixed by fixture code:
 No shell, `bdock`, `whr`, navi, Typst, Docker, source snippet, arbitrary executable
 or user-provided argument string is invoked. Repeated site generation uses distinct
 new directories. Temporary source paths resolve symlinks in system temp roots first,
-so existing strict source-path checks still apply on macOS. The original committed
-sheet is never modified. Cache/environment paths are owned and are not serialized.
+so existing strict source-path checks still apply on macOS. Original committed
+sheets are never modified. Cache/environment paths are owned and are not serialized.
 
 The static fixture server binds only `127.0.0.1:0`, serves a generated-file map with
 known MIME types and directory-index routes, disables listings and returns 404 for
@@ -42,7 +46,8 @@ unknown/malformed paths. No request-triggered filesystem traversal. Never reuse
 
 Shared scripted flow in both desktop and mobile projects, using the same oracle:
 
-1. Load generated home; assert title and the single reference link.
+1. Load generated home; assert title, the selected reference count and the case's
+   exact reference link.
 2. Enter the corpus query; assert the expected result and accessible result label.
 3. Press Tab; assert focused result; press Enter; assert the exact card fragment,
    heading and expected command text.
@@ -54,6 +59,8 @@ Shared scripted flow in both desktop and mobile projects, using the same oracle:
 6. Verify attribution, no browser errors, unchanged source, an empty forbidden-
    request list and `documentElement.scrollWidth <= documentElement.clientWidth`.
    Do not execute copied text.
+7. Follow every declared cross-sheet/card link and verify the destination URL,
+   target heading and card. The no-JavaScript context also checks these links.
 
 The complete shared flow above MUST pass at both desktop 1280×800 and mobile
 390×844: search, keyboard result activation, exact clipboard bytes, appearance
