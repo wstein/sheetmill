@@ -281,23 +281,40 @@ func sourceDetails(source any) (string, error) {
 		if key == "license" {
 			label = "License"
 		}
-		value, ok := fields[key].(string)
-		if !ok {
-			var encoded bytes.Buffer
-			encoder := yaml.NewEncoder(&encoded)
-			encoder.SetIndent(2)
-			if err := encoder.Encode(fields[key]); err != nil {
-				return "", err
-			}
-			if err := encoder.Close(); err != nil {
-				return "", err
-			}
-			value = strings.TrimSuffix(encoded.String(), "\n")
+		label, err := sourceText(label, true)
+		if err != nil {
+			return "", err
+		}
+		value, err := sourceText(fields[key], false)
+		if err != nil {
+			return "", err
 		}
 		fmt.Fprintf(&b, `<dt>%s:</dt><dd>%s</dd>`, esc(label), esc(value))
 	}
 	b.WriteString(`</dl>`)
 	return b.String(), nil
+}
+
+// HTML normalizes NUL and CR, and ordinary key layout collapses whitespace.
+// Quote controls using YAML escapes so accepted metadata is not silently changed.
+func sourceText(value any, key bool) (string, error) {
+	if text, ok := value.(string); ok {
+		controls := strings.ContainsFunc(text, func(r rune) bool { return unicode.IsControl(r) && (key || (r != '\n' && r != '\t')) })
+		if !controls {
+			return text, nil
+		}
+		value = &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Style: yaml.DoubleQuotedStyle, Value: text}
+	}
+	var encoded bytes.Buffer
+	encoder := yaml.NewEncoder(&encoded)
+	encoder.SetIndent(2)
+	if err := encoder.Encode(value); err != nil {
+		return "", err
+	}
+	if err := encoder.Close(); err != nil {
+		return "", err
+	}
+	return strings.TrimSuffix(encoded.String(), "\n"), nil
 }
 
 type renderer struct {
