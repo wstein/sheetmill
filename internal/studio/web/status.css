@@ -1,3 +1,3 @@
 /* SPDX-License-Identifier: EUPL-1.2 */
-#studio-status{position:relative;z-index:10;padding:1rem;border:2px solid #e56b6f;background:#f7f8fc;color:#2c3140;font:14px system-ui;overflow-wrap:anywhere}
+#studio-status{position:relative;z-index:10;padding:1rem;border:2px solid var(--coral,#EA877F);background:var(--surface,#F7F8FC);color:var(--text,#2C3140);font:14px Plex,system-ui,sans-serif;overflow-wrap:anywhere}
 #studio-status nav{display:flex;gap:1rem;flex-wrap:wrap}#studio-status p{margin:.4rem 0}#studio-status div{max-height:12rem;overflow:auto}
