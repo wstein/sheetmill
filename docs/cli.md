@@ -43,7 +43,7 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `VAL002` | Invalid general known metadata field |
 | `VAL003` | Invalid cheatsheet metadata/schema |
 | `MD001`, `MD002` | Card without section; empty structural heading |
-| `ATTR001`, `ATTR002` | Unsupported/malformed attribute; duplicate/conflict |
+| `ATTR001`, `ATTR002`, `ATTR003` | Unsupported/malformed attribute; duplicate/conflict; attribute group outside a root `##`/`###` heading |
 | `ID001` | Duplicate explicit/reserved ID |
 | `IO001`, `IO002`, `IO003` | Input access/selection; stdout failure; output creation/write |
 | `REN001`, `REN002`, `REN003` | Unsupported IR; unsafe URL; invalid/ambiguous route or base path |

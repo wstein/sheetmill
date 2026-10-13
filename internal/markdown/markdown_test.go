@@ -243,3 +243,41 @@ func TestEmailAutolinkDestinations(t *testing.T) {
 		t.Fatalf("destinations %v; want %v", got, want)
 	}
 }
+
+// Attribute groups apply only to root ## and ### headings. Anywhere else they
+// would silently become visible text, so they are diagnosed.
+func TestStrayAttributeGroups(t *testing.T) {
+	for _, tt := range []struct {
+		name, body string
+		line       int
+	}{
+		{"paragraph line", "## S\n### C\nText.\n\n{.marker-none}\n", 8},
+		{"after list item", "## S\n### C\n- one\n{.marker-none}\n", 7},
+		{"after table", "## S\n### C\n| A | B |\n| - | - |\n| a | b |\n{.show-header}\n", 9},
+		{"preamble", "{.cols-2}\n", 4},
+		{"inside paragraph", "## S\nFirst line\n{#anchor}\nlast line\n", 6},
+		{"content heading", "## S\n### C\n#### Sub {.secondary}\n", 6},
+		{"level one heading", "# Title {#top}\n", 4},
+		{"nested heading", "## S\n### C\n> ### Quoted {.tip}\n", 6},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			_, ds := Parse([]byte("---\ntitle: Test\n---\n" + tt.body))
+			if len(ds) != 1 || ds[0].Code != "ATTR003" || ds[0].Span.Start.Line != tt.line {
+				t.Fatalf("want one ATTR003 on line %d, got %v", tt.line, ds)
+			}
+		})
+	}
+	for _, body := range []string{
+		"## S\n### C\n\\{.marker-none}\n",
+		"## S\n### C\n`{.marker-none}`\n",
+		"## S\n### C\n```text\n{.marker-none}\n```\n",
+		"## S\n### C\nUse {braces} and {.class} inside prose.\n",
+		"## S\n### C\n#### Sub \\{.secondary}\n",
+		"## S {#s}\n### C {.tip}\n",
+		"## S\n### C\n    {.indented-code}\n",
+	} {
+		if _, ds := Parse([]byte("---\ntitle: Test\n---\n" + body)); len(ds) > 0 {
+			t.Errorf("%q: %v", body, ds)
+		}
+	}
+}

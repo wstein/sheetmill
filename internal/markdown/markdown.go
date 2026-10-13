@@ -24,6 +24,12 @@ const MaxSourceBytes = 8 << 20
 
 var explicitID = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]*$`)
 
+// attributeGroup matches a whole {.class #id} group; trailingGroup one ending a heading.
+var (
+	attributeGroup = regexp.MustCompile(`^\{[.#][^{}]*\}$`)
+	trailingGroup  = regexp.MustCompile(`\{[.#][^{}]*\}$`)
+)
+
 func Parse(src []byte) (*model.Document, []diagnostic.Diagnostic) {
 	source := diagnostic.NewSource(src)
 	if len(src) > MaxSourceBytes {
@@ -104,10 +110,82 @@ func Parse(src []byte) (*model.Document, []diagnostic.Diagnostic) {
 		}
 	}
 	closeSection(source.Position(len(src)))
+	ds = append(ds, strayAttributes(root, cv)...)
 	if len(ds) > 0 {
 		return nil, ds
 	}
 	return d, nil
+}
+
+// strayAttributes reports {.class #id} groups that would otherwise become visible
+// text: lines consisting only of a group, and groups ending headings other than
+// root-level ## and ### structure. Code, raw HTML and escaped braces are content.
+func strayAttributes(root ast.Node, cv converter) []diagnostic.Diagnostic {
+	var ds []diagnostic.Diagnostic
+	report := func(start, end int, message string) {
+		ds = append(ds, diagnostic.Diagnostic{Code: "ATTR003", Message: message, Span: cv.source.Span(cv.offset+start, cv.offset+end)})
+	}
+	var walk func(ast.Node)
+	walk = func(n ast.Node) {
+		switch x := n.(type) {
+		case *ast.CodeBlock, *ast.FencedCodeBlock, *ast.HTMLBlock:
+			return
+		case *ast.Heading:
+			if x.Parent() == root && (x.Level == 2 || x.Level == 3) {
+				return // structural headings are parsed by heading()
+			}
+			line, start, end, onlyText := inlineLine(x.FirstChild(), nil, cv.body)
+			trimmed := strings.TrimSpace(line)
+			if at := trailingGroup.FindStringIndex(trimmed); onlyText && at != nil && !escapedPunctuation(trimmed, at[0]) {
+				report(start, end, "attribute groups apply only to root-level ## and ### headings; escape the brace to keep it as text")
+			}
+			return
+		}
+		if n.Type() == ast.TypeBlock && n.FirstChild() != nil && n.FirstChild().Type() == ast.TypeInline {
+			for c := n.FirstChild(); c != nil; {
+				line, start, end, onlyText := inlineLine(c, &c, cv.body)
+				if trimmed := strings.TrimSpace(line); onlyText && attributeGroup.MatchString(trimmed) {
+					report(start, end, "attribute group "+trimmed+" is not applied here; attributes belong at the end of a ## or ### heading, or escape the brace")
+				}
+			}
+			return
+		}
+		for c := n.FirstChild(); c != nil; c = c.NextSibling() {
+			walk(c)
+		}
+	}
+	walk(root)
+	return ds
+}
+
+// inlineLine joins one source line of sibling inline nodes starting at n. It
+// reports whether the line holds only plain text, and advances *next past it.
+func inlineLine(n ast.Node, next *ast.Node, body []byte) (string, int, int, bool) {
+	var b strings.Builder
+	start, end, onlyText := -1, -1, true
+	for ; n != nil; n = n.NextSibling() {
+		t, ok := n.(*ast.Text)
+		if !ok {
+			onlyText = false
+			continue
+		}
+		if start < 0 {
+			start = t.Segment.Start
+		}
+		end = t.Segment.Stop
+		b.Write(t.Value(body))
+		if t.SoftLineBreak() || t.HardLineBreak() {
+			n = n.NextSibling()
+			break
+		}
+	}
+	if next != nil {
+		*next = n
+	}
+	if start < 0 {
+		return "", 0, 0, false
+	}
+	return b.String(), start, end, onlyText
 }
 
 func slug(s string) string {
