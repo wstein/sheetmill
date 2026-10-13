@@ -74,3 +74,21 @@ browser project. It verifies SHA-256 filenames against actual response bytes,
 CSS/script/font resource loading, shared home/sheet URLs and absence of unversioned
 asset requests. JavaScript-disabled contexts still load CSS and fonts. These
 checks run in both default and all-corpus selections; no deployment is involved.
+
+## Opt-in T049 reference-machine checks
+
+After the same explicit pinned-tool setup, run `npm run test:performance` with
+`SHEETMILL_HUGO` set. This launches one desktop Chromium measurement test, with
+100 synthetic 8 KiB sheets, 20 fresh-process/fresh-port starts, 100 timed saves
+and 100 rapid-save correctness sequences. It enforces SC-002/SC-003 counts and
+writes every raw timing sample plus sanitized machine/tool metadata to local
+`performance.json` under a unique ignored `.local/e2e/performance/run-*/` directory.
+The report identifies the Git revision and measured executable SHA-256; tracked
+runtime and harness edits must be committed before the run. No samples are discarded; retries
+are disabled. Authenticated traces, screenshots and video are disabled.
+
+Run on an otherwise idle documented workstation. Ordinary CI runs the evaluator
+unit tests via `npm run test:harness`; machine-dependent timing thresholds are
+opt-in and are not presented as hosted-runner or universal performance guarantees.
+The five-author SC-006 usability study is separate and remains pending. See
+[Studio verification](../../docs/studio-verification.md) for methods and results.

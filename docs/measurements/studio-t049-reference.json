@@ -1,0 +1,996 @@
+{
+  "schema": 1,
+  "startedUTC": "2026-10-13T21:59:50.012Z",
+  "machine": {
+    "os": "darwin",
+    "release": "27.0.0",
+    "arch": "arm64",
+    "cpu": "Apple M2 Pro",
+    "logicalCPUs": 12,
+    "memoryBytes": 17179869184
+  },
+  "tools": {
+    "node": "24.21.0",
+    "chromium": "156.0.8078.4",
+    "playwright": "1.64.0",
+    "go": "go version go1.27.2 darwin/arm64",
+    "hugo": "hugo v0.167.0+extended+withdeploy darwin/arm64 BuildDate=2026-09-28T14:50:38Z VendorInfo=Homebrew"
+  },
+  "method": {
+    "viewport": "1280x800",
+    "startup": "process spawn to rendered current card and enabled search, including bootstrap, navigation and initial build",
+    "edit": "external writeFile completion to rendered current card and enabled search",
+    "clock": "Node performance.now, viewport-intersecting browser RAF predicate plus two frames (paint opportunity, not a pixel timestamp)",
+    "warmup": "none discarded; fresh process and ephemeral port each start; browser and development CLI built before timing; OS caches not flushed",
+    "retries": 0
+  },
+  "workload": {
+    "sheets": 100,
+    "bytesPerSheet": 8192,
+    "maximumAllowedBytesPerSheet": 102400,
+    "initialSHA256": "5170cedf84478d24fa6398f7d2b7ca379b62fc19f3ca764f094cb4761c48046b"
+  },
+  "sequenceEvidence": [
+    {
+      "index": 0,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 1,
+      "finalStatus": "invalid",
+      "expectedLine": 8,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 2,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 3,
+      "finalStatus": "invalid",
+      "expectedLine": 10,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 4,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 5,
+      "finalStatus": "invalid",
+      "expectedLine": 12,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 6,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 7,
+      "finalStatus": "invalid",
+      "expectedLine": 14,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 8,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 9,
+      "finalStatus": "invalid",
+      "expectedLine": 16,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 10,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 11,
+      "finalStatus": "invalid",
+      "expectedLine": 18,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 12,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 13,
+      "finalStatus": "invalid",
+      "expectedLine": 20,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 14,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 15,
+      "finalStatus": "invalid",
+      "expectedLine": 22,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 16,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 17,
+      "finalStatus": "invalid",
+      "expectedLine": 24,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 18,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 19,
+      "finalStatus": "invalid",
+      "expectedLine": 26,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 20,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 21,
+      "finalStatus": "invalid",
+      "expectedLine": 28,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 22,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 23,
+      "finalStatus": "invalid",
+      "expectedLine": 30,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 24,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 25,
+      "finalStatus": "invalid",
+      "expectedLine": 32,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 26,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 27,
+      "finalStatus": "invalid",
+      "expectedLine": 34,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 28,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 29,
+      "finalStatus": "invalid",
+      "expectedLine": 36,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 30,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 31,
+      "finalStatus": "invalid",
+      "expectedLine": 38,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 32,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 33,
+      "finalStatus": "invalid",
+      "expectedLine": 40,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 34,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 35,
+      "finalStatus": "invalid",
+      "expectedLine": 42,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 36,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 37,
+      "finalStatus": "invalid",
+      "expectedLine": 44,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 38,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 39,
+      "finalStatus": "invalid",
+      "expectedLine": 46,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 40,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 41,
+      "finalStatus": "invalid",
+      "expectedLine": 48,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 42,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 43,
+      "finalStatus": "invalid",
+      "expectedLine": 50,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 44,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 45,
+      "finalStatus": "invalid",
+      "expectedLine": 52,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 46,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 47,
+      "finalStatus": "invalid",
+      "expectedLine": 54,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 48,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 49,
+      "finalStatus": "invalid",
+      "expectedLine": 56,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 50,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": true,
+      "correct": true
+    },
+    {
+      "index": 51,
+      "finalStatus": "invalid",
+      "expectedLine": 58,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 52,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 53,
+      "finalStatus": "invalid",
+      "expectedLine": 60,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 54,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 55,
+      "finalStatus": "invalid",
+      "expectedLine": 62,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 56,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 57,
+      "finalStatus": "invalid",
+      "expectedLine": 64,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 58,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 59,
+      "finalStatus": "invalid",
+      "expectedLine": 66,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 60,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 61,
+      "finalStatus": "invalid",
+      "expectedLine": 68,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 62,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 63,
+      "finalStatus": "invalid",
+      "expectedLine": 70,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 64,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 65,
+      "finalStatus": "invalid",
+      "expectedLine": 72,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 66,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 67,
+      "finalStatus": "invalid",
+      "expectedLine": 74,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 68,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 69,
+      "finalStatus": "invalid",
+      "expectedLine": 76,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 70,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 71,
+      "finalStatus": "invalid",
+      "expectedLine": 78,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 72,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 73,
+      "finalStatus": "invalid",
+      "expectedLine": 80,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 74,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 75,
+      "finalStatus": "invalid",
+      "expectedLine": 82,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 76,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 77,
+      "finalStatus": "invalid",
+      "expectedLine": 84,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 78,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 79,
+      "finalStatus": "invalid",
+      "expectedLine": 86,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 80,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 81,
+      "finalStatus": "invalid",
+      "expectedLine": 88,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 82,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 83,
+      "finalStatus": "invalid",
+      "expectedLine": 90,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 84,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 85,
+      "finalStatus": "invalid",
+      "expectedLine": 92,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 86,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 87,
+      "finalStatus": "invalid",
+      "expectedLine": 94,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 88,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 89,
+      "finalStatus": "invalid",
+      "expectedLine": 96,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 90,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 91,
+      "finalStatus": "invalid",
+      "expectedLine": 98,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 92,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 93,
+      "finalStatus": "invalid",
+      "expectedLine": 100,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 94,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 95,
+      "finalStatus": "invalid",
+      "expectedLine": 102,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 96,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 97,
+      "finalStatus": "invalid",
+      "expectedLine": 104,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 98,
+      "finalStatus": "current",
+      "expectedLine": null,
+      "disconnected": false,
+      "correct": true
+    },
+    {
+      "index": 99,
+      "finalStatus": "invalid",
+      "expectedLine": 106,
+      "disconnected": false,
+      "correct": true
+    }
+  ],
+  "source": {
+    "revision": "00629d721db2ef58562206ab1893693cdc8f53fa",
+    "trackedRuntimeAndHarnessClean": true,
+    "executableSHA256": "bf0ae2c0915d41175c252d56b25a2ace696a99be4317de3984fa43a175e3aa0a"
+  },
+  "completedUTC": "2026-10-13T22:02:08.386Z",
+  "assessment": {
+    "passed": true,
+    "edits": {
+      "valid": true,
+      "count": 100,
+      "thresholdMs": 1000,
+      "withinThreshold": 100,
+      "p50Ms": 586.7372090000063,
+      "p95Ms": 663.1112500000017,
+      "maxMs": 708.4057920000014,
+      "samplesMs": [
+        608.1483340000013,
+        578.9440419999992,
+        664.9992500000008,
+        523.1679999999997,
+        616.9982909999999,
+        590.0906249999989,
+        617.5568750000002,
+        577.2198749999989,
+        692.2059579999986,
+        531.7000419999968,
+        598.6333339999983,
+        708.4057920000014,
+        571.4724590000005,
+        579.0040420000005,
+        603.1686249999984,
+        591.4551670000001,
+        661.1661659999991,
+        542.3654590000006,
+        658.0260420000013,
+        637.7572499999987,
+        500.16100000000006,
+        483.6352909999987,
+        508.7224160000005,
+        597.5542080000014,
+        599.2815420000006,
+        497.23799999999756,
+        645.4384999999966,
+        663.1112500000017,
+        487.87474999999904,
+        608.033875000001,
+        599.2495830000007,
+        494.31820900000093,
+        505.047166999997,
+        528.099041999998,
+        577.747625,
+        498.42408299999806,
+        634.4867089999971,
+        667.5002079999977,
+        599.3400840000031,
+        593.1445830000011,
+        595.8942500000048,
+        493.9905409999992,
+        501.17866700000013,
+        616.8713329999955,
+        604.8925000000017,
+        637.0635840000032,
+        549.9815420000014,
+        597.2097910000011,
+        617.6190409999981,
+        581.7466659999991,
+        489.1304170000003,
+        611.3350830000054,
+        615.2698339999988,
+        584.7220000000016,
+        649.5939579999977,
+        644.5432090000031,
+        497.06170900000143,
+        498.3173339999994,
+        496.93587500000285,
+        620.3270419999972,
+        592.9643330000035,
+        488.3859999999986,
+        501.3805829999983,
+        499.5501250000016,
+        501.723708000005,
+        495.3570000000036,
+        610.7272499999963,
+        672.0411659999954,
+        524.8832909999983,
+        492.2067919999972,
+        607.301707999999,
+        600.0513340000034,
+        490.47670800000196,
+        504.3958330000023,
+        607.4336670000048,
+        490.19812499999534,
+        606.3167919999978,
+        492.309874999999,
+        608.5821250000008,
+        489.0764999999956,
+        521.1023750000022,
+        639.9000420000011,
+        561.3900829999984,
+        586.7372090000063,
+        606.0823329999985,
+        604.8604999999952,
+        476.3007910000015,
+        608.3903749999954,
+        507.76783299999806,
+        600.2709590000013,
+        582.950417,
+        611.1442499999976,
+        564.7407079999975,
+        634.5596670000086,
+        491.8870840000018,
+        511.1678329999995,
+        599.7918749999953,
+        482.43395799999416,
+        500.7185829999944,
+        504.64574999999604
+      ]
+    },
+    "startups": {
+      "valid": true,
+      "count": 20,
+      "thresholdMs": 3000,
+      "withinThreshold": 20,
+      "p50Ms": 332.9152919999997,
+      "p95Ms": 366.62154100000043,
+      "maxMs": 640.5833750000002,
+      "samplesMs": [
+        640.5833750000002,
+        337.0949579999997,
+        327.8204579999997,
+        331.3487919999998,
+        325.2199169999999,
+        332.322541,
+        324.87629200000083,
+        332.9152919999997,
+        345.00887499999953,
+        326.4226660000004,
+        329.65087500000027,
+        366.62154100000043,
+        336.779125,
+        332.0954590000001,
+        327.1165000000001,
+        337.424583,
+        362.4046670000007,
+        339.25858400000106,
+        356.2612079999999,
+        336.1891250000008
+      ]
+    },
+    "latestSave": {
+      "count": 100,
+      "correct": 100,
+      "results": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "usability": {
+      "status": "pending",
+      "requiredAuthors": 5
+    }
+  }
+}
