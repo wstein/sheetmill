@@ -13,3 +13,17 @@
 
 Completed through [PR #3](https://github.com/wstein/sheetmill/pull/3).
 See [verification evidence](../../docs/hugo-verification.md); no merge/deployment performed.
+
+## Follow-up hardening (after PR #3)
+
+Test gaps found in the post-merge review. Each needs a failing test first;
+behavior fixes stay within the authorized 004 scope.
+
+- [ ] T011 Test that unknown frontmatter keys round-trip byte-stable into
+  `data/ir/<sheet>.json` (FR-006).
+- [ ] T012 Inject a write failure partway through `writeProject`; assert `IO003`,
+  exit status 2 and that no pre-existing path is modified (FR-003).
+- [ ] T013 Keep a bare `[x](#)` link as `href="#"`; `url.String()` currently drops
+  the empty fragment and renders `href=""`.
+- [ ] T014 Run the Hugo integration test with `SHEETMILL_HUGO` on the REN103 and
+  empty-label fixtures and record the evidence in docs/hugo-verification.md.
