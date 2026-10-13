@@ -1,0 +1,38 @@
+---
+{
+  "custom": {
+    "preserved": true
+  },
+  "source": {
+    "attribution": "Example contributors",
+    "format": "fechin-reference",
+    "license": "GPL-3.0",
+    "original_metadata": {
+      "background": "bg-example",
+      "plugins": [
+        "copyCode",
+        "runCode"
+      ]
+    },
+    "path": "source/_posts/sample.md",
+    "repository": "https://github.com/example/reference",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sha256": "62c51891b767194b1b36585a526d7f4acb0abf75c5c96c6c739ac647858aafd5"
+  },
+  "tags": [
+    "sample"
+  ],
+  "title": "Independent conversion fixture"
+}
+---
+## Basics
+### Example {.col-span-2}
+
+| Key | Action |
+| --- | --- |
+| `q` | Quit |
+
+````sh
+printf '%s\n' '### literal'
+```
+````

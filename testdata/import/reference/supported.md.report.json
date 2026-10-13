@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "format": "fechin-reference",
+  "provenance": {
+    "repository": "https://github.com/example/reference",
+    "path": "source/_posts/sample.md",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "license": "GPL-3.0",
+    "attribution": "Example contributors"
+  },
+  "source_sha256": "62c51891b767194b1b36585a526d7f4acb0abf75c5c96c6c739ac647858aafd5",
+  "converted_sha256": "9cbae87a269e07c3c1dae98e6db91c2b441438351035c25a90f8e2f317115a58",
+  "findings": [
+    {
+      "severity": "warning",
+      "code": "IMP101",
+      "message": "legacy plugins archived and disabled; no plugin behavior is imported",
+      "span": {
+        "start": {
+          "offset": 42,
+          "line": 3,
+          "column": 1
+        },
+        "end": {
+          "offset": 49,
+          "line": 3,
+          "column": 8
+        }
+      }
+    },
+    {
+      "severity": "warning",
+      "code": "IMP102",
+      "message": "legacy visual metadata background archived as inert source data",
+      "span": {
+        "start": {
+          "offset": 71,
+          "line": 4,
+          "column": 1
+        },
+        "end": {
+          "offset": 81,
+          "line": 4,
+          "column": 11
+        }
+      }
+    }
+  ]
+}

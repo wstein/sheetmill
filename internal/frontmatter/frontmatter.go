@@ -20,6 +20,7 @@ type Result struct {
 	Metadata   map[string]any
 	Body       []byte
 	BodyOffset int
+	Locations  map[string]diagnostic.Span
 }
 
 var yamlLine = regexp.MustCompile(`line (\d+)`)
@@ -160,5 +161,5 @@ func Parse(b []byte) (Result, []diagnostic.Diagnostic) {
 	if len(ds) > 0 {
 		return Result{}, ds
 	}
-	return Result{metadata, b[body:], body}, nil
+	return Result{Metadata: metadata, Body: b[body:], BodyOffset: body, Locations: locations}, nil
 }
