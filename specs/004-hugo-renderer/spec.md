@@ -28,6 +28,10 @@ Depends on: accepted core/Reference import (001–003)
   paths are never overwritten or removed.
 - FR-004: Render supported GFM semantics, readable code, task state and table alignment.
   Escape HTML, text, attrs and URLs; allow only relative/http/https/mailto links.
+  URLs are rejected with `REN002` for: protocol-relative `//host`, backslashes, control
+  characters, entity-encoded forbidden schemes, whitespace in opaque parts, and any scheme
+  other than http, https or mailto. Generated Hugo config sets `security` `exec` and
+  `http` to none and disables inline shortcodes.
 - FR-005: Keep deterministic source/project/search bytes independent of input order,
   clocks and absolute host paths. Pin Hugo 0.167.0; compare actual built file bytes.
 - FR-006: Preserve all metadata in JSON and show source/license attribution on pages.
