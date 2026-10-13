@@ -52,6 +52,7 @@ unknown data survive, with the following legacy behavior archived under
 | `IMP107` | Invalid `tags` (non-array, null or empty entries) dropped; original archived (warning) |
 | `IMP108` | Unsupported token removed from a heading group, e.g. `.secondary`; supported ones such as `.cols-2` stay (warning) |
 | `IMP109` | Standalone attribute line such as `{.shortcuts}` or `{.marker-none}` removed (warning) |
+| `IMP110` | Standalone `{.shortcuts}` inside a card removed; the card is marked `.keys` so its key table renders as keys (warning) |
 | Core diagnostic codes | Unsupported structural attrs/YAML/GFM+ contract errors |
 
 Code blocks/code spans are excluded from directive scanning. This is an explicit
