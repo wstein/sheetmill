@@ -332,3 +332,16 @@ func TestSearchIndexKeepsCodeVerbatim(t *testing.T) {
 		}
 	}
 }
+
+func TestEmptyLinkLabels(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### C\n![](diagram.png) [](https://example.com) [![](https://img.example/a.png)](https://example.com/b) [](<>)\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "test")
+	for _, want := range []string{`<a href="diagram.png" title="">diagram.png</a>`, `<a href="https://example.com" title="">https://example.com</a>`, `<span class="image-reference">image: https://img.example/a.png</span>`, `<a href="" title="">link</a>`} {
+		if !strings.Contains(got, want) {
+			t.Error(want, got)
+		}
+	}
+}

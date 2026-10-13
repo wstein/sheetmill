@@ -317,8 +317,14 @@ func (r *renderer) node(b *strings.Builder, n model.Node, header bool) {
 			}
 			return
 		}
+		// Without label text an anchor is invisible and has no accessible name.
+		unlabeled := n.Kind != "AutoLink" && !labeled(n.Children)
 		if n.Kind == "Image" && r.inLink {
 			b.WriteString(`<span class="image-reference">`)
+			if unlabeled {
+				fmt.Fprintf(b, "image: %s</span>", esc(destination))
+				return
+			}
 			r.nodes(b, n.Children, header)
 			fmt.Fprintf(b, " (image: %s)</span>", esc(destination))
 			return
@@ -326,9 +332,14 @@ func (r *renderer) node(b *strings.Builder, n model.Node, header bool) {
 		fmt.Fprintf(b, `<a href="%s" title="%s">`, esc(destination), title)
 		previous := r.inLink
 		r.inLink = true
-		if n.Kind == "AutoLink" {
+		switch {
+		case n.Kind == "AutoLink":
 			b.WriteString(esc(n.Text))
-		} else {
+		case unlabeled && destination != "":
+			b.WriteString(esc(destination))
+		case unlabeled:
+			b.WriteString("link")
+		default:
 			r.nodes(b, n.Children, header)
 		}
 		b.WriteString("</a>")
@@ -372,6 +383,16 @@ func (r *renderer) url(n model.Node, destination string) string {
 		}
 	}
 	return u.String()
+}
+
+// labeled reports visible label content: text, or an image rendered as a reference.
+func labeled(nodes []model.Node) bool {
+	for _, n := range nodes {
+		if n.Kind == "Image" || strings.TrimSpace(n.Text) != "" || labeled(n.Children) {
+			return true
+		}
+	}
+	return false
 }
 func verbatim(n model.Node) bool {
 	raw, _ := n.Properties["raw"].(bool)
