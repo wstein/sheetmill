@@ -98,6 +98,10 @@ func Parse(b []byte) (Result, []diagnostic.Diagnostic) {
 			add("FM005", "YAML anchors and aliases are unsupported")
 			return nil
 		}
+		if (n.Kind == yaml.MappingNode && n.Tag != "!!map") || (n.Kind == yaml.SequenceNode && n.Tag != "!!seq") {
+			add("FM005", fmt.Sprintf("unsupported YAML collection tag %q; use ordinary mappings and arrays", n.Tag))
+			return nil
+		}
 		switch n.Kind {
 		case yaml.MappingNode:
 			m := map[string]any{}
