@@ -2,6 +2,7 @@
 package studio
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -108,16 +109,21 @@ func (s *Selection) Read() Snapshot {
 			entry.Error = "source is unavailable or not a regular file"
 		} else if before.Size() > maxSource {
 			entry.Error = "source exceeds 8 MiB"
+		} else if total+int(before.Size()) > maxSources {
+			return Snapshot{Error: "selection exceeds 32 MiB aggregate source bytes"}
 		} else {
 			f, e := s.root.Open(name)
 			if e != nil {
 				entry.Error = "cannot open selected source"
 			} else {
 				opened, e1 := f.Stat()
-				b, e2 := io.ReadAll(io.LimitReader(f, maxSource+1))
+				b, e2 := readStableBytes(f, min(before.Size(), int64(maxSources-total)))
+				_, seekErr := f.Seek(0, io.SeekStart)
+				second, secondErr := readStableBytes(f, min(before.Size(), int64(maxSources-total)))
+				final, statErr := f.Stat()
 				f.Close()
 				after, e3 := s.root.Lstat(name)
-				if e1 != nil || e2 != nil || e3 != nil || !after.Mode().IsRegular() || !os.SameFile(before, opened) || !os.SameFile(opened, after) {
+				if e1 != nil || e2 != nil || e3 != nil || seekErr != nil || secondErr != nil || statErr != nil || !bytes.Equal(b, second) || before.Size() != final.Size() || before.ModTime() != final.ModTime() || opened.Size() != final.Size() || opened.ModTime() != final.ModTime() || int64(len(b)) != final.Size() || !after.Mode().IsRegular() || !os.SameFile(before, opened) || !os.SameFile(opened, after) {
 					entry.Error = "source changed during read; waiting for a stable regular file"
 				} else if len(b) > maxSource {
 					entry.Error = "source exceeds 8 MiB"
@@ -135,3 +141,13 @@ func (s *Selection) Read() Snapshot {
 	return snap
 }
 func (s Snapshot) hash() [32]byte { b, _ := json.Marshal(s); return sha256.Sum256(b) }
+
+// The stat-sized buffer prevents ReadAll growth from multiplying the source cap.
+func readStableBytes(f *os.File, size int64) ([]byte, error) {
+	b := make([]byte, int(size)+1)
+	n, err := io.ReadFull(f, b)
+	if err == io.EOF || err == io.ErrUnexpectedEOF {
+		err = nil
+	}
+	return b[:n], err
+}
