@@ -11,6 +11,9 @@ Sibling repository policies do not govern this repository.
 - The current scope includes features 001–004: core, Reference import, finalized
   brand assets and a Hugo renderer with local site generation (authorized by the
   user on 2026-10-13). PDF/Typst and navi renderers remain out of scope.
+- Feature 007 MVP T001–T018 and applicable final checks are authorized on
+  2026-10-13: one smill sheet, temporary verification executable, Hugo and local
+  browser E2E. Later Studio server/editor/sibling stages remain out of scope.
 - Use `codex/` feature branches and Conventional Commits. Topic pushes and draft
   PRs belong to an authorized implementation handoff; otherwise ask before publishing.
 - Merge, tag, release, deploy, distribution builds, PDF generation, artifact
