@@ -80,3 +80,37 @@ test('workspace cancellation awaits child shutdown before removal', async () => 
   await owner.close(); await failed;
   await assert.rejects(access(owner.root));
 });
+
+test('corpus rejects ambiguous, missing and escaping inputs',async()=>{
+  const {loadCorpus}=await import('./helpers/corpus.mjs');
+  const root=await scratch();
+  try {
+    await writeFile(join(root,'smill.md'),'source');
+    const input={id:'smill',input:'smill.md',product:{name:'SheetMill',revision:'a'.repeat(40)},title:'SheetMill',search:{query:'query',label:'label',card:'card'},copy:{card:'card',text:'line\n'},cards:['card'],attribution:{license:'EUPL-1.2',author:'Example'},crossLinks:[]};
+    await loadCorpus(root,[input]);
+    for(const invalid of [[],[input,input],[{...input,input:'../smill.md'}],[{...input,input:'/smill.md'}],[{...input,product:{}}],[{...input,cards:['card','card']}],[{...input,copy:{card:'unknown',text:'x'}}]]) {
+      await assert.rejects(loadCorpus(root,invalid));
+    }
+    await symlink(join(root,'smill.md'),join(root,'alias.md'));
+    await assert.rejects(loadCorpus(root,[{...input,input:'alias.md'}]),/symlinks/);
+  } finally {await rm(root,{recursive:true});}
+});
+
+test('OS interruption closes owned children and preserves separate evidence',async()=>{
+  const {spawn}=await import('node:child_process');
+  const {once}=await import('node:events');
+  const {readFile}=await import('node:fs/promises');
+  const evidenceRoot=await scratch(),evidence=join(evidenceRoot,'stages.log');
+  const probe=new URL('./helpers/interrupt-probe.mjs',import.meta.url);
+  const {fileURLToPath}=await import('node:url');
+  const child=spawn(process.execPath,[fileURLToPath(probe),evidence],{stdio:['ignore','pipe','pipe']});
+  const closed=once(child,'close');
+  const deadline=setTimeout(()=>child.kill('SIGKILL'),5000);
+  try {
+    const [chunk]=await once(child.stdout,'data');const owned=chunk.toString().trim();
+    child.kill('SIGTERM');
+    const [code]=await closed;assert.equal(code,143);
+    await assert.rejects(access(owned));
+    assert.equal(await readFile(evidence,'utf8'),'prepared\ncleaned\n');
+  } finally {clearTimeout(deadline);child.kill('SIGKILL');await rm(evidenceRoot,{recursive:true,force:true});}
+});
