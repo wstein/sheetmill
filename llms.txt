@@ -1,0 +1,55 @@
+# SheetMill
+
+> SheetMill is a Go reference-sheet compiler. Its CLI, `smill`, validates GFM
+> Markdown with YAML frontmatter, prints a versioned semantic JSON IR, converts
+> Reference sheets with provenance, exports self-contained Hugo 0.167.0 projects
+> and serves a read-only local preview. Nothing in a source sheet is executed or
+> fetched. Typst/PDF and navi output are planned, not implemented.
+
+Use this file to debug or investigate a SheetMill problem. To help a human set
+up SheetMill or write sheets, read the agent guide instead. Contributors working
+inside the repository must follow AGENTS.md.
+
+Diagnostics are written to stderr as `path:line:column: CODE: message`; warnings
+end with `(warning)`. Exit status: 0 success, 1 invalid source, 2 usage or IO
+error (including broken stdout). `smill version` prints `smill dev` for source
+builds. To investigate: reproduce with `smill check <file>`, then
+`smill inspect <file>` to see how the parser understood the sheet (sections,
+cards, IDs, attributes, byte spans), then `smill build hugo <file> --out <new-dir>`
+for renderer issues. Report the exact command, input, stderr and exit status.
+
+## Docs
+
+- [Agent guide](https://raw.githubusercontent.com/wstein/sheetmill/main/docs/agent-guide.md): setup, authoring rules and the check/inspect/build loop
+- [CLI and diagnostic codes](https://raw.githubusercontent.com/wstein/sheetmill/main/docs/cli.md): commands, input selection, exit status and every code (SRC, FM, VAL, MD, ATTR, ID, IO, REN)
+- [Source format](https://raw.githubusercontent.com/wstein/sheetmill/main/docs/format/gfm-plus.md): frontmatter, sections, cards, heading attributes, IDs, spans and the JSON IR
+- [Compatibility boundary](https://raw.githubusercontent.com/wstein/sheetmill/main/docs/format/compatibility.md): what is and is not supported from other formats
+- [Hugo export](https://raw.githubusercontent.com/wstein/sheetmill/main/docs/hugo.md): project layout, URL safety, base path, link rewriting, Pages deployment
+- [Reference import](https://raw.githubusercontent.com/wstein/sheetmill/main/docs/imports.md): provenance flags, loss reports and IMP codes
+- [Live preview security](https://raw.githubusercontent.com/wstein/sheetmill/main/docs/studio-security.md): `smill serve` loopback, bootstrap and request rules
+- [Architecture](https://raw.githubusercontent.com/wstein/sheetmill/main/docs/architecture.md): pipeline and dependency choices
+
+## Code map
+
+- `cmd/smill`: executable entry point; all logic is in `internal/cli.Run`
+- `internal/cli`: Cobra commands, input selection, symlink and size limits, output writing
+- `internal/frontmatter`, `internal/validate`: YAML frontmatter decoding and metadata rules (FM, VAL codes)
+- `internal/markdown`: GFM parsing into sections and cards, attributes and IDs (MD, ATTR, ID codes); golden JSON tests
+- `internal/model`, `internal/diagnostic`: IR types and source spans
+- `internal/importer/reference`: Reference conversion (IMP codes)
+- `internal/render/hugo`: IR to Hugo project, URL safety and theme (REN codes)
+- `internal/studio`: read-only local preview server
+- `schema/cheatsheet.schema.json`: JSON Schema for decoded metadata
+
+## Tests
+
+- `go test ./...`, `go vet ./...` and `gofmt -l .` must pass; Go 1.27.2
+- `SHEETMILL_HUGO=/absolute/path/to/hugo go test ./internal/render/hugo -run TestHugoIntegration` builds with real Hugo 0.167.0
+- Golden IR changes: `go test ./internal/markdown -run TestGolden -update`, then inspect the diff
+- [Browser E2E harness](https://raw.githubusercontent.com/wstein/sheetmill/main/tests/e2e/README.md): pinned Hugo and Chromium reader journeys
+
+## Optional
+
+- [Feature specifications](https://raw.githubusercontent.com/wstein/sheetmill/main/specs/README.md): implemented and planned features with authorization status
+- [Repository](https://github.com/wstein/sheetmill): issues and pull requests
+- [Live demo](https://wstein.github.io/sheetmill/): the example sheets built and deployed from `main`

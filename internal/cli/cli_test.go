@@ -217,3 +217,48 @@ func TestImportUsageOnParseErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestRootHelpPointsAgentsToGuides(t *testing.T) {
+	for _, args := range [][]string{{"--help"}, {"help"}} {
+		var out, errout bytes.Buffer
+		if code := Run(args, &out, &errout); code != 0 {
+			t.Fatal(args, code, errout.String())
+		}
+		for _, want := range []string{"Are you an AI? Use these resources ONLY IF your task specifically asks you to:", agentGuideURL, llmsURL} {
+			if !strings.Contains(out.String(), want) {
+				t.Errorf("%v help lacks %q", args, want)
+			}
+		}
+	}
+	var out bytes.Buffer
+	if Run([]string{"check", "--help"}, &out, &bytes.Buffer{}); strings.Contains(out.String(), "Are you an AI?") {
+		t.Fatal("subcommand help repeats the agent notice")
+	}
+}
+
+// The help URLs name files on main; they must exist in this tree.
+func TestAgentResourcesExist(t *testing.T) {
+	const prefix = "https://raw.githubusercontent.com/wstein/sheetmill/main/"
+	llms, err := os.ReadFile(filepath.Join("..", "..", "llms.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	urls := []string{agentGuideURL, llmsURL}
+	for _, field := range strings.FieldsFunc(string(llms), func(r rune) bool { return r == '(' || r == ')' || r == ' ' || r == '\n' }) {
+		if strings.HasPrefix(field, "https://") {
+			urls = append(urls, field)
+		}
+	}
+	for _, u := range urls {
+		if !strings.HasPrefix(u, prefix) {
+			if strings.HasPrefix(u, "https://github.com/wstein/sheetmill") || strings.HasPrefix(u, "https://wstein.github.io/sheetmill/") {
+				continue
+			}
+			t.Errorf("unexpected external link %s", u)
+			continue
+		}
+		if _, err := os.Stat(filepath.Join("..", "..", filepath.FromSlash(strings.TrimPrefix(u, prefix)))); err != nil {
+			t.Errorf("%s: %v", u, err)
+		}
+	}
+}
