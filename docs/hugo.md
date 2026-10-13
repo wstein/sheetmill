@@ -82,3 +82,15 @@ manual dispatch: it repeats the core checks, exports the demo with
 `--base-path /sheetmill/`, builds with the pinned Hugo and deploys to
 <https://wstein.github.io/sheetmill/> through the `github-pages` environment,
 which accepts `main` only. Other sheets need the 012 redistribution gate first.
+
+
+## Read-only live preview
+
+`smill serve [file-or-directory] --hugo /absolute/path/to/hugo` reuses the same
+Go parser, semantic IR, renderer and pinned Hugo in owned temporary projects.
+Save files externally; the local authenticated browser shows revision state,
+source diagnostics and last-valid output. Trusted Studio assets/publication
+identity are injected into HTTP HTML responses only; exported/generated file
+bytes are unchanged. See [CLI usage](cli.md#local-saved-file-preview),
+[security boundary](studio-security.md) and [actual verification](studio-verification.md).
+No deployment is part of starting a Studio session.

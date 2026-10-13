@@ -4,7 +4,7 @@
     "input": "examples/sheets/smill.md",
     "product": {
       "name": "SheetMill",
-      "revision": "0f87dfb7b2fc5a3269e76f6c6f579cb863e430a3"
+      "revision": "92d64e3965454540e6b7dab2177edc279ed10147"
     },
     "title": "SheetMill CLI",
     "search": {
@@ -20,7 +20,8 @@
       "choose-inputs",
       "exit-status",
       "import-provenance",
-      "inert-examples"
+      "inert-examples",
+      "serve-project"
     ],
     "copy": {
       "card": "build-library",

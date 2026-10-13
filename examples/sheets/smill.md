@@ -4,8 +4,8 @@ category: reference
 tags: [sheetmill, smill, markdown]
 source:
   repository: https://github.com/wstein/sheetmill
-  revision: 0f87dfb7b2fc5a3269e76f6c6f579cb863e430a3
-  path: docs/cli.md
+  revision: 92d64e3965454540e6b7dab2177edc279ed10147
+  path: internal/cli/cli.go
   license: EUPL-1.2
   attribution: SheetMill contributors
   note: Independently authored against implemented CLI commands; examples are inert.
@@ -73,3 +73,15 @@ A written `--out` target must be a new `.md` file. License metadata preserves pr
 - [ ] Review a generated page before sharing it.
 
 Raw HTML is shown escaped and images remain unfetched links with warnings. Source shortcodes, scripts and shell snippets are never executed by the compiler.
+
+
+## Local live preview {#preview}
+### Preview saved files {.col-span-2 #serve-project}
+```sh
+smill serve ./sheets --hugo /absolute/path/to/hugo
+smill serve ./sheets/editor.md --open --port 0
+```
+
+Use installed Hugo 0.167.0. The default selection is the current directory; a file selects only that file. `--port 0` chooses an available IPv4 loopback port. `--open` opens the browser after readiness; a launch failure leaves the printed address available.
+
+The printed bootstrap address is private and usable once. The browser is read-only: save Markdown in your external editor. Pending, invalid, removed and disconnected states are explicit; an invalid save may retain a labeled last-valid preview. No source snippet, PDF, navi command or deployment runs. Interrupt the CLI to close the session and remove its owned temporary output.

@@ -11,7 +11,8 @@ web references, Typst PDFs, and interactive navi commands.
 
 **Status:** foundation, parser, validation, deterministic JSON inspection and
 controlled Reference import and self-contained Hugo project export are implemented.
-Local website generation is supported with pinned Hugo 0.167.0. PDF and navi
+Local website generation and read-only live preview are supported with pinned
+Hugo 0.167.0. PDF and navi
 remain planned for later milestones.
 Try the [live reference demo on GitHub Pages](https://wstein.github.io/sheetmill/).
 The demo is generated from the independently authored example sheets.
@@ -26,10 +27,13 @@ smill check sheet.md
 smill check ./sheets
 smill inspect sheet.md
 smill build hugo ./sheets --out ./new-project
+smill serve ./sheets --open --hugo /absolute/path/to/hugo
 ```
 
 `check` takes explicit files or one-level directories; `inspect` prints versioned
-JSON for exactly one file. Diagnostics go to stderr. See [CLI](docs/cli.md).
+JSON for exactly one file. `serve` watches externally saved files on IPv4
+loopback, with a private one-use bootstrap address and no browser write controls.
+See [Studio security and usage](docs/studio-security.md). Diagnostics go to stderr. See [CLI](docs/cli.md).
 
 ## Source
 
