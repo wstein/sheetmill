@@ -39,5 +39,6 @@ not constitute independent review. Delegation is not required by this policy.
 Original code uses EUPL-1.2 SPDX headers. Keep the full license and provenance.
 Implement compatibility independently; do not copy Reference's GPL implementation,
 styles or authored sheets. The user selected the Editorial Stack direction with coral/periwinkle colors.
-`assets/BRAND.md` governs brand source; the user approved the logo and brand finalization on 2026-10-13.
+`assets/BRAND.md` governs brand source; the user approved the brand specification/direction and authorized final master
+implementation on 2026-10-13. Exact SVG paths and optical variants require review.
 Hugo/local generation is authorized; deployment and later renderer gates remain.
