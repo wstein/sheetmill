@@ -1,6 +1,8 @@
 # 012 — Hosted reference library: base path and publication gate
 
-Created: 2026-10-13 · Status: draft, specification only
+Created: 2026-10-13 · Status: partly authorized (2026-10-13): FR-001/FR-002 base path
+and GitHub Pages deployment of `examples/sheets`; the redistribution gate (FR-004/FR-005)
+remains specification only
 Depends on: 004-hugo-renderer (implemented); content rights of the chosen sheets
 
 ## User scenarios and acceptance

@@ -14,13 +14,18 @@ Sibling repository policies do not govern this repository.
 - Feature 007 MVP T001–T018 and applicable final checks are authorized on
   2026-10-13: one smill sheet, temporary verification executable, Hugo and local
   browser E2E. Later Studio server/editor/sibling stages remain out of scope.
+- Feature 012 is partly authorized (user, 2026-10-13): the base path option and
+  GitHub Pages deployment of the independently authored `examples/sheets` only,
+  to https://wstein.github.io/sheetmill/ from `main` pushes and manual runs. The
+  redistribution gate and other sheets or hosts remain separately gated.
 - Use `codex/` feature branches and Conventional Commits. Topic pushes and draft
   PRs belong to an authorized implementation handoff; otherwise ask before publishing.
 - Merge, tag, release, deploy, distribution builds, PDF generation, artifact
   publication and sibling-repository edits require separate human approval.
   Local Hugo site generation and the approved brand exports are authorized.
 - Do not execute source snippets, fetch source-linked resources, weaken branch
-  protections, add automatic merges or publish artifacts from CI.
+  protections, add automatic merges or publish artifacts from CI, except the
+  authorized Pages deployment above.
 - Unknown source metadata must be preserved or diagnosed, never silently dropped.
 
 ## Implementation and verification

@@ -1,6 +1,7 @@
 # Tasks — 012
 
-- [ ] T001 Resolve open decisions: hosting target, base path, domain, licensed sheets.
+- [x] T001 Resolve open decisions for the first slice: GitHub Pages, base path
+  `/sheetmill/`, no custom domain, only the independently authored `examples/sheets`.
 - [ ] T002 Write failing tests for base path validation and sub-path output.
 - [ ] T003 Implement the base path option; update templates and `app.js`.
 - [ ] T004 Write failing tests for the redistribution gate and allow list.
