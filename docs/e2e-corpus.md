@@ -94,5 +94,15 @@ separate workflow; merging these example files would include them in its library
 
 ## Review
 
-Independent Sol review is pending; findings and exact reviewed revision will be
-recorded before the PR handoff.
+Sol independently reviewed the implementation and pinned source inventories,
+passing 15 helper tests, default 6 browser cases, all-corpus 12 browser cases,
+Go tests/vet and diff checks. Independent output matched the documented 16-file
+digest and all source hashes. No functional, provenance or CI-boundary findings.
+
+A P3 documentation finding identified stale corpus-stage wording in the E2E
+contract/data model. Focused commits reconciled default/all selection, cross-card
+links, required permalink oracles and precise validation timing. Sol re-reviewed
+`6f0e48f09fba1dbc3722111078455c9532c41929`: all findings closed, no remaining
+findings. The final wording-only correction required no runtime test rerun.
+The final review summary is also posted on PR #11; subsequent evidence-only
+updates do not change the tested implementation.
