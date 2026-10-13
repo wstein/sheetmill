@@ -1,0 +1,82 @@
+# E2E harness contract — first slice
+
+Status: design; commands/files below are implemented by tasks, not available yet.
+Maps to US1, FR-001/004/009/010 and SC-001/004/005.
+
+## Invocation and prerequisites
+
+From `tests/e2e`, `npm test -- --project=desktop` runs the complete first journey;
+`npm test` additionally covers mobile and JavaScript-disabled contexts. The package
+is private and has no publish script. Exact Node 24.21.0 and Playwright 1.64.0 are
+checked before running; browser comes from the matching installed Playwright cache.
+`SHEETMILL_HUGO` must be an absolute path to the installed Hugo 0.167.0 executable.
+No download/install is performed by tests; missing prerequisites fail clearly.
+
+MVP `corpus.json` contains exactly `smill`, mapped to `examples/sheets/smill.md`.
+Later US2 adds cases without changing the first journey's assertions or introducing
+runtime dependencies on sibling products. Each case follows [data-model.md](../data-model.md).
+
+## Process and filesystem boundary
+
+Allowed tool invocations are fixed by fixture code:
+
+1. Go tool version and temporary test compilation of `./cmd/smill` (`-trimpath`, no
+   release flags, output in an owned tools directory; never committed/uploaded).
+2. The resulting executable: `version`, `check <selected-source>`, `inspect
+   <selected-source>` and `build hugo <selected-source> --out <new-project>`.
+3. Explicit Hugo executable: `version`, then `--source <owned-project> --destination
+   <owned-public> --clock 2000-01-01T00:00:00Z --noBuildLock --quiet`.
+
+No shell, `bdock`, `whr`, navi, Typst, Docker, source snippet, arbitrary executable
+or user-provided argument string is invoked. Repeated site generation uses distinct
+new directories. Temporary source paths resolve symlinks in system temp roots first,
+so existing strict source-path checks still apply on macOS. The original committed
+sheet is never modified. Cache/environment paths are owned and are not serialized.
+
+The static fixture server binds only `127.0.0.1:0`, serves a generated-file map with
+known MIME types and directory-index routes, disables listings and returns 404 for
+unknown/malformed paths. No request-triggered filesystem traversal. Never reuse
+`127.0.0.1:1313`, an already running server or an installed `smill`.
+
+## Browser journey and oracles
+
+Desktop flow in order:
+
+1. Load generated home; assert title and the single reference link.
+2. Enter the corpus query; assert the expected result and accessible result label.
+3. Press Tab; assert focused result; press Enter; assert the exact card fragment,
+   heading and expected command text.
+4. Seed the clipboard with a sentinel. Click that card's real copy button, read the
+   actual clipboard under permissions scoped to this origin, and compare exact
+   expected multiline bytes. Do not stub clipboard APIs or accept only a toast.
+5. Switch light/dark modes; inspect the actual applied state and reload to prove
+   preference persistence; navigate a stable card link and verify its destination.
+6. Verify attribution, no browser errors, unchanged source and an empty forbidden-
+   request list. Do not execute copied text.
+
+Mobile 390×844 repeats representative content/navigation and measures
+`documentElement.scrollWidth <= documentElement.clientWidth`. A distinct
+`javaScriptEnabled:false` context verifies the real sheet/card content and ordinary
+links, without expecting search/copy/live refresh enhancements. Initial desktop
+viewport is 1280×800. No pixel-baseline test is required for the MVP.
+
+Before any navigation, context routing permits only the exact fixture origin;
+service workers are blocked. Every blocked off-origin request is also recorded
+and fails the test. No general external-origin exception or silent network stub.
+Use semantic locators and auto-retrying assertions; no fixed-duration sleeps.
+
+## Determinism, evidence and cleanup
+
+Before browser interaction, compare two complete sorted public file sets and all
+corresponding bytes. Compare source hashes before and after the full run. Evidence
+is outside both public trees: ignored `.local/e2e/` by default, configurable only
+as a local output path. Logs ≤1 MiB per child; include stage/executable/outcome,
+redacting credentials. Zero retries; traces retained on failure and screenshots
+only on failure. Capture setup logs even if the browser was never launched.
+
+Cleanup always closes owned contexts/listener, stops and awaits only known children
+with bounded escalation, and removes only the fixture's owned temporary trees.
+Keep evidence separately. Interruptions and failed setup are covered by harness
+self-tests. One worker initially; no external reporter, hosted trace viewer or
+artifact upload. CI stores no generated site, executable or evidence as a published
+artifact. Required E2E CI runs all contexts and cannot treat a skip as success.
