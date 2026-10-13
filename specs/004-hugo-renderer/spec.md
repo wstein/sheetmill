@@ -24,6 +24,8 @@ Depends on: accepted core/Reference import (001–003)
   self-contained project. Inputs use existing explicit/nonrecursive boundaries.
 - FR-003: Require a new output directory; refuse existing/symlink destinations and
   duplicate sheet routes. Validate all inputs before writing. No overwrite mode.
+  An IO failure mid-write can leave a partial new project, reported as `IO003`; existing
+  paths are never overwritten or removed.
 - FR-004: Render supported GFM semantics, readable code, task state and table alignment.
   Escape HTML, text, attrs and URLs; allow only relative/http/https/mailto links.
 - FR-005: Keep deterministic source/project/search bytes independent of input order,
@@ -40,7 +42,8 @@ Depends on: accepted core/Reference import (001–003)
 
 ## Success criteria
 
-Semantic and negative tests pass. New-output boundaries preserve existing files.
+Semantic and negative tests pass. New-output boundaries preserve existing files, including after an injected
+mid-write IO failure (partial new project reported as `IO003`).
 Project and actual Hugo output hashes match across repeated generation. Local site
 is visually checked at desktop/mobile, with search/navigation exercised. a separately assigned independent reviewer (recorded in docs/hugo-verification.md)
 reviews the exact final revision; findings are fixed and re-reviewed. Human approval
