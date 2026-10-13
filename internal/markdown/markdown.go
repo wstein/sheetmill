@@ -17,6 +17,7 @@ import (
 	"github.com/yuin/goldmark/extension"
 	east "github.com/yuin/goldmark/extension/ast"
 	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/util"
 )
 
 const MaxSourceBytes = 8 << 20
@@ -153,7 +154,7 @@ func heading(h *ast.Heading, body []byte, cv converter, span diagnostic.Span) (s
 		tailStart = t.Segment.Start
 	}
 	open := strings.LastIndex(tail, "{")
-	if open < 0 {
+	if open < 0 || escapedPunctuation(tail, open) {
 		return strings.TrimSpace(title), a, nil
 	}
 	suffix := strings.TrimSpace(tail[open:])
@@ -165,8 +166,16 @@ func heading(h *ast.Heading, body []byte, cv converter, span diagnostic.Span) (s
 	bad := func(code, msg string) (string, attributes, []diagnostic.Diagnostic) {
 		return "", a, []diagnostic.Diagnostic{{Code: code, Message: msg, Span: attrSpan}}
 	}
-	if strings.Contains(tail[:open], "{.") || strings.Contains(tail[:open], "{#") {
-		return bad("ATTR001", "use one trailing heading attribute group")
+	for before := 0; before < open; {
+		relative := strings.IndexByte(tail[before:open], '{')
+		if relative < 0 {
+			break
+		}
+		at := before + relative
+		if at+1 < open && !escapedPunctuation(tail, at) && (tail[at+1] == '.' || tail[at+1] == '#') {
+			return bad("ATTR001", "use one trailing heading attribute group")
+		}
+		before = at + 1
 	}
 	if !strings.HasSuffix(suffix, "}") || strings.Count(suffix, "{") != 1 || strings.Count(suffix, "}") != 1 {
 		return bad("ATTR001", "malformed heading attributes; expected {.class #id}")
@@ -213,13 +222,24 @@ func heading(h *ast.Heading, body []byte, cv converter, span diagnostic.Span) (s
 	title = strings.TrimSpace(strings.TrimSuffix(title, tail[open:]))
 	return title, a, nil
 }
+func escapedPunctuation(s string, index int) bool {
+	slashes := 0
+	for i := index - 1; i >= 0 && s[i] == '\\'; i-- {
+		slashes++
+	}
+	return slashes%2 == 1
+}
 func plain(n ast.Node, b []byte) string {
 	var out strings.Builder
 	var walk func(ast.Node)
 	walk = func(n ast.Node) {
 		switch x := n.(type) {
 		case *ast.Text:
-			out.Write(x.Value(b))
+			if x.IsRaw() {
+				out.Write(x.Value(b))
+			} else {
+				out.Write(util.UnescapePunctuations(x.Value(b)))
+			}
 		case *ast.String:
 			out.Write(x.Value)
 		case *ast.AutoLink:
