@@ -16,3 +16,5 @@
 /* Inputs retain a visible boundary and readable placeholder in both themes. */
 .sidebar input{border-color:var(--muted)}
 .sidebar input::placeholder{color:var(--muted);opacity:1}
+/* Follow the system scheme before app.js runs, or without it; an explicit choice wins. */
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#2C3140;--surface:#343B50;--text:#F7F8FC;--muted:#D0D5E5;--line:#5F6678;--accent:#F7F8FC;--link:#E9ECFF;--wash:#40485E;--code:#40485E;color-scheme:dark}:root:not([data-theme=light]) .logo-light{display:none!important}:root:not([data-theme=light]) .logo-dark{display:block!important}}
