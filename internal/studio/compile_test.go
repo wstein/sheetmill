@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -30,6 +32,12 @@ func TestMain(m *testing.M) {
 			}
 		}
 		source, destination := args[1], args[3]
+		if _, err := os.Stat(filepath.Join(source, "hold-test-publisher")); err == nil {
+			signal.Ignore(syscall.SIGTERM)
+			for {
+				time.Sleep(time.Hour)
+			}
+		}
 		os.MkdirAll(destination, 0700)
 		os.WriteFile(filepath.Join(destination, "index.html"), []byte("<!doctype html><html><head></head><body>Generated</body></html>"), 0600)
 		input, _ := os.ReadFile(filepath.Join(source, "data/sheets/one.json"))
@@ -103,5 +111,28 @@ func TestPublisherEnvironmentArgumentsAndCancellation(t *testing.T) {
 	f.Close()
 	if _, e := treeSize(root, maxGenerated); e == nil {
 		t.Fatal("oversized generation accepted")
+	}
+}
+
+func TestRendererErrorsStayPerSheet(t *testing.T) {
+	snap := Snapshot{Entries: []Entry{{Name: "one.md", Bytes: []byte(validSource + "[unsafe](javascript:alert(1))")}, {Name: "peer.md", Bytes: []byte(validSource)}}}
+	b := compile(context.Background(), testTool(t), t.TempDir(), 1, snap, nil, 0)
+	if b.Error != "" || b.Sheets[0].Status != "invalid" || len(b.Sheets[0].Diagnostics) == 0 || b.Sheets[1].Status != "current" {
+		t.Fatalf("renderer failure blocked peers: %+v", b)
+	}
+}
+
+func TestPublisherCancellationEscalatesOnlyOwnedChild(t *testing.T) {
+	root := t.TempDir()
+	os.WriteFile(filepath.Join(root, "hold-test-publisher"), nil, 0600)
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	args := []string{"--source", root, "--destination", filepath.Join(root, "public"), "--clock", "2000-01-01T00:00:00Z", "--noBuildLock", "--quiet"}
+	if runTool(ctx, testTool(t), args, root, false, maxGenerated) == nil {
+		t.Fatal("resistant publisher succeeded")
+	}
+	if time.Since(start) > 3*time.Second {
+		t.Fatal("cancellation exceeded owned escalation deadline")
 	}
 }
