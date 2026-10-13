@@ -125,9 +125,9 @@ BundleDock provenance and zero off-origin resource requests.
 
 ### Source disclosure presentation
 
-Rendered pages keep attribution and license visible in a compact footer. Full
-source metadata, including unknown fields, remains escaped and intact inside a
-collapsed **Full source metadata** disclosure. The native disclosure works without
+Rendered pages show attribution, license and **Source details** together in one
+compact disclosure summary, wrapping only when needed. Full source metadata,
+including unknown fields, and the rights note remain inside the closed disclosure. The native disclosure works without
 JavaScript. The generated **Edit on GitHub** action appears alongside the reference
 navigation, with an accessible label identifying the cheatsheet edit destination.
 Neither presentation changes cheatsheet Markdown or provenance values.

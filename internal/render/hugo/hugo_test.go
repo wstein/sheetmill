@@ -597,7 +597,7 @@ func TestCompactProvenance(t *testing.T) {
 		t.Fatal(ds)
 	}
 	b := body(t, p, "test")
-	for _, want := range []string{`<dl class="source-facts">`, `<dt>Attribution</dt><dd>Contributors &lt;safe&gt;</dd>`, `<dt>License</dt><dd>EUPL-1.2</dd>`, `<details class="source-details"><summary>Full source metadata</summary>`, `&#34;retained&#34;: true`} {
+	for _, want := range []string{`<details class="source-details"><summary><span class="source-facts">Contributors &lt;safe&gt;</span>`, `<span class="source-facts">EUPL-1.2</span>`, `Source details</summary>`, `&#34;retained&#34;: true`} {
 		if !strings.Contains(b, want) {
 			t.Errorf("missing %q", want)
 		}
