@@ -247,6 +247,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 					class += " " + c
 				}
 				fmt.Fprintf(&b, `<article class="%s" id="ref-%s"><h3>%s <a class="permalink" href="#ref-%s" aria-label="Permalink to %s">#</a></h3>`, esc(class), esc(card.ID), r.heading(card.Heading), esc(card.ID), esc(card.Title))
+				r.keys = slices.Contains(card.Classes, "keys")
 				// Card kinds carry a visible text label, never colour alone.
 				for _, kind := range []string{"warning", "tip", "note"} {
 					if slices.Contains(card.Classes, kind) {
@@ -255,6 +256,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 					}
 				}
 				r.nodes(&b, card.Content, false)
+				r.keys = false
 				b.WriteString(`</article>`)
 				index = append(index, entry{Title: card.Title, Sheet: title, Section: section.Title, Text: plain(card.Content), URL: base + s.ID + "/#ref-" + card.ID, Tags: tags, Category: category, License: license})
 			}
@@ -408,6 +410,7 @@ func sourceText(value any, key bool) (string, error) {
 
 type renderer struct {
 	inLink           bool
+	keys, keyCell    bool // inside a .keys card; inside its first table column
 	routes           map[string]string
 	self, path, base string
 	source           string
@@ -475,6 +478,10 @@ func (r *renderer) node(b *strings.Builder, n model.Node, header bool) {
 	case "ThematicBreak":
 		b.WriteString("<hr>")
 	case "CodeSpan":
+		if r.keyCell && !header {
+			b.WriteString(keys(n))
+			return
+		}
 		wrap("code")
 	case "Emphasis":
 		if n.Properties["level"] == 2 {
@@ -499,7 +506,13 @@ func (r *renderer) node(b *strings.Builder, n model.Node, header bool) {
 		r.nodes(b, n.Children, true)
 		b.WriteString("</tr></thead>")
 	case "TableRow":
-		wrap("tr")
+		b.WriteString("<tr>")
+		for i, cell := range n.Children {
+			r.keyCell = r.keys && i == 0
+			r.node(b, cell, header)
+		}
+		r.keyCell = false
+		b.WriteString("</tr>")
 	case "TableCell":
 		tag := "td"
 		if header {
@@ -625,6 +638,23 @@ func (r *renderer) repositoryURL(joined string, link *url.URL) (string, bool) {
 	}
 	resolved := url.URL{Scheme: base.Scheme, Host: base.Host, Path: target, RawQuery: link.RawQuery, Fragment: link.Fragment}
 	return resolved.String(), true
+}
+
+// keys renders a key-table code span as keyboard input; "Ctrl+C" becomes a
+// combination of two keys, while "+" alone stays one key.
+func keys(n model.Node) string {
+	var text strings.Builder
+	for _, c := range n.Children {
+		text.WriteString(c.Text)
+	}
+	parts := strings.Split(text.String(), "+")
+	if len(parts) == 1 || slices.Contains(parts, "") {
+		return "<kbd>" + esc(text.String()) + "</kbd>"
+	}
+	for i, part := range parts {
+		parts[i] = "<kbd>" + esc(part) + "</kbd>"
+	}
+	return "<kbd>" + strings.Join(parts, "+") + "</kbd>"
 }
 
 // labeled reports visible label content: text, or an image rendered as a reference.

@@ -1008,3 +1008,26 @@ func TestLicenseInSearchAndLibrary(t *testing.T) {
 		t.Fatal("home cards must show the license")
 	}
 }
+
+func TestKeyTables(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### Keys {.keys}\n| Key | Action |\n| --- | --- |\n| `Ctrl+C` | Copy `text` |\n| `+` | Zoom |\n| `<Esc>` | Leave |\n\nUse `Ctrl+V` too.\n### Plain\n| Key | Action |\n| --- | --- |\n| `Ctrl+C` | Copy |\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "test")
+	for _, want := range []string{
+		`<td><kbd><kbd>Ctrl</kbd>+<kbd>C</kbd></kbd></td>`,
+		`<td>Copy <code>text</code></td>`,
+		`<td><kbd>+</kbd></td>`,
+		`<td><kbd>&lt;Esc&gt;</kbd></td>`,
+		`Use <code>Ctrl+V</code> too.`,
+		`<th>Key</th>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Error(want, got)
+		}
+	}
+	if strings.Count(got, "<kbd>") != 5 {
+		t.Error("only first-column code in .keys cards becomes keys", got)
+	}
+}

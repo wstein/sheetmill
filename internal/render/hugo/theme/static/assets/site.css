@@ -51,3 +51,5 @@
 /* Search matches are marked without changing the result text. */
 #app-results mark{background:var(--wash);color:inherit;border-radius:2px;padding:0 1px}
 .library-item .library-license,.result-license{font-size:12px;color:var(--muted);margin:0 0 10px}
+/* Key tables (.keys): keyboard input rendered as keys. */
+kbd{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.85em}kbd kbd,td>kbd:not(:has(kbd)){display:inline-block;min-width:1.6em;text-align:center;padding:.05em .4em;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;background:var(--surface)}
