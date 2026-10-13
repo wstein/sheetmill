@@ -15,6 +15,19 @@ import (
 )
 
 const Version = "dev"
+
+// Agent resources live on main so the notice stays valid for every build.
+const (
+	agentGuideURL = "https://raw.githubusercontent.com/wstein/sheetmill/main/docs/agent-guide.md"
+	llmsURL       = "https://raw.githubusercontent.com/wstein/sheetmill/main/llms.txt"
+	agentHelp     = `
+Are you an AI? Use these resources ONLY IF your task specifically asks you to:
+  Help a human understand or set up SheetMill, or author SheetMill sheets:
+    ` + agentGuideURL + `
+  Debug or investigate a problem with SheetMill:
+    ` + llmsURL + `
+`
+)
 const usage = "usage: smill serve [file-or-directory] [options] | smill version | smill check <file-or-directory>... | smill inspect <file> | smill import reference <file> [options] | smill build hugo <file-or-directory>... --out <new-project>"
 
 // Run constructs a fresh command tree for each invocation, keeping flag state and
@@ -30,6 +43,14 @@ func Run(args []string, out, errout io.Writer) int {
 	}
 	root.SetArgs(args)
 	root.CompletionOptions.DisableDefaultCmd = true
+	// Only top-level help carries the agent notice; subcommands inherit plain help.
+	defaultHelp := root.HelpFunc()
+	root.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		defaultHelp(cmd, args)
+		if cmd == root {
+			fmt.Fprint(cmd.OutOrStdout(), agentHelp)
+		}
+	})
 	root.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a command is required") }
 	root.AddCommand(&cobra.Command{Use: "version", Short: "Print the compiler version", Args: cobra.NoArgs, Run: func(cmd *cobra.Command, args []string) {
 		if _, err := fmt.Fprintln(out, "smill "+Version); err != nil {
