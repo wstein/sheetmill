@@ -1,5 +1,7 @@
 # SheetMill
 
+![SheetMill — One source. Every reference.](assets/banner.svg)
+
 [![CI](https://github.com/wstein/sheetmill/actions/workflows/check.yml/badge.svg)](https://github.com/wstein/sheetmill/actions/workflows/check.yml)
 [![Go version](https://img.shields.io/badge/Go-1.27.2-00ADD8?logo=go&logoColor=white)](go.mod)
 [![License: EUPL-1.2](https://img.shields.io/badge/license-EUPL--1.2-blue)](LICENSE)
@@ -8,8 +10,9 @@ Git-native cheatsheet compiler. Turn Markdown and YAML frontmatter into beautifu
 web references, Typst PDFs, and interactive navi commands.
 
 **Status:** foundation, parser, validation, deterministic JSON inspection and
-controlled Reference import are implemented. Web, PDF and navi output are planned
-for later milestones.
+controlled Reference import and self-contained Hugo project export are implemented.
+Local website generation is supported with pinned Hugo 0.167.0. PDF and navi
+remain planned for later milestones.
 Nothing in a source sheet is executed.
 
 The CLI executable is `smill`. Go **1.27.2** is the pinned development toolchain.
@@ -20,6 +23,7 @@ smill version
 smill check sheet.md
 smill check ./sheets
 smill inspect sheet.md
+smill build hugo ./sheets --out ./new-project
 ```
 
 `check` takes explicit files or one-level directories; `inspect` prints versioned
@@ -49,18 +53,20 @@ with provenance and deterministic loss reports. It never overwrites an existing 
 Read the [source format](docs/format/gfm-plus.md), [compatibility boundary](docs/format/compatibility.md),
 [architecture](docs/architecture.md), and [three branding proposals](docs/brand-options.md).
 The selected direction is Editorial Stack with coral/periwinkle colors; see the
-[brand guide and SVG candidates](assets/BRAND.md). Final geometry awaits visual approval. See [rated recommendations](docs/recommendations.md).
+[brand guide and finalized masters](assets/BRAND.md), with an extended
+[visual review board](assets/preview.svg). See [rated recommendations](docs/recommendations.md).
 
 ## Development
 
 ```sh
-gofmt -w cmd internal
+gofmt -w cmd internal assets
 go test ./...
 go vet ./...
 ```
 
 Tests compile temporary test executables; no distribution binary is produced.
-Goldmark supplies GFM parsing and the YAML organization supplies YAML decoding;
+[Local Hugo generation](docs/hugo.md) describes the explicit export/build workflow.
+The CLI uses Cobra **v1.10.2**. Goldmark supplies GFM parsing and the YAML organization supplies YAML decoding;
 [dependency and license provenance](docs/provenance.md) explains these choices.
 
 SheetMill has no runtime dependency on BundleDock, WorkHarbor or CrewBook.
