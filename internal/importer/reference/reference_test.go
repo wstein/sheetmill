@@ -78,6 +78,7 @@ func TestInvalidProvenance(t *testing.T) {
 		})
 	}
 }
+
 // Unsupported classes are archived (TestLegacyMapping); malformed or
 // conflicting groups that remain still fail before anything is written.
 func TestUnsupportedFails(t *testing.T) {
