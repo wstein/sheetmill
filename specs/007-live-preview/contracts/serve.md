@@ -1,11 +1,12 @@
-# Later-stage local serve contract
+# Implemented read-only local serve contract
 
-Not an MVP prerequisite. Maps to US3–US5; no implementation is authorized by this
-design document. The one-sheet static publishing journey must pass first.
+Maps to US3–US5, implemented after the MVP/US2 gates under separate user
+authorization on 2026-10-13 (T019–T041). This contract records that increment;
+editor, PDF/navi, playground, deployment and T049 measurements remain outside it.
 
 ## CLI
 
-Proposed form: `smill serve [file-or-directory] [--open] [--port <0..65535>]
+Implemented form: `smill serve [file-or-directory] [--open] [--port <0..65535>]
 [--hugo <absolute-executable>]`.
 
 - Cobra parses at most one selection. Default selection is current directory,
@@ -31,9 +32,9 @@ privacy. Reject unrelated/null origins and cross-site embedding; no permissive C
 Direct top-level navigation without an Origin is allowed only under session auth
 (or for the non-sensitive bootstrap response below).
 
-Proposed bootstrap: a cryptographically random 32-byte one-use secret in a CLI-
+Implemented bootstrap: a cryptographically random 32-byte one-use secret in a CLI-
 issued bootstrap URL. Successful top-level bootstrap consumes it, sets a random
-HttpOnly SameSite=Strict session cookie, and redirects to the clean local root.
+HttpOnly SameSite=Strict session cookie with a port-specific name, and redirects to the clean local root.
 Bootstrap responses carry `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
 Never include private source or credentials in unauthenticated bootstrap errors.
 Session cookie auth and exact origin/host checks protect all preview/assets/state/
@@ -55,7 +56,7 @@ are selection-relative; host paths remain terminal-only.
 Trusted Studio client/status assets are under `/studio/`; private JSON state is
 `GET /studio/state`, events `GET /studio/events`. Generated site pages/assets retain
 their root routes. In HTTP HTML responses only, add the trusted local Studio client
-script; generated files remain unchanged. Client adds fixed status chrome with
+script; generated files remain unchanged. Trusted HTML script attributes identify the served publication. Client adds fixed status chrome with
 `textContent`/DOM APIs, never inserts diagnostic/source strings as HTML. Content
 namespace remains `ref-`, existing app IDs remain `app-`, Studio IDs use `studio-`.
 Use `nosniff`, no-referrer, no-store private responses and a restrictive local-only
@@ -64,7 +65,7 @@ user-activated external links remain navigation, not automatic resource fetching
 
 ## State and events
 
-State includes session sequence, selected sheet IDs/titles, per-sheet status,
+State includes monotonic state version, source sequence, selected sheet IDs/titles, per-sheet status,
 source-relative diagnostics with spans, published revision and connectivity. It
 contains no session credentials, raw unselected files or canonical schema additions.
 
@@ -92,7 +93,7 @@ escalation limited to the known owned Hugo process.
 
 ## Validation
 
-Before enabling this stage, failing Go/HTTP tests cover scope, origin/host/token
+Go/HTTP regressions and browser tests cover scope, origin/host/token
 checks, all request methods, resource ceilings, cancellation/order and cleanup.
 Extend the same browser harness with saved changes, invalid→repaired source,
 rapid saves, disconnect/reconnect and atomic/symlink replacement. Measure live

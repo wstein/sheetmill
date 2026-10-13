@@ -44,7 +44,25 @@ never upload traces, generated sites or executables. Teardown removes only owned
 temporary trees and closes owned contexts/listeners/children. One worker avoids
 clipboard interference; zero retries keeps failures visible.
 
-This implements the 007 MVP and US2 corpus increment. `serve`, PDF, navi and
+This implements the 007 MVP and US2 corpus increment. `serve` is covered separately below; PDF, navi and
 playgrounds remain deferred. CI runs default and explicit all-corpus suites,
 without publishing artifacts or deploying. See `docs/e2e-corpus.md` for pinned
 product identities; no sibling executable is needed on PATH. See `docs/e2e-verification.md` for actual results.
+
+
+## Authenticated Studio journeys
+
+`npm run test:studio` runs the real read-only `smill serve` with installed pinned
+Hugo in desktop/mobile contexts. Six scenarios per viewport include saved-file
+updates, parser/renderer failures and repair, peers, atomic replacement/removal,
+100 rapid-save sequences, same-port restart, disconnect/reconnect, source scope,
+inert variants, first-state freshness and isolated failed-state-request recovery.
+
+The server executable is the same owned temporary CLI from the existing tools
+fixture. Browser bootstrap is consumed with fixed Node HTTP request headers;
+cookies stay in memory and startup stdout is never retained. Browser history and
+failure screenshots contain only the clean local origin. Studio configuration
+sets tracing **off**, including failures, because authenticated traces can expose
+cookies. Every browser request still obeys the exact-origin guard. No artifact
+upload or deployment step is added. See `docs/studio-verification.md` and
+`docs/studio-security.md`; this suite does not claim T049 performance/usability.

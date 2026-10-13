@@ -1,9 +1,9 @@
-# Quickstart validation — 007 MVP
+# Quickstart validation — 007 publishing and read-only Studio
 
-The one-sheet automated GFM → CLI → Hugo → browser MVP is implemented. The
-private E2E package, three independently authored sheets and CI job exist; the `serve` command and later
-server stages do not. Current commands below run only the MVP, with no PDF, navi or
-publication. See [actual evidence](../../docs/e2e-verification.md).
+The one-sheet GFM → CLI → Hugo → browser MVP, US2 corpus and read-only
+`smill serve` increments are implemented. No PDF, navi, browser editor or
+playground is implemented. See [publishing evidence](../../docs/e2e-verification.md)
+and [Studio checks/gaps](../../docs/studio-verification.md).
 
 ## Prerequisites
 
@@ -77,17 +77,18 @@ only. Those product binaries are not installed/invoked by the harness. The share
 journeys verify cross-sheet/card links, search, exact copy and attribution.
 See [corpus identities and evidence](../../docs/e2e-corpus.md).
 
-## Later server stages, separately selected
+## Read-only saved-file Studio: implemented
 
-After the server-stage tasks, from a worktree root:
+From a worktree root, with installed pinned Hugo:
 
 ```sh
 go run ./cmd/smill serve examples/sheets/smill.md --open --hugo /absolute/path/to/hugo
 ```
 
 Save changes from an external editor. Observe new content, then invalid-source
-diagnostics, repair, reconnect and latest-save behavior. This proposed command is
-not part of the first slice. The browser remains read-only. Run the later studio
-journeys and Go security/lifecycle tests described in [serve.md](contracts/serve.md).
-Measure SC-002 on the documented workstation and SC-006 with five authors; do not
-claim those outcomes from the static first-slice journey.
+diagnostics, repair, reconnect and latest-save behavior. This command belongs to the separately authorized read-only server increment. The browser remains read-only. Run `npm run test:studio` from `tests/e2e` for authenticated desktop/mobile
+journeys; traces are disabled. The same installed-tool prerequisites apply.
+Use `SHEETMILL_HUGO=/absolute/path/to/hugo go test -race ./internal/studio` for
+Go security/lifecycle/integration tests described in [serve.md](contracts/serve.md).
+SC-002/SC-003 performance and SC-006 five-author usability remain unmeasured;
+T049 is deliberately unchecked.

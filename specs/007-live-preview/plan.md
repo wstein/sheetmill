@@ -8,7 +8,9 @@
 
 **Implementation status (2026-10-13)**: the user authorized and the branch implements
 T001–T018 plus MVP final checks, followed by separately authorized US2
-T042–T046 and its final checks. Studio server/editor stages remain planned.
+T042–T046 and its final checks, then separately authorized T019–T041.
+Read-only Studio server stages are implemented; editor/playground stages remain
+planned and T049 performance/usability is unmeasured.
 See [verification](../../docs/e2e-verification.md).
 
 Deliver one real `smill` reference through actual CLI validation/inspection/export,

@@ -116,3 +116,14 @@ loader before implementation, then passing with explicit selection and cross-car
 validation. Additional permalink validation rejects a missing oracle before a
 browser journey begins. Source/CI and final documentation receive independent
 Sol review; exact review results are recorded in the corpus evidence document.
+
+
+## Read-only Studio increment
+
+T019–T041 were subsequently authorized and implemented. See
+[Studio verification](studio-verification.md) for actual Go/browser results,
+review fixes and updated sheet hashes, and [security boundary](studio-security.md)
+for tested request/source/process constraints. The source-relative diagnostic and
+freshness journeys run against the real `smill serve`, compiler and installed
+Hugo. The original static MVP/US2 evidence above remains historical; Studio did
+not add PDF, navi, browser editing or deployment. T049 remains unmeasured.
