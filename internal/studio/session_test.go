@@ -117,3 +117,46 @@ func TestInvalidStartupAndActualHugo(t *testing.T) {
 		t.Fatal("actual Hugo omitted source")
 	}
 }
+
+func TestStreamCeilingAndShutdown(t *testing.T) {
+	path := fixture(t, "one.md", validSource)
+	s, e := Start(context.Background(), Options{Input: path, Hugo: testTool(t)})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	jar, _ := cookiejar.New(nil)
+	client := &http.Client{Jar: jar}
+	r, e := client.Get(s.BootstrapURL())
+	if e != nil {
+		t.Fatal(e)
+	}
+	r.Body.Close()
+	var streams []*http.Response
+	for i := 0; i < 8; i++ {
+		r, e := client.Get(s.gate.origin + "/studio/events")
+		if e != nil {
+			t.Fatal(e)
+		}
+		if r.StatusCode != 200 {
+			t.Fatal(r.StatusCode)
+		}
+		streams = append(streams, r)
+	}
+	defer func() {
+		for _, r := range streams {
+			r.Body.Close()
+		}
+	}()
+	r, e = client.Get(s.gate.origin + "/studio/events")
+	if e != nil {
+		t.Fatal(e)
+	}
+	r.Body.Close()
+	if r.StatusCode != 429 {
+		t.Fatal("stream limit", r.StatusCode)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
