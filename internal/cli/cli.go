@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -48,7 +49,9 @@ func Run(args []string, out, errout io.Writer) int {
 	}
 	imports := &cobra.Command{Use: "import", Short: "Convert existing reference sheets"}
 	imports.AddCommand(referenceCommand(out, errout, &status))
-	imports.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("an import format is required") }
+	imports.RunE = func(cmd *cobra.Command, args []string) error {
+		return usageError{fmt.Errorf("an import format is required"), importUsage}
+	}
 	root.AddCommand(imports)
 	root.AddCommand(buildCommand(out, errout, &status))
 	executeErr := root.Execute()
@@ -57,11 +60,24 @@ func Run(args []string, out, errout io.Writer) int {
 		return 2
 	}
 	if err := executeErr; err != nil {
-		fmt.Fprintf(errout, "%v\n%s\n", err, usage)
+		text := usage
+		var u usageError
+		if errors.As(err, &u) {
+			text = u.usage
+		}
+		fmt.Fprintf(errout, "%v\n%s\n", err, text)
 		return 2
 	}
 	return status
 }
+
+// usageError selects the command-specific usage printed with a parse error.
+type usageError struct {
+	error
+	usage string
+}
+
+func (e usageError) Unwrap() error { return e.error }
 
 func runSources(command string, args []string, out, errout io.Writer) int {
 	fail := func(message string) int { fmt.Fprintln(errout, message); return 2 }
