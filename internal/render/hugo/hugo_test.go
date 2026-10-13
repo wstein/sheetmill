@@ -4,6 +4,7 @@ package hugo
 import (
 	"bytes"
 	"encoding/json"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -294,5 +295,23 @@ func TestDuplicateRouteReportsEverySource(t *testing.T) {
 	}
 	if !sources["Same.md"] || !sources["same.md"] {
 		t.Fatal(ds)
+	}
+}
+
+type failingFS struct{}
+
+func (failingFS) Open(string) (fs.File, error) { return nil, fs.ErrPermission }
+
+func TestEmbeddedAssetFailureIsFatal(t *testing.T) {
+	for name, set := range map[string]*fs.FS{"theme": &themeFiles, "brand": &brandFiles} {
+		t.Run(name, func(t *testing.T) {
+			previous := *set
+			*set = failingFS{}
+			defer func() { *set = previous }()
+			p, ds := Render([]Sheet{sheet(t, "test", "Intro.")}, Options{})
+			if len(ds) == 0 || ds[0].Code != "REN001" || len(p.Files) > 0 {
+				t.Fatal(ds, len(p.Files))
+			}
+		})
 	}
 }

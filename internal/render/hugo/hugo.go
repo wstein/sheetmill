@@ -28,6 +28,9 @@ const Version = "0.167.0"
 //go:embed theme
 var theme embed.FS
 
+// Embedded sources are variables so tests can prove read failures are fatal.
+var themeFiles, brandFiles fs.FS = theme, brand.Files
+
 type Sheet struct {
 	ID, SourceName string
 	Document       *model.Document
@@ -174,26 +177,25 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if err := putJSON("hugo.json", config); err != nil {
 		panic(err)
 	} // strings and literals only
-	putJSON("data/library.json", pages)
-	putJSON("static/search.json", index)
-	fs.WalkDir(theme, "theme", func(name string, d fs.DirEntry, e error) error {
-		if e != nil {
+	// Every remaining file is required; never return a partial project.
+	copyTree := func(files fs.FS, from, to string) error {
+		return fs.WalkDir(files, from, func(name string, d fs.DirEntry, e error) error {
+			if e != nil || d.IsDir() {
+				return e
+			}
+			b, e := fs.ReadFile(files, name)
+			if from != "." {
+				name = strings.TrimPrefix(name, from+"/")
+			}
+			p.Files[path.Join(to, name)] = b
 			return e
-		}
-		if !d.IsDir() {
-			p.Files[strings.TrimPrefix(name, "theme/")], e = theme.ReadFile(name)
-		}
-		return e
-	})
-	fs.WalkDir(brand.Files, ".", func(name string, d fs.DirEntry, e error) error {
+		})
+	}
+	for _, e := range []error{putJSON("data/library.json", pages), putJSON("static/search.json", index), copyTree(themeFiles, "theme", ""), copyTree(brandFiles, ".", "static/brand")} {
 		if e != nil {
-			return e
+			return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN001", Message: "project assembly failed: " + e.Error()}})
 		}
-		if !d.IsDir() {
-			p.Files["static/brand/"+name], e = brand.Files.ReadFile(name)
-		}
-		return e
-	})
+	}
 	return p, nil
 }
 
