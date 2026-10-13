@@ -25,8 +25,9 @@ pinned in `go.mod`/`go.sum`; no sibling project package is imported.
 Future renderers consume IR and must establish their own layout and escaping
 contracts. The Hugo renderer consumes the semantic IR directly and exports a complete
 project; it never reparses original Markdown. See [Hugo contracts](hugo.md).
-Navi command validation/export is a separate future phase; `.navi` currently only
-records author intent.
+The navi renderer (`internal/render/navi`, [navi export](navi.md)) likewise consumes
+the IR: a card is exported only when it carries `.navi` and an explicit ID, and the
+package can neither execute commands nor use the network.
 
 Go 1.27.2 was selected after checking Go release support and sibling policy on
 2026-10-13. BundleDock pins that toolchain; WorkHarbor tests it alongside 1.26.9.
