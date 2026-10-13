@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wstein/sheetmill/internal/markdown"
+	"github.com/wstein/sheetmill/internal/model"
 	"github.com/wstein/sheetmill/internal/render/hugo"
 )
 
@@ -28,17 +29,32 @@ func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	command.Flags().StringVar(&sourceBase, "source-base-url", "", "GitHub blob URL of the selection root; other relative links resolve to repository files")
 	command.MarkFlagRequired("out")
 	build.AddCommand(command)
+	build.AddCommand(naviCommand(out, errout, status))
 	build.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a renderer is required") }
 	return build
 }
-func runHugo(args []string, destination string, options hugo.Options, out, errout io.Writer) int {
+
+// selection is the parsed input of a build: sorted files, their parsed documents and
+// the source paths behind each basename, for resolving renderer issues.
+type selection struct {
+	files       []loadedFile
+	sourcePaths map[string][]string
+}
+type loadedFile struct {
+	name, relative string
+	document       *model.Document
+}
+
+// loadSelection reads and parses every selected file, printing diagnostics. The
+// returned status is nonzero when the build must stop (1 invalid, 2 IO).
+func loadSelection(args []string, errout io.Writer) (selection, int) {
 	seen := map[string]bool{}
 	var files []string
 	for _, arg := range args {
 		paths, err := inputs(arg, true)
 		if err != nil {
 			fmt.Fprintf(errout, "%s:1:1: IO001: %v\n", arg, err)
-			return 2
+			return selection{}, 2
 		}
 		for _, path := range paths {
 			if !seen[path] {
@@ -50,14 +66,13 @@ func runHugo(args []string, destination string, options hugo.Options, out, errou
 	sort.Strings(files)
 	root := commonDir(files)
 	// Render identifies sheets by basename; one basename may name several paths.
-	sourcePaths := map[string][]string{}
-	var sheets []hugo.Sheet
+	sel := selection{sourcePaths: map[string][]string{}}
 	invalid := false
 	for _, path := range files {
 		b, err := read(path)
 		if err != nil {
 			fmt.Fprintf(errout, "%s:1:1: IO001: %v\n", path, err)
-			return 2
+			return selection{}, 2
 		}
 		document, ds := markdown.Parse(b)
 		for _, d := range ds {
@@ -65,12 +80,24 @@ func runHugo(args []string, destination string, options hugo.Options, out, errou
 			invalid = true
 		}
 		name := filepath.Base(path)
-		sourcePaths[name] = append(sourcePaths[name], path)
+		sel.sourcePaths[name] = append(sel.sourcePaths[name], path)
 		relative, _ := filepath.Rel(root, path)
-		sheets = append(sheets, hugo.Sheet{ID: sheetID(name), SourceName: name, Path: filepath.ToSlash(relative), Document: document})
+		sel.files = append(sel.files, loadedFile{name, filepath.ToSlash(relative), document})
 	}
 	if invalid {
-		return 1
+		return selection{}, 1
+	}
+	return sel, 0
+}
+func runHugo(args []string, destination string, options hugo.Options, out, errout io.Writer) int {
+	sel, status := loadSelection(args, errout)
+	if status != 0 {
+		return status
+	}
+	sourcePaths := sel.sourcePaths
+	var sheets []hugo.Sheet
+	for _, f := range sel.files {
+		sheets = append(sheets, hugo.Sheet{ID: sheetID(f.name), SourceName: f.name, Path: f.relative, Document: f.document})
 	}
 	project, ds := hugo.Render(sheets, options)
 	report := func(ds []hugo.Issue, suffix string) {
