@@ -3,6 +3,7 @@ package studio
 
 import (
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"testing"
 )
@@ -52,5 +53,64 @@ func TestReadAuthorization(t *testing.T) {
 	}
 	if request("/studio/state", cookie, map[string]string{"Origin": "http://127.0.0.1:3210", "Sec-Fetch-Site": "same-origin"}).Code != 200 {
 		t.Fatal("authorized refused")
+	}
+}
+
+func TestTwoPreviewSessionsKeepIndependentCookies(t *testing.T) {
+	jar, _ := cookiejar.New(nil)
+	gates := []*gate{}
+	for _, host := range []string{"127.0.0.1:3210", "127.0.0.1:3211"} {
+		g, _ := newGate(host)
+		gates = append(gates, g)
+		r := httptest.NewRequest("GET", g.origin+"/studio/bootstrap?token="+g.secret, nil)
+		w := httptest.NewRecorder()
+		g.wrap(http.NotFoundHandler()).ServeHTTP(w, r)
+		jar.SetCookies(r.URL, w.Result().Cookies())
+	}
+	for _, g := range gates {
+		r := httptest.NewRequest("GET", g.origin+"/studio/state", nil)
+		for _, cookie := range jar.Cookies(r.URL) {
+			r.AddCookie(cookie)
+		}
+		w := httptest.NewRecorder()
+		g.wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })).ServeHTTP(w, r)
+		if w.Code != 200 {
+			t.Fatal("second preview displaced first authorization", w.Code)
+		}
+	}
+}
+
+func TestGateMethodsRoutesAndHeaders(t *testing.T) {
+	g, _ := newGate("127.0.0.1:3210")
+	handler := g.wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("private")) }))
+	for _, method := range []string{"POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE", "CONNECT"} {
+		r := httptest.NewRequest(method, g.origin+"/studio/state", nil)
+		r.Host = g.host
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+		if w.Code != 405 {
+			t.Fatal(method, w.Code)
+		}
+	}
+	for _, path := range []string{"/%2e%2e/private", "/one/../private", "/one//private", "/one%2fprivate"} {
+		r := httptest.NewRequest("GET", g.origin+path, nil)
+		r.AddCookie(&http.Cookie{Name: g.cookieName, Value: g.cookie})
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+		if w.Code != 404 {
+			t.Fatal("ambiguous path accepted", path, w.Code)
+		}
+	}
+	r := httptest.NewRequest("HEAD", g.origin+"/studio/state", nil)
+	r.AddCookie(&http.Cookie{Name: g.cookieName, Value: g.cookie})
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+	for _, header := range []string{"Content-Security-Policy", "Referrer-Policy", "Cache-Control", "X-Content-Type-Options", "X-Frame-Options"} {
+		if w.Header().Get(header) == "" {
+			t.Fatal("missing boundary header", header)
+		}
+	}
+	if w.Header().Get("Access-Control-Allow-Origin") != "" {
+		t.Fatal("CORS widened")
 	}
 }

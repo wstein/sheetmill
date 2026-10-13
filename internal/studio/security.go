@@ -11,9 +11,9 @@ import (
 )
 
 type gate struct {
-	mu                           sync.Mutex
-	host, origin, secret, cookie string
-	consumed                     bool
+	mu                                       sync.Mutex
+	host, origin, secret, cookie, cookieName string
+	consumed                                 bool
 }
 
 func randomSecret() (string, error) {
@@ -32,7 +32,7 @@ func newGate(host string) (*gate, error) {
 	if e != nil {
 		return nil, e
 	}
-	return &gate{host: host, origin: "http://" + host, secret: secret, cookie: cookie}, nil
+	return &gate{host: host, origin: "http://" + host, secret: secret, cookie: cookie, cookieName: "smill_" + strings.ReplaceAll(host, ":", "_")}, nil
 }
 func same(a, b string) bool { return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1 }
 func (g *gate) wrap(next http.Handler) http.Handler {
@@ -86,14 +86,14 @@ func (g *gate) wrap(next http.Handler) http.Handler {
 				deny()
 				return
 			}
-			http.SetCookie(w, &http.Cookie{Name: "smill_session", Value: g.cookie, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode})
+			http.SetCookie(w, &http.Cookie{Name: g.cookieName, Value: g.cookie, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode})
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 		cookies := 0
 		authorized := false
 		for _, c := range r.Cookies() {
-			if c.Name == "smill_session" {
+			if c.Name == g.cookieName {
 				cookies++
 				authorized = same(c.Value, g.cookie)
 			}
