@@ -50,7 +50,10 @@ dismissal, admin enforcement, linear history, conversation resolution, no force 
 or deletion. Automatic merges are disabled. CI has only contents-read permissions
 and SHA-pinned Actions; it publishes no artifacts.
 
-The draft PR and GitHub CI result are reported in the chat after publication.
+[Draft PR #1](https://github.com/wstein/sheetmill/pull/1) was opened and attached to
+the chat. Both push and pull-request `core` checks passed for implementation
+revision `2f3f8423224648d45c0c58ad747406c8d8757c5b`. Final checklist-only updates
+are also checked by CI; the latest result is reported in the chat.
 Independent review is pending and remains a merge gate. Tests and fuzzing are local
 author evidence, not independent approval. Optional upstream content stays outside
 the repository; ordinary CI does not fetch it. No dependency vulnerability scan,

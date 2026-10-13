@@ -7,5 +7,5 @@
 - [x] T005 Add numbered feature specs, plans and tasks.
 - [x] T006 Add SHA-pinned read-only verification CI and useful README badges.
 - [x] T007 Document three brand directions and measured text contrast.
-- [ ] T008 Verify GitHub main protection and CI for the final PR revision.
+- [x] T008 Verify GitHub main protection and passing core CI for the implementation revision.
 - [ ] T009 Obtain independent review before any merge (human action).
