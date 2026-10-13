@@ -114,7 +114,7 @@ func TestHugoIntegration(t *testing.T) {
 		t.Skip("set SHEETMILL_HUGO to explicitly authorize installed tool")
 	}
 	v, err := exec.Command(binary, "version").CombinedOutput()
-	if err != nil || !strings.Contains(string(v), "v"+Version+"+") {
+	if err != nil || !pinnedVersion(string(v)) {
 		t.Fatalf("need Hugo %s: %s %v", Version, v, err)
 	}
 	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### Literal {#literal}\n```sh\necho '<tag>'\n```\n\n{{< unsafe >}}\n")}, Options{})
@@ -243,6 +243,40 @@ func TestURLSpacesAndUnsafeSchemes(t *testing.T) {
 		s := sheet(t, "test", "## S\n### C\n[x](<"+destination+">)\n")
 		if _, ds := Render([]Sheet{s}, Options{}); len(ds) == 0 || ds[0].Code != "REN002" {
 			t.Fatal(destination, ds)
+		}
+	}
+}
+
+func TestImageAltLinksAndTrailingURLSpace(t *testing.T) {
+	s := sheet(t, "test", "## S\n### C\n![an [inner](https://inner.example) image](https://img.example/a.png)\n\n[Space](<https://example.com/a >)\n")
+	p, ds := Render([]Sheet{s}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "test")
+	if strings.Contains(got, `href="https://inner.example"`) || !strings.Contains(got, `href="https://example.com/a%20"`) {
+		t.Fatal(got)
+	}
+}
+
+// Official standard builds and Homebrew extended builds have different suffixes.
+func pinnedVersion(output string) bool {
+	fields := strings.Fields(output)
+	if len(fields) < 2 || fields[0] != "hugo" {
+		return false
+	}
+	version := fields[1]
+	return version == "v"+Version || strings.HasPrefix(version, "v"+Version+"+") || strings.HasPrefix(version, "v"+Version+"-")
+}
+func TestPinnedVersion(t *testing.T) {
+	for _, s := range []string{"hugo v0.167.0 linux/amd64", "hugo v0.167.0-abcdef linux/amd64", "hugo v0.167.0+extended darwin/arm64"} {
+		if !pinnedVersion(s) {
+			t.Fatal(s)
+		}
+	}
+	for _, s := range []string{"hugo v0.167.01 linux/amd64", "hugo v0.168.0 linux/amd64", "different v0.167.0"} {
+		if pinnedVersion(s) {
+			t.Fatal(s)
 		}
 	}
 }
