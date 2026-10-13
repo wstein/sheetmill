@@ -43,7 +43,8 @@ func runHugo(args []string, destination, title string, out, errout io.Writer) in
 		}
 	}
 	sort.Strings(files)
-	sourcePaths := map[string]string{}
+	// Render identifies sheets by basename; one basename may name several paths.
+	sourcePaths := map[string][]string{}
 	var sheets []hugo.Sheet
 	invalid := false
 	for _, path := range files {
@@ -58,22 +59,34 @@ func runHugo(args []string, destination, title string, out, errout io.Writer) in
 			invalid = true
 		}
 		name := filepath.Base(path)
-		sourcePaths[name] = path
+		sourcePaths[name] = append(sourcePaths[name], path)
 		sheets = append(sheets, hugo.Sheet{ID: sheetID(name), SourceName: name, Document: document})
 	}
 	if invalid {
 		return 1
 	}
 	project, ds := hugo.Render(sheets, hugo.Options{Title: title})
-	for _, d := range ds {
-		fmt.Fprintf(errout, "%s:%s\n", sourcePaths[d.Source], d.Error())
+	report := func(ds []hugo.Issue, suffix string) {
+		printed := map[string]bool{}
+		for _, d := range ds {
+			paths := sourcePaths[d.Source]
+			if len(paths) == 0 {
+				paths = []string{"smill"} // project-level issue without a sheet origin
+			}
+			for _, path := range paths {
+				line := fmt.Sprintf("%s:%s%s", path, d.Error(), suffix)
+				if !printed[line] {
+					printed[line] = true
+					fmt.Fprintln(errout, line)
+				}
+			}
+		}
 	}
+	report(ds, "")
 	if len(ds) > 0 {
 		return 1
 	}
-	for _, d := range project.Warnings {
-		fmt.Fprintf(errout, "%s:%s (warning)\n", sourcePaths[d.Source], d.Error())
-	}
+	report(project.Warnings, " (warning)")
 	if err := writeProject(destination, project.Files); err != nil {
 		fmt.Fprintf(errout, "%s:1:1: IO003: %v\n", destination, err)
 		return 2

@@ -73,3 +73,20 @@ func TestHugoDiagnosticOrigins(t *testing.T) {
 		}
 	}
 }
+
+func TestHugoAmbiguousBasenameNamesEveryPath(t *testing.T) {
+	dir := tempDir(t)
+	var paths []string
+	for _, sub := range []string{"a", "b"} {
+		os.Mkdir(filepath.Join(dir, sub), 0700)
+		path := filepath.Join(dir, sub, "x.md")
+		os.WriteFile(path, []byte("---\ntitle: X\n---\n"), 0600)
+		paths = append(paths, path)
+	}
+	var out, errout bytes.Buffer
+	code := Run([]string{"build", "hugo", paths[0], paths[1], "--out", filepath.Join(dir, "site")}, &out, &errout)
+	lines := strings.Split(strings.TrimSpace(errout.String()), "\n")
+	if code != 1 || len(lines) != 2 || !strings.HasPrefix(lines[0], paths[0]+":") || !strings.HasPrefix(lines[1], paths[1]+":") {
+		t.Fatal(code, errout.String())
+	}
+}
