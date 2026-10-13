@@ -97,6 +97,16 @@ It deploys through the `github-pages` environment, which accepts `main` only.
 A test builds the manual pages and fails on any warning. Other sheets need the
 012 redistribution gate first.
 
+## Search engines and sharing
+
+Every page carries a meta description (the sheet's `description`, else the site
+`--description`) and Open Graph title, type and description. With
+`--site-url https://host/<base-path>/`, whose path must equal `--base-path`, pages
+also get a canonical link, `og:url` and `og:image` (the brand social preview), and
+the export adds `sitemap.xml` with the home page and every sheet; it has no dates,
+so output stays deterministic. No `robots.txt` is generated: crawlers only read it
+at a host root, which a project site under a path does not control.
+
 ## Sheets in several directories
 
 Each selected file keeps its path relative to the deepest directory that contains
