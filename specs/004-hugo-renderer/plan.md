@@ -10,7 +10,9 @@ Export one generated frontmatter-only page per sheet and trusted, pre-escaped HT
 in Hugo data JSON. Hugo templates never receive source Markdown. `safe.HTML` is
 restricted to the renderer-owned HTML field. Other metadata is escaped normally.
 Generate stable section/card anchors with a content namespace and rewrite recognized
-local fragments. Search JSON contains plain text plus generated local destinations;
+local fragments. Search JSON contains plain text plus generated local destinations. Indexed text is
+card/sheet titles, section titles, prose as plain text and code spans/blocks verbatim,
+stored as JSON text, never HTML; raw HTML is excluded.
 JS uses textContent/createElement, never source innerHTML.
 
 Use root-relative local URLs (v0.1 sites served at the origin root), a fixed build
