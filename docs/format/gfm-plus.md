@@ -27,9 +27,9 @@ Known fields use strict types without implicit scalar/array coercion:
 | `cheatsheet.tool` | Optional nonempty string |
 
 All other JSON-compatible fields, including nested `cheatsheet` fields, are
-preserved in `metadata`. In particular, `cheatsheet.navi` is currently generic
-metadata, not a validated command/parameter schema. Its proposed future contract
-is documented in the [navi profile](navi-profile.md); it adds no parser behavior.
+preserved in `metadata`. `cheatsheet.navi` is generic metadata to the parser and
+`smill check`; only `smill build navi` validates it, under the
+[navi export contract](navi-profile.md).
 The [JSON Schema](../../schema/cheatsheet.schema.json) describes
 metadata after YAML decoding; parser limits and duplicate keys are additional rules.
 
@@ -72,7 +72,7 @@ any other heading. Escape the brace (`\{.x}`) or use a code span to show one.
 | `{.row-span-N}` | Card web-layout hint, decimal `N` from 1 through 12 |
 | `{.note}`, `{.tip}`, `{.warning}` | SheetMill semantic card classes |
 | `{.keys}` | Key table card: inline code in a table's first column renders as keys (`Ctrl+C` shows two keys) |
-| `{.navi}` | Reserved; [proposed navi profile](navi-profile.md), not an implemented export |
+| `{.navi}` | Marks a command card for `smill build navi`, which also needs an explicit `{#id}`; see [navi export](navi-profile.md) |
 | `{.wrap}` | Inert legacy compatibility hint; does not change semantic content |
 
 Combine tokens inside one group, for example `{.col-span-2 .note #example}`.

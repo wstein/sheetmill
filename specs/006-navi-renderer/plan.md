@@ -1,26 +1,17 @@
 # Plan — 006
 
-Documentation refinement only. The proposed first slice is
-`bash-free-input-v1`: explicit cards, one physical Bash command per card and
-free-input parameters. See [spec](spec.md), [format](../../docs/format/navi-profile.md)
-and [source evidence](research.md). No renderer, validator or CLI implementation
-is authorized. No compatibility execution has occurred.
+Implemented in `internal/render/navi` and `internal/cli/navi.go`; the CLI shares
+file selection and parsing with `smill build hugo` (`loadSelection`). The IR gained
+`id_explicit`, an additive field omitted when false. See [spec](spec.md), the
+[format page](../../docs/format/navi-profile.md) and [source evidence](research.md).
 
-1. Review the profile, closed metadata contract and acceptance matrix. Preserve
-   current generic frontmatter/IR behavior; schema-1 output changes need review.
-2. After separate authorization, select/pin a non-executing Bash 5.2 grammar
-   parser and expose explicit-ID provenance through a reviewed additive IR
-   representation. Define sidecar schema 1 with complete metadata and selected
-   card records. Do not reparse source Markdown inside the renderer.
-3. Write failing selection, metadata, syntax and placeholder tests; independent
-   golden bytes; pure pinned-navi parser/interpolation compatibility fixtures;
-   deterministic output tests, fuzzing and transitive no-execution audit.
-4. Implement `internal/navi` and the proposed `smill build navi` only after those
-   prerequisites. Add validator/schema, source diagnostics and user documentation;
-   no suggestion providers or alternate shells. Do not add placeholder commands.
-5. Run all acceptance checks and record exactly what was tested. Obtain independent
-   review of the final revision; generation and publication remain separately gated.
+1. Contract and decisions: spec, format page, immutable upstream evidence.
+2. Tests: renderer table tests, golden bytes, grammar-model and deduplication
+   checks, fuzz target, no-execution lint, CLI boundary tests.
+3. Independent review of the final revision, then human merge. Publishing generated
+   cheats, releases and distribution builds remain separately gated.
+4. Later, each needing its own decision: metadata sidecar, a pinned pure Go shell
+   parser for bash, zsh and fish, choice lists without silent executable providers,
+   shared-context inheritance, nushell raw strings.
 
-Use a dedicated `codex/006-*` branch/PR for implementation. No navi, finder, shell
-or source snippet runs in renderer tests or CI. The one-line restriction is a
-first-slice tradeoff, not a claim of full navi syntax or round-trip compatibility.
+No navi, finder, shell or source snippet runs in renderer tests or CI.

@@ -21,8 +21,14 @@ assuming current master behaves identically.
 
 ## Decisions and pending evidence
 
-- Select `bash-free-input-v1`: one physical Bash command per explicitly marked,
-  identified card, card-local free-input hints and no executable providers.
+- Update 2026-10-14 (implementation): decisions below are superseded where they
+  conflict with [spec.md](spec.md). Profiles are bash, zsh, fish and nu; multi-line
+  commands are exported; marked cards that fail are skipped with warnings; the IR
+  now carries `id_explicit`. The hash model (FNV-1a, 64 bit, offset `0x811C9DC5`,
+  over the string bytes plus a trailing `0xff`, which is Rust's `str` hash input)
+  was derived from `hash.rs` and `item.rs` above, not by running navi.
+- Select explicit-card exports: one explicitly marked, identified card per entry,
+  card-local free-input hints and no executable providers.
 - Treat parameter values as trusted raw shell text, not safely quoted arbitrary
   data. Record this limitation in generated headers and future user documentation.
 - Keep current generic metadata preservation and `.navi` behavior unchanged.
@@ -31,9 +37,7 @@ assuming current master behaves identically.
   Bash grammar checks and a transitive no-execution audit before calling the
   profile tested. A model written from this evidence must document which pinned
   upstream branches it covers; do not describe it as running upstream navi.
-- The IR does not currently expose a dedicated explicit-ID flag. Before implementing
-  selection validation, determine a reviewed additive IR representation for this
-  source fact; do not reparse Markdown in the exporter or infer explicitness from
-  a generated slug. This prerequisite is included in T004.
-- Multiline scripts, escaping literal placeholders, other shells and provider
-  capabilities require subsequent scope/design approval.
+- The IR exposes the explicit-ID fact as the additive card field `id_explicit`
+  (omitted when false); the exporter never reparses Markdown or infers it from a slug.
+- Escaping literal placeholders, choice lists and provider capabilities require
+  subsequent scope/design approval.
