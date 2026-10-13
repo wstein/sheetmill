@@ -44,7 +44,7 @@ func (s *Session) handler() http.Handler {
 		s.mu.RLock()
 		data, exists := s.files[name]
 		for _, sheet := range s.state.Sheets {
-			if sheet.ID == strings.Split(name, "/")[0] && sheet.Status == "removed" {
+			if name == sheet.ID+"/index.html" && (sheet.Status == "removed" || sheet.Published == 0) {
 				exists = false
 			}
 		}

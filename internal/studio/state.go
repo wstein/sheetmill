@@ -46,6 +46,9 @@ func (s *Session) begin(seq uint64, snap Snapshot) {
 	s.state.Error = snap.Error
 	known := map[string]SheetState{}
 	for _, old := range s.state.Sheets {
+		if old.Status == "removed" {
+			continue
+		}
 		old.Status = "removed"
 		if snap.Error != "" {
 			old.Status = "pending"
@@ -61,6 +64,15 @@ func (s *Session) begin(seq uint64, snap Snapshot) {
 		old.Stale = old.Published > 0
 		old.Diagnostics = nil
 		known[entry.Name] = old
+	}
+	selectedIDs := map[string]bool{}
+	for _, entry := range snap.Entries {
+		selectedIDs[routeID(entry.Name)] = true
+	}
+	for name, old := range known {
+		if old.Status == "removed" && selectedIDs[old.ID] {
+			delete(known, name)
+		}
 	}
 	s.state.Sheets = nil
 	for _, v := range known {
