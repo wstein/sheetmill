@@ -23,7 +23,7 @@ behavior fixes stay within the authorized 004 scope.
   `data/ir/<sheet>.json` (FR-006).
 - [x] T012 Inject a write failure partway through `writeProject`; assert `IO003`,
   exit status 2 and that no pre-existing path is modified (FR-003).
-- [ ] T013 Keep a bare `[x](#)` link as `href="#"`; `url.String()` currently drops
+- [x] T013 Keep a bare `[x](#)` link as `href="#"`; `url.String()` currently drops
   the empty fragment and renders `href=""`.
 - [ ] T014 Run the Hugo integration test with `SHEETMILL_HUGO` on the REN103 and
   empty-label fixtures and record the evidence in docs/hugo-verification.md.
