@@ -21,7 +21,8 @@ const usage = "usage: smill version | smill check <file-or-directory>... | smill
 func Run(args []string, out, errout io.Writer) int {
 	status := 0
 	root := &cobra.Command{Use: "smill", Short: "Compile reference sheets from GFM and YAML", SilenceErrors: true, SilenceUsage: true}
-	root.SetOut(out)
+	helpOut := &checkedWriter{Writer: out}
+	root.SetOut(helpOut)
 	root.SetErr(errout)
 	root.SetArgs(args)
 	root.CompletionOptions.DisableDefaultCmd = true
@@ -46,7 +47,12 @@ func Run(args []string, out, errout io.Writer) int {
 	imports.AddCommand(referenceCommand(out, errout, &status))
 	imports.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("an import format is required") }
 	root.AddCommand(imports)
-	if err := root.Execute(); err != nil {
+	executeErr := root.Execute()
+	if helpOut.err != nil {
+		fmt.Fprintln(errout, "IO002: "+helpOut.err.Error())
+		return 2
+	}
+	if err := executeErr; err != nil {
 		fmt.Fprintf(errout, "%v\n%s\n", err, usage)
 		return 2
 	}
@@ -181,4 +187,22 @@ func read(path string) ([]byte, error) {
 		return nil, err
 	}
 	return b, nil
+}
+
+// Cobra's default help implementation ignores writer errors. Retain them so
+// a truncated help response observes the same IO contract as normal output.
+type checkedWriter struct {
+	io.Writer
+	err error
+}
+
+func (w *checkedWriter) Write(p []byte) (int, error) {
+	n, err := w.Writer.Write(p)
+	if err == nil && n != len(p) {
+		err = io.ErrShortWrite
+	}
+	if err != nil {
+		w.err = err
+	}
+	return n, err
 }
