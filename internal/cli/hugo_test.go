@@ -198,3 +198,22 @@ func TestHugoBuildNestedSelection(t *testing.T) {
 		}
 	}
 }
+
+// The published manual must build cleanly from the listed pages.
+func TestManualBuildsWithoutWarnings(t *testing.T) {
+	list, err := os.ReadFile(filepath.Join("..", "..", "docs", "manual-pages.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"build", "hugo"}
+	for _, line := range strings.Split(string(list), "\n") {
+		if line = strings.TrimSpace(line); line != "" && !strings.HasPrefix(line, "#") {
+			args = append(args, filepath.Join("..", "..", filepath.FromSlash(line)))
+		}
+	}
+	args = append(args, "--out", filepath.Join(tempDir(t), "manual"), "--base-path", "/sheetmill/", "--source-base-url", "https://github.com/wstein/sheetmill/blob/main/docs/", "--edit-base-url", "https://github.com/wstein/sheetmill/edit/main/docs/")
+	var out, errout bytes.Buffer
+	if code := Run(args, &out, &errout); code != 0 || errout.Len() != 0 {
+		t.Fatal(code, errout.String())
+	}
+}

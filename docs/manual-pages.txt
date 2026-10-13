@@ -1,0 +1,13 @@
+# Pages of the published SheetMill manual, relative to the repository root.
+# The Pages workflow builds exactly these; internal/cli tests require them to
+# check and export without warnings.
+docs/getting-started.md
+docs/agent-guide.md
+docs/cli.md
+docs/format/gfm-plus.md
+docs/format/compatibility.md
+docs/hugo.md
+docs/studio-security.md
+docs/imports.md
+docs/architecture.md
+docs/provenance.md
