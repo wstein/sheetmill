@@ -1146,3 +1146,43 @@ func TestHugoIntegrationSocialMetadata(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestRelatedSheets(t *testing.T) {
+	p, ds := Render([]Sheet{
+		described(t, "git", "title: Git\ncategory: vcs\ntags: [cli, history]\n", "Intro.\n"),
+		described(t, "hg", "title: Mercurial\ncategory: vcs\ntags: [history]\n", "Intro.\n"),
+		described(t, "svn", "title: Subversion\ncategory: vcs\n", "Intro.\n"),
+		described(t, "tar", "title: tar\ncategory: files\ntags: [cli]\n", "Intro.\n"),
+		described(t, "zip", "title: zip\ncategory: files\n", "Intro.\n"),
+		described(t, "alone", "title: Alone\n", "Intro.\n"),
+	}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	related := func(id string) string {
+		var data struct {
+			Related []struct {
+				Title string `json:"title"`
+				URL   string `json:"url"`
+			} `json:"related"`
+		}
+		if err := json.Unmarshal(p.Files["data/sheets/"+id+".json"], &data); err != nil {
+			t.Fatal(err)
+		}
+		var titles []string
+		for _, r := range data.Related {
+			titles = append(titles, r.Title)
+		}
+		return strings.Join(titles, ",")
+	}
+	// hg: shared tag + category = 3; svn: category = 1; tar: shared tag = 2.
+	if got := related("git"); got != "Mercurial,tar,Subversion" {
+		t.Fatal(got)
+	}
+	if got := related("alone"); got != "" {
+		t.Fatal("unrelated sheets get no list", got)
+	}
+	if !strings.Contains(string(p.Files["layouts/page.html"]), "related") {
+		t.Fatal("page template must show related sheets")
+	}
+}
