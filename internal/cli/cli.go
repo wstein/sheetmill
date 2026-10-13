@@ -15,7 +15,7 @@ import (
 )
 
 const Version = "dev"
-const usage = "usage: smill version | smill check <file-or-directory>... | smill inspect <file> | smill import reference <file> [options] | smill build hugo <file-or-directory>... --out <new-project>"
+const usage = "usage: smill serve [file-or-directory] [options] | smill version | smill check <file-or-directory>... | smill inspect <file> | smill import reference <file> [options] | smill build hugo <file-or-directory>... --out <new-project>"
 
 // Run constructs a fresh command tree for each invocation, keeping flag state and
 // writers isolated for embedders and tests. Cobra owns all command/flag parsing.
@@ -54,6 +54,7 @@ func Run(args []string, out, errout io.Writer) int {
 	}
 	root.AddCommand(imports)
 	root.AddCommand(buildCommand(out, errout, &status))
+	root.AddCommand(serveCommand(out, errout, &status))
 	executeErr := root.Execute()
 	if helpOut.err != nil {
 		fmt.Fprintln(errout, "IO002: "+helpOut.err.Error())
