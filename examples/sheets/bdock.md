@@ -58,3 +58,11 @@ Resolve the newest stable versions allowed by `packages.txt` into `packages.lock
 Pin the source revision when documenting flags. Bundle publication and consumer activation are separate operations from these CLI commands.
 
 For documenting the verified command inventory as a reference, see [SheetMill semantic inspection](smill.md#inspect-ir). The link and code blocks remain inert content in this library.
+
+## Reproducible selection {#reproducibility}
+### Pin a reviewed image {.col-span-2 #pin-reviewed-image}
+```sh
+bdock tools volume --image quay.io/bundledock/toolbox@sha256:40bae37ef7fd7b8e7131803850801ed41cfb23a6ef774bc2e40f95ee81e59a1c --bundle toolbox
+```
+
+The pinned repository README records this index for toolbox `2026.10.10-b4.1`. It is a source-recorded publication receipt, not a claim about today's registry availability or the latest catalog. Review the receipt and consumer requirements before real use; SheetMill does not pull or initialize it.

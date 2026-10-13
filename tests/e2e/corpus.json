@@ -56,7 +56,8 @@
       "initialize-volume",
       "bundle-options",
       "upgrade-catalog",
-      "reference-boundary"
+      "reference-boundary",
+      "pin-reviewed-image"
     ],
     "copy": {
       "card": "discover-commands",
