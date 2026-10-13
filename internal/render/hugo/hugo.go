@@ -49,6 +49,8 @@ type Options struct {
 	// EditBaseURL is an explicit GitHub /owner/repository/edit/ref/directory/ base.
 	// It refers to authored sheets, never to upstream source provenance.
 	EditBaseURL string
+	// Description introduces the library on the home page.
+	Description string
 	// SourceBaseURL is an explicit GitHub /owner/repository/blob/ref/directory/ base
 	// for the selection root. Relative links that name no selected sheet resolve to
 	// the repository file instead of being reported as unresolved.
@@ -86,10 +88,39 @@ type entry struct {
 	URL     string `json:"url"`
 }
 type page struct {
-	Title   string `json:"title"`
-	URL     string `json:"url"`
-	Body    string `json:"body"`
-	EditURL string `json:"edit_url,omitempty"`
+	Title       string   `json:"title"`
+	URL         string   `json:"url"`
+	Description string   `json:"description,omitempty"`
+	Category    string   `json:"category,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	Body        string   `json:"body"`
+	EditURL     string   `json:"edit_url,omitempty"`
+}
+
+// shelf groups library pages by category for the home page.
+type shelf struct {
+	Category string `json:"category"`
+	Sheets   []page `json:"sheets"`
+}
+
+// shelves sorts categories by name and puts uncategorized sheets last; pages
+// keep their deterministic route order. Bodies are omitted from the index.
+func shelves(pages []page) []shelf {
+	groups := map[string][]page{}
+	for _, p := range pages {
+		p.Body = ""
+		groups[p.Category] = append(groups[p.Category], p)
+	}
+	names := make([]string, 0, len(groups))
+	for name := range groups {
+		names = append(names, name)
+	}
+	sort.Slice(names, func(i, j int) bool { return names[i] != "" && (names[j] == "" || names[i] < names[j]) })
+	out := make([]shelf, 0, len(names))
+	for _, name := range names {
+		out = append(out, shelf{name, groups[name]})
+	}
+	return out
 }
 
 var route = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
@@ -217,6 +248,15 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
 		errors = append(errors, issues(s.SourceName, r.errors)...)
 		page := page{Title: title, URL: base + s.ID + "/", Body: b.String()}
+		page.Description, _ = s.Document.Metadata["description"].(string)
+		page.Category, _ = s.Document.Metadata["category"].(string)
+		if tags, ok := s.Document.Metadata["tags"].([]any); ok {
+			for _, tag := range tags {
+				if tag, ok := tag.(string); ok {
+					page.Tags = append(page.Tags, tag)
+				}
+			}
+		}
 		if editBase != "" {
 			page.EditURL = editBase + escapePath(paths[s.ID])
 		}
@@ -242,7 +282,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if title == "" {
 		title = "SheetMill References"
 	}
-	params := map[string]any{"base": base}
+	params := map[string]any{"base": base, "description": options.Description}
 	config := map[string]any{"baseURL": "https://example.invalid/", "title": title, "languageCode": "en", "disableKinds": []string{"taxonomy", "term", "RSS", "sitemap"}, "enableRobotsTXT": false, "disableHugoGeneratorInject": true, "params": params, "outputs": map[string]any{"home": []string{"HTML"}, "page": []string{"HTML"}}, "security": map[string]any{"enableInlineShortcodes": false, "exec": map[string]any{"allow": []string{"none"}, "osEnv": []string{"none"}}, "http": map[string]any{"methods": []string{"none"}, "urls": []string{"none"}}}}
 	// Every remaining file is required; never return a partial project.
 	copyTree := func(files fs.FS, from, to string) error {
@@ -258,7 +298,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			return e
 		})
 	}
-	for _, e := range []error{putJSON("data/library.json", pages), putJSON("static/search.json", index), copyTree(themeFiles, "theme", ""), copyTree(brandFiles, ".", "static/brand")} {
+	for _, e := range []error{putJSON("data/library.json", pages), putJSON("data/shelves.json", shelves(pages)), putJSON("static/search.json", index), copyTree(themeFiles, "theme", ""), copyTree(brandFiles, ".", "static/brand")} {
 		if e != nil {
 			return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN001", Message: "project assembly failed: " + e.Error()}})
 		}
