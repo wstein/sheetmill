@@ -97,7 +97,7 @@ No deployment is part of starting a Studio session.
 
 ## GitHub page editing
 
-The demo's **Edit this page on GitHub** link opens the authored SheetMill Markdown,
+The demo's **Edit on GitHub** link opens the authored SheetMill Markdown,
 for example [bdock.md](https://github.com/wstein/sheetmill/edit/main/examples/sheets/bdock.md).
 It is separate from `source.repository/path/revision`, which records the upstream
 implementation used to write the reference. Provenance remains preserved verbatim.
@@ -122,3 +122,12 @@ only changes its export configuration; no deployment was run while preparing it.
 Local actual-Hugo verification at `/sheetmill/` passed desktop/mobile and
 JavaScript-disabled checks for the visible bdock edit destination, unchanged
 BundleDock provenance and zero off-origin resource requests.
+
+### Source disclosure presentation
+
+Rendered pages keep attribution and license visible in a compact footer. Full
+source metadata, including unknown fields, remains escaped and intact inside a
+collapsed **Full source metadata** disclosure. The native disclosure works without
+JavaScript. The generated **Edit on GitHub** action appears alongside the reference
+navigation, with an accessible label identifying the cheatsheet edit destination.
+Neither presentation changes cheatsheet Markdown or provenance values.
