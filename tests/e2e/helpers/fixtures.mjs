@@ -20,6 +20,7 @@ function recordTo(path,records) {return record=>{records.push(record);appendFile
 
 export const test=base.extend({
   sourceSuffix:['',{option:true}],
+  basePath:['/',{option:true}],
   corpusID:['smill',{option:true}],
   corpusCases:[async({},use)=>{
     await use(await loadCorpus(root,JSON.parse(await readFile(join(root,'tests/e2e/corpus.json'),'utf8')),process.env.SHEETMILL_E2E_CORPUS??'smill'));
@@ -51,7 +52,7 @@ export const test=base.extend({
       throw Error(`${error.message} (setup evidence: ${log})`,{cause:error});
     } finally {await owner.close();}
   },{scope:'worker',timeout:300_000}],
-  site:async({tools,corpus,corpusCases,sourceSuffix},use,testInfo)=>{
+  site:async({tools,corpus,corpusCases,sourceSuffix,basePath},use,testInfo)=>{
     const directory=await evidence(),log=join(directory,'stages.jsonl'),records=[];
     await writeFile(log,'');
     const owner=await OwnedWorkspace.create();registerInterruptCleanup(owner);
@@ -76,14 +77,15 @@ export const test=base.extend({
       const sites=[];
       for(const name of ['first','second']) {
         const project=join(owner.root,name),destination=join(project,'public');
-        await exec(tools.smill,['build','hugo',source,'--out',project]);
+        await exec(tools.smill,['build','hugo',source,'--out',project,'--base-path',basePath]);
         await exec(tools.hugo,['--source',project,'--destination',destination,'--clock','2000-01-01T00:00:00Z','--noBuildLock','--quiet'],{timeoutMs:30_000,env:{...tools.env,HUGO_CACHEDIR:join(owner.root,'cache-'+name)}});
         sites.push(await readSite(destination));
       }
       compareSites(...sites);
       const digest=createHash('sha256');for(const [name,bytes] of sites[0])digest.update(name+'\0').update(bytes).update('\0');
       await writeFile(join(directory,'result.json'),JSON.stringify({files:sites[0].size,sha256:digest.digest('hex'),sourceHashes:Object.fromEntries(sources.map(s=>[s.item.id,s.sourceHash]))},null,2));
-      const server=await serveSite(sites[0]);owner.defer(server.close);
+      const mounted=basePath==='/'?sites[0]:new Map([...sites[0]].map(([name,bytes])=>[basePath.slice(1)+name,bytes]));
+      const server=await serveSite(mounted);owner.defer(server.close);
       await use({...server,records,toolRecords:tools.records,workspace:owner.root,log});
     } finally {
       try {
