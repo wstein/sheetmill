@@ -188,3 +188,12 @@ func TestCobraHelpAndFlags(t *testing.T) {
 		}
 	}
 }
+
+func TestHelpWriteFailure(t *testing.T) {
+	for _, args := range [][]string{{"--help"}, {"help"}, {"check", "--help"}, {"import", "reference", "--help"}} {
+		var errout bytes.Buffer
+		if code := Run(args, brokenWriter{}, &errout); code != 2 || !strings.Contains(errout.String(), "IO002") {
+			t.Fatalf("%v: %d %s", args, code, errout.String())
+		}
+	}
+}
