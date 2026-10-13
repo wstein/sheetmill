@@ -1,7 +1,8 @@
 # E2E harness contract — MVP and additional inputs
 
 Status: implemented for the one-sheet MVP and US2 additional-input corpus.
-Server stages remain deferred. Maps to US1/US2, FR-001/004/009/010 and SC-001/004/005.
+Read-only server journeys are implemented in `studio.spec.mjs` under the
+separate `studio.config.mjs`, with authenticated tracing disabled. Maps to US1/US2, FR-001/004/009/010 and SC-001/004/005.
 
 ## Invocation and prerequisites
 
