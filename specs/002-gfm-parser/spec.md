@@ -25,4 +25,4 @@ Created: 2026-10-13 · Status: implemented, review pending · Depends on: 001
 
 All valid fixtures parse; invalid fixtures fail at meaningful source positions.
 Repeated output equals golden bytes. Nested structure and literal fence tests pass.
-Race tests and vet pass; bounded fuzzing records no crashes. No renderers exist.
+Race tests and vet pass; bounded fuzzing records no crashes. No renderers are part of 002.
