@@ -21,7 +21,8 @@ remain owned by the existing compiler.
 - `permalink`: required selected card ID and exact accessible link label.
 - `attribution`: exact visible license/attribution expectations.
 - `crossLinks`: array of `{label, sheet, card}` targets. Each target must identify
-  a card in the selected corpus; missing targets fail before browser startup.
+  a card in the selected corpus; missing targets fail before site generation
+  or reader navigation.
   Empty for `smill`; BundleDock links to SheetMill semantic inspection, and
   WorkHarbor links to BundleDock volume options.
 - Relationship: one case selects one source sheet; source frontmatter records its
