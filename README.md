@@ -53,6 +53,10 @@ cheatsheet:
 | `x` | Select line |
 ````
 
+AI agents are first-class authors: the [agent guide](docs/agent-guide.md) covers
+setup and the authoring loop, and [llms.txt](llms.txt) indexes resources for
+debugging. `smill --help` points agents to both.
+
 Convert explicit external files using the [Reference import adapter](docs/imports.md),
 with provenance and deterministic loss reports. It never overwrites an existing file.
 
