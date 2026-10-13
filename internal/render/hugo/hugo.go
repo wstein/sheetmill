@@ -76,12 +76,17 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "select at least one sheet"}})
 	}
 	sheets = append([]Sheet(nil), sheets...)
-	sort.Slice(sheets, func(i, j int) bool { return sheets[i].ID < sheets[j].ID })
+	sort.SliceStable(sheets, func(i, j int) bool { return sheets[i].ID < sheets[j].ID })
 	routes := map[string]string{}
-	ids := map[string]bool{}
+	ids := map[string]string{}
 	for _, s := range sheets {
-		if !route.MatchString(s.ID) || ids[s.ID] || s.ID == "assets" || s.ID == "brand" {
-			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "invalid, reserved or duplicate sheet route: " + s.ID}})
+		if first, duplicate := ids[s.ID]; duplicate {
+			// Name every colliding source so neither file is left unexplained.
+			d := []diagnostic.Diagnostic{{Code: "REN003", Message: "duplicate sheet route: " + s.ID}}
+			return Project{}, append(issues(first, d), issues(s.SourceName, d)...)
+		}
+		if !route.MatchString(s.ID) || s.ID == "assets" || s.ID == "brand" {
+			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "invalid or reserved sheet route: " + s.ID}})
 		}
 		if s.Document == nil || s.Document.Schema != 1 {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN001", Message: "renderer requires schema-1 IR"}})
@@ -93,7 +98,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "ambiguous source basename: " + s.SourceName}})
 		}
 		routes[s.SourceName] = s.ID
-		ids[s.ID] = true
+		ids[s.ID] = s.SourceName
 	}
 	putJSON := func(name string, v any) error {
 		b, e := json.MarshalIndent(v, "", "  ")
