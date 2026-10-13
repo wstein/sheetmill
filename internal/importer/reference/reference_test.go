@@ -200,3 +200,34 @@ func TestErrorReport(t *testing.T) {
 		t.Fatal(r, ds)
 	}
 }
+
+func TestHeadingLossReports(t *testing.T) {
+	b := []byte("---\ntitle: X\n---\n## <script>x</script>\n### {% plugin x %}\n\nBody.\n\n### `{% literal %}`\n")
+	r, ds := Convert(b, provenance())
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	html, directives := 0, 0
+	lastOffset := -1
+	for _, f := range r.Report.Findings {
+		if f.Span.Start.Offset < lastOffset {
+			t.Fatal("findings out of source order", r.Report.Findings)
+		}
+		lastOffset = f.Span.Start.Offset
+		switch f.Code {
+		case "IMP103":
+			html++
+			if f.Span.Start.Line != 4 {
+				t.Fatal(f)
+			}
+		case "IMP104":
+			directives++
+			if f.Span.Start.Line != 5 {
+				t.Fatal(f)
+			}
+		}
+	}
+	if html == 0 || directives != 1 {
+		t.Fatalf("missing heading findings or code literal scanned: %+v", r.Report.Findings)
+	}
+}
