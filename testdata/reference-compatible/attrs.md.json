@@ -1,0 +1,390 @@
+{
+  "schema": 1,
+  "metadata": {
+    "title": "Layout hints",
+    "unknown": [
+      "preserved",
+      "metadata"
+    ]
+  },
+  "source": "## Notes {#notes}\n### Caution {.col-span-2 .row-span-3 .warning .wrap #caution}\n\nHints are metadata. Renderers decide layout.\n\n### Tip {.tip}\n\nUse `title` in frontmatter.\n",
+  "preamble": [],
+  "sections": [
+    {
+      "id": "notes",
+      "title": "Notes",
+      "span": {
+        "start": {
+          "offset": 59,
+          "line": 5,
+          "column": 1
+        },
+        "end": {
+          "offset": 230,
+          "line": 13,
+          "column": 1
+        }
+      },
+      "heading": {
+        "kind": "Heading",
+        "span": {
+          "start": {
+            "offset": 59,
+            "line": 5,
+            "column": 1
+          },
+          "end": {
+            "offset": 76,
+            "line": 5,
+            "column": 18
+          }
+        },
+        "properties": {
+          "level": 2
+        },
+        "children": [
+          {
+            "kind": "Text",
+            "span": {
+              "start": {
+                "offset": 62,
+                "line": 5,
+                "column": 4
+              },
+              "end": {
+                "offset": 67,
+                "line": 5,
+                "column": 9
+              }
+            },
+            "text": "Notes"
+          },
+          {
+            "kind": "Text",
+            "span": {
+              "start": {
+                "offset": 67,
+                "line": 5,
+                "column": 9
+              },
+              "end": {
+                "offset": 76,
+                "line": 5,
+                "column": 18
+              }
+            },
+            "text": " {#notes}"
+          }
+        ]
+      },
+      "content": [],
+      "cards": [
+        {
+          "id": "caution",
+          "title": "Caution",
+          "span": {
+            "start": {
+              "offset": 77,
+              "line": 6,
+              "column": 1
+            },
+            "end": {
+              "offset": 186,
+              "line": 10,
+              "column": 1
+            }
+          },
+          "heading": {
+            "kind": "Heading",
+            "span": {
+              "start": {
+                "offset": 77,
+                "line": 6,
+                "column": 1
+              },
+              "end": {
+                "offset": 138,
+                "line": 6,
+                "column": 62
+              }
+            },
+            "properties": {
+              "level": 3
+            },
+            "children": [
+              {
+                "kind": "Text",
+                "span": {
+                  "start": {
+                    "offset": 81,
+                    "line": 6,
+                    "column": 5
+                  },
+                  "end": {
+                    "offset": 128,
+                    "line": 6,
+                    "column": 52
+                  }
+                },
+                "text": "Caution {.col-span-2 .row-span-3 .warning .wrap"
+              },
+              {
+                "kind": "Text",
+                "span": {
+                  "start": {
+                    "offset": 128,
+                    "line": 6,
+                    "column": 52
+                  },
+                  "end": {
+                    "offset": 138,
+                    "line": 6,
+                    "column": 62
+                  }
+                },
+                "text": " #caution}"
+              }
+            ]
+          },
+          "layout": {
+            "columns": 2,
+            "rows": 3
+          },
+          "classes": [
+            "warning"
+          ],
+          "compatibility": [
+            "wrap"
+          ],
+          "content": [
+            {
+              "kind": "Paragraph",
+              "span": {
+                "start": {
+                  "offset": 140,
+                  "line": 8,
+                  "column": 1
+                },
+                "end": {
+                  "offset": 184,
+                  "line": 8,
+                  "column": 45
+                }
+              },
+              "children": [
+                {
+                  "kind": "Text",
+                  "span": {
+                    "start": {
+                      "offset": 140,
+                      "line": 8,
+                      "column": 1
+                    },
+                    "end": {
+                      "offset": 176,
+                      "line": 8,
+                      "column": 37
+                    }
+                  },
+                  "text": "Hints are metadata. Renderers decide"
+                },
+                {
+                  "kind": "Text",
+                  "span": {
+                    "start": {
+                      "offset": 176,
+                      "line": 8,
+                      "column": 37
+                    },
+                    "end": {
+                      "offset": 184,
+                      "line": 8,
+                      "column": 45
+                    }
+                  },
+                  "text": " layout."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tip",
+          "title": "Tip",
+          "span": {
+            "start": {
+              "offset": 186,
+              "line": 10,
+              "column": 1
+            },
+            "end": {
+              "offset": 230,
+              "line": 13,
+              "column": 1
+            }
+          },
+          "heading": {
+            "kind": "Heading",
+            "span": {
+              "start": {
+                "offset": 186,
+                "line": 10,
+                "column": 1
+              },
+              "end": {
+                "offset": 200,
+                "line": 10,
+                "column": 15
+              }
+            },
+            "properties": {
+              "level": 3
+            },
+            "children": [
+              {
+                "kind": "Text",
+                "span": {
+                  "start": {
+                    "offset": 190,
+                    "line": 10,
+                    "column": 5
+                  },
+                  "end": {
+                    "offset": 193,
+                    "line": 10,
+                    "column": 8
+                  }
+                },
+                "text": "Tip"
+              },
+              {
+                "kind": "Text",
+                "span": {
+                  "start": {
+                    "offset": 193,
+                    "line": 10,
+                    "column": 8
+                  },
+                  "end": {
+                    "offset": 200,
+                    "line": 10,
+                    "column": 15
+                  }
+                },
+                "text": " {.tip}"
+              }
+            ]
+          },
+          "layout": {},
+          "classes": [
+            "tip"
+          ],
+          "compatibility": [],
+          "content": [
+            {
+              "kind": "Paragraph",
+              "span": {
+                "start": {
+                  "offset": 202,
+                  "line": 12,
+                  "column": 1
+                },
+                "end": {
+                  "offset": 229,
+                  "line": 12,
+                  "column": 28
+                }
+              },
+              "children": [
+                {
+                  "kind": "Text",
+                  "span": {
+                    "start": {
+                      "offset": 202,
+                      "line": 12,
+                      "column": 1
+                    },
+                    "end": {
+                      "offset": 206,
+                      "line": 12,
+                      "column": 5
+                    }
+                  },
+                  "text": "Use "
+                },
+                {
+                  "kind": "CodeSpan",
+                  "span": {
+                    "start": {
+                      "offset": 206,
+                      "line": 12,
+                      "column": 5
+                    },
+                    "end": {
+                      "offset": 212,
+                      "line": 12,
+                      "column": 11
+                    }
+                  },
+                  "children": [
+                    {
+                      "kind": "Text",
+                      "span": {
+                        "start": {
+                          "offset": 207,
+                          "line": 12,
+                          "column": 6
+                        },
+                        "end": {
+                          "offset": 212,
+                          "line": 12,
+                          "column": 11
+                        }
+                      },
+                      "text": "title",
+                      "properties": {
+                        "raw": true
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "Text",
+                  "span": {
+                    "start": {
+                      "offset": 213,
+                      "line": 12,
+                      "column": 12
+                    },
+                    "end": {
+                      "offset": 216,
+                      "line": 12,
+                      "column": 15
+                    }
+                  },
+                  "text": " in"
+                },
+                {
+                  "kind": "Text",
+                  "span": {
+                    "start": {
+                      "offset": 216,
+                      "line": 12,
+                      "column": 15
+                    },
+                    "end": {
+                      "offset": 229,
+                      "line": 12,
+                      "column": 28
+                    }
+                  },
+                  "text": " frontmatter."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
