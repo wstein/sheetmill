@@ -6,7 +6,7 @@
   chrome.append(label,details,links);document.body.prepend(chrome);
   let state=null,connected=false;
   const selected=location.pathname.split('/')[1];
-  const key='studio-published';let seen=Number(sessionStorage.getItem(key)||0);
+  let seen=0;
   function render(){
     const sheet=state?.sheets.find(s=>s.id===selected);
     label.textContent=!connected?'Disconnected — freshness unknown':state?.error?'Preview failed':sheet?`${sheet.status}${sheet.stale?' — last-valid preview':''}`:'SheetMill Studio — read-only';
@@ -21,9 +21,14 @@
     try{
       const response=await fetch('/studio/state',{cache:'no-store'});if(!response.ok)throw Error('State unavailable');
       const next=await response.json();if(state&&next.version<state.version)return;state=next;render();
-      if(connected&&next.published>seen){const had=seen>0;seen=next.published;sessionStorage.setItem(key,String(seen));if(had)location.reload()}
+      if(connected&&next.published>seen){const had=seen>0;seen=next.published;if(had)location.reload()}
     }catch{connected=false;render()}
   }
-  const events=new EventSource('/studio/events');events.onopen=()=>{connected=true;refresh()};events.onmessage=()=>refresh();events.onerror=()=>{connected=false;render()};
-  window.addEventListener('online',refresh);render();refresh();
+  let events;
+  function connect(){
+    events?.close();events=new EventSource('/studio/events');
+    events.onopen=()=>{connected=true;refresh()};events.onmessage=()=>refresh();events.onerror=()=>{connected=false;render()};
+  }
+  window.addEventListener('offline',()=>{events?.close();connected=false;render()});
+  window.addEventListener('online',()=>{connect();refresh()});connect();render();refresh();
 })();
