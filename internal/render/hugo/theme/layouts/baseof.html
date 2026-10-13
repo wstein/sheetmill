@@ -2,7 +2,8 @@
 <html lang="en" data-base="{{ site.Params.base }}">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark"><title>{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ .Site.Title }}</title>
+<meta name="color-scheme" content="light dark">{{ $description := site.Params.description }}{{ $path := site.Params.base }}{{ if not .IsHome }}{{ with index site.Data.sheets .Params.sheetid }}{{ with .description }}{{ $description = . }}{{ end }}{{ $path = .url }}{{ end }}{{ end }}
+{{ with $description }}<meta name="description" content="{{ . }}"><meta property="og:description" content="{{ . }}">{{ end }}<meta property="og:type" content="website"><meta property="og:title" content="{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ site.Title }}">{{ with site.Params.origin }}<link rel="canonical" href="{{ . }}{{ $path }}"><meta property="og:url" content="{{ . }}{{ $path }}"><meta property="og:image" content="{{ . }}{{ site.Params.base }}brand/social-preview.png">{{ end }}<title>{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ .Site.Title }}</title>
 <link rel="icon" href="{{ site.Params.base }}brand/favicon.svg" type="image/svg+xml"><link rel="icon" href="{{ site.Params.base }}brand/favicon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="{{ site.Params.base }}brand/apple-touch-icon.png">
 <link rel="stylesheet" href="{{ site.Params.base }}{{ site.Params.stylesheet }}"><script src="{{ site.Params.base }}{{ site.Params.script }}" defer></script>
 </head>
