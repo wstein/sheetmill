@@ -174,17 +174,15 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			if e != nil {
 				errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
 			} else {
-				b.WriteString(`<aside class="provenance"><h2>Source &amp; license</h2>`)
+				b.WriteString(`<aside class="provenance" aria-label="Source and license"><details class="source-details"><summary>`)
 				if fields, ok := source.(map[string]any); ok {
-					b.WriteString(`<dl class="source-facts">`)
-					for _, field := range []struct{ key, label string }{{"attribution", "Attribution"}, {"license", "License"}} {
-						if value, ok := fields[field.key].(string); ok && value != "" {
-							fmt.Fprintf(&b, `<dt>%s</dt><dd>%s</dd>`, field.label, esc(value))
+					for _, key := range []string{"attribution", "license"} {
+						if value, ok := fields[key].(string); ok && value != "" {
+							fmt.Fprintf(&b, `<span class="source-facts">%s</span><span aria-hidden="true"> · </span>`, esc(value))
 						}
 					}
-					b.WriteString(`</dl>`)
 				}
-				fmt.Fprintf(&b, `<details class="source-details"><summary>Full source metadata</summary><pre>%s</pre></details><p>Source attribution is preserved. Import does not grant redistribution rights.</p></aside>`, esc(string(disclosure)))
+				fmt.Fprintf(&b, `Source details</summary><pre>%s</pre><p>Source attribution is preserved. Import does not grant redistribution rights.</p></details></aside>`, esc(string(disclosure)))
 			}
 		}
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)

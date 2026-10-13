@@ -24,12 +24,12 @@
 .edit-link{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:5px 10px;border:1px solid var(--line);border-radius:5px;color:var(--muted);font-size:12px;font-weight:500;text-decoration:none;background:var(--surface)}
 .edit-link:hover{color:var(--text);border-color:var(--muted)}
 .edit-link svg{flex:none}
-.source-facts{display:flex;flex-wrap:wrap;gap:4px 12px;margin:8px 0 12px;font-size:12px}
-.source-facts dt{color:var(--muted)}
-.source-facts dd{margin:0 16px 0 0;overflow-wrap:anywhere;min-width:0}
 .source-details{font-size:12px;color:var(--muted)}
 .source-details summary{cursor:pointer;width:fit-content;padding:5px 0;text-decoration:underline;text-underline-offset:3px}
 .source-details summary:focus-visible{outline:3px solid var(--link);outline-offset:4px}
 .source-details pre{max-height:24rem;overflow:auto;color:var(--text)}
-@media(max-width:760px){.source-facts{display:grid;grid-template-columns:auto minmax(0,1fr)}.edit-link{min-height:44px}}
+@media(max-width:760px){.edit-link{min-height:44px}}
 @media print{.edit-link{display:none}}
+
+.provenance{margin-top:28px;padding-top:12px}
+.source-details summary{overflow-wrap:anywhere}
