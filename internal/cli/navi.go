@@ -12,17 +12,19 @@ import (
 
 func naviCommand(out, errout io.Writer, status *int) *cobra.Command {
 	var destination, shell, root string
+	var strict bool
 	command := &cobra.Command{Use: "navi <file-or-directory>...", Short: "Export marked cards as navi .cheat files to a new directory", Args: cobra.MinimumNArgs(1), Run: func(cmd *cobra.Command, args []string) {
-		*status = runNavi(args, destination, shell, root, out, errout)
+		*status = runNavi(args, destination, shell, root, strict, out, errout)
 	}}
 	command.Flags().StringVar(&destination, "out", "", "new directory for the .cheat files; never overwritten")
-	command.Flags().StringVar(&shell, "shell", "bash", "shell profile navi is configured with: "+strings.Join(navi.ProfileNames(), ", "))
+	command.Flags().StringVar(&shell, "shell", "bash", "shell profile navi is configured with: "+strings.Join(navi.ProfileNames(), ", ")+" (zsh, fish and nu are experimental: unverified against real shells)")
 	command.Flags().StringVar(&root, "root", "", "directory source paths are made relative to (default: the common directory of the inputs); relative paths name each card to navi")
+	command.Flags().BoolVar(&strict, "strict", false, "fail without writing when any card is skipped or any warning is reported")
 	command.MarkFlagRequired("out")
 	return command
 }
 
-func runNavi(args []string, destination, shell, root string, out, errout io.Writer) int {
+func runNavi(args []string, destination, shell, root string, strict bool, out, errout io.Writer) int {
 	sel, status := loadSelection(args, root, errout)
 	if status != 0 {
 		return status
@@ -53,6 +55,10 @@ func runNavi(args []string, destination, shell, root string, out, errout io.Writ
 		return 1
 	}
 	report(project.Warnings, " (warning)")
+	if strict && len(project.Warnings) > 0 {
+		fmt.Fprintf(errout, "smill:1:1: NAV000: --strict: %d warning(s) reported; nothing was written\n", len(project.Warnings))
+		return 1
+	}
 	if len(project.Files) == 0 {
 		fmt.Fprintln(errout, "smill:1:1: NAV106: no sheet produced a .cheat file")
 		return 1

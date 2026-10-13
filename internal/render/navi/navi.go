@@ -67,8 +67,10 @@ type Project struct {
 type param struct{ Type, Description string }
 
 var (
-	paramName   = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
-	placeholder = regexp.MustCompile(`<([A-Za-z_][A-Za-z0-9_-]*)>`)
+	paramName = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
+	// placeholder follows navi v2.24.0's VAR_REGEX, \\?<(\w[\w\d\-_]*)>, whose \w is
+	// Unicode in Rust's regex crate. \p{N} is a deliberately wider superset of \d.
+	placeholder = regexp.MustCompile(`\\?<([\p{L}\p{M}\p{N}\p{Pc}][\p{L}\p{M}\p{N}\p{Pc}-]*)>`)
 	cardID      = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]*$`)
 )
 
@@ -172,21 +174,15 @@ func renderSheet(s Sheet, profile Profile) ([]byte, []entry, []Issue, []Issue) {
 		cards = parseMetadata(raw, profile, bad)
 	}
 	tags := tagList(d.Metadata, tool, bad)
-	// Declarations of one name must agree across a sheet: all its cards share one
-	// navi tag context, where a variable name has one definition.
-	declared := map[string]param{}
+	// Parameters are card-local: every card has its own navi context, so one name
+	// may be declared differently in different cards.
 	ids := make([]string, 0, len(cards))
 	for id := range cards {
 		ids = append(ids, id)
 	}
 	sort.Strings(ids)
-	for _, id := range ids {
-		for _, name := range sortedParams(cards[id].params) {
-			if prior, seen := declared[name]; seen && prior != cards[id].params[name] {
-				errs = append(errs, issue(s, "NAV007", fmt.Sprintf("parameter %q is declared differently in several cards; one tag context has one definition per name", name), diagnostic.Span{}))
-			}
-			declared[name] = cards[id].params[name]
-		}
+	if dropped := unexportedMetadata(d.Metadata); len(dropped) > 0 {
+		warns = append(warns, issue(s, "NAV107", "metadata not written to the .cheat file (a sidecar is not implemented yet): "+strings.Join(dropped, ", "), diagnostic.Span{}))
 	}
 	existing := map[string]bool{}
 	for _, sec := range d.Sections {
@@ -360,6 +356,9 @@ func renderCard(s Sheet, card model.Card, tagLine string, profile Profile, metas
 	used := map[string]bool{}
 	for _, m := range placeholder.FindAllStringSubmatch(command, -1) {
 		name := m[1]
+		if strings.HasPrefix(m[0], `\`) {
+			return skip("NAV103", fmt.Sprintf("navi reads \\<%s> as an escaped placeholder; there is no escape for literal placeholders in this version", name), block.Span)
+		}
 		if !paramName.MatchString(name) {
 			return skip("NAV103", fmt.Sprintf("<%s> looks like a navi placeholder but names match [a-z][a-z0-9_]{0,31}", name), block.Span)
 		}
@@ -374,6 +373,9 @@ func renderCard(s Sheet, card model.Card, tagLine string, profile Profile, metas
 		}
 	}
 	title := oneLine(card.Title)
+	if title == "" {
+		return skip("NAV102", "the card title is empty once invisible characters are removed; navi skips entries without a description", card.Span)
+	}
 	if strings.ContainsRune(title, braille) {
 		return skip("NAV102", "the card title contains U+2800, navi's finder field separator", card.Span)
 	}
@@ -424,46 +426,127 @@ func checkCommand(command string, profile Profile) (string, string) {
 	return "", ""
 }
 
-// unterminatedQuote scans POSIX-like quoting; it returns the open quote or 0.
-// Commands with a heredoc are not scanned because the payload is free text.
+// unterminatedQuote scans POSIX-like quoting and returns the quote left open, or 0.
+// Command substitutions ($( ) and backticks) start a fresh code context, also
+// inside double quotes. Only quotes are ever reported: unbalanced parentheses or
+// other shell errors are not diagnosed here. Commands with a heredoc are not
+// scanned because the payload is free text.
 func unterminatedQuote(s string, p Profile) rune {
-	var quote rune
-	ansi := false
 	rs := []rune(s)
-	for i := 0; i < len(rs); i++ {
-		c := rs[i]
-		switch quote {
-		case '\'':
-			if c == '\\' && (p.fishQuotes || ansi) {
+	// scan reads code from i until end of input or the closer of a substitution
+	// (')' or '`'); it returns the next index and any quote left open.
+	var scan func(i int, closer rune) (int, rune)
+	var double func(i int) (int, rune)
+	double = func(i int) (int, rune) {
+		for i < len(rs) {
+			switch {
+			case rs[i] == '\\':
+				i += 2
+			case rs[i] == '"':
+				return i + 1, 0
+			case rs[i] == '$' && i+1 < len(rs) && rs[i+1] == '(':
+				next, open := scan(i+2, ')')
+				if open != 0 {
+					return next, open
+				}
+				i = next
+			case rs[i] == '`':
+				next, open := scan(i+1, '`')
+				if open != 0 {
+					return next, open
+				}
+				i = next
+			default:
 				i++
-			} else if c == '\'' {
-				quote, ansi = 0, false
 			}
-		case '"':
-			if c == '\\' {
+		}
+		return i, '"'
+	}
+	scan = func(i int, closer rune) (int, rune) {
+		depth := 0
+		for i < len(rs) {
+			c := rs[i]
+			switch {
+			case c == '\\':
+				i += 2
+			case c == '\'':
+				ansi := p.ansiC && i > 0 && rs[i-1] == '$'
 				i++
-			} else if c == '"' {
-				quote = 0
-			}
-		default:
-			switch c {
-			case '\\':
-				i++
-			case '\'':
-				quote = '\''
-				ansi = p.ansiC && i > 0 && rs[i-1] == '$'
-			case '"':
-				quote = '"'
-			case '#':
-				if i == 0 || unicode.IsSpace(rs[i-1]) {
-					for i < len(rs) && rs[i] != '\n' {
+				for i < len(rs) && rs[i] != '\'' {
+					if rs[i] == '\\' && (p.fishQuotes || ansi) {
 						i++
+					}
+					i++
+				}
+				if i >= len(rs) {
+					return i, '\''
+				}
+				i++
+			case c == '"':
+				next, open := double(i + 1)
+				if open != 0 {
+					return next, open
+				}
+				i = next
+			case c == '$' && i+1 < len(rs) && rs[i+1] == '(':
+				next, open := scan(i+2, ')')
+				if open != 0 {
+					return next, open
+				}
+				i = next
+			case c == '`':
+				if closer == '`' {
+					return i + 1, 0
+				}
+				next, open := scan(i+1, '`')
+				if open != 0 {
+					return next, open
+				}
+				i = next
+			case c == '(' && closer == ')':
+				depth++
+				i++
+			case c == ')' && closer == ')':
+				if depth == 0 {
+					return i + 1, 0
+				}
+				depth--
+				i++
+			case c == '#' && (i == 0 || unicode.IsSpace(rs[i-1])):
+				for i < len(rs) && rs[i] != '\n' {
+					i++
+				}
+			default:
+				i++
+			}
+		}
+		return i, 0
+	}
+	_, open := scan(0, 0)
+	return open
+}
+
+// unexportedMetadata lists the frontmatter paths the .cheat file does not carry.
+// The export uses title, license, attribution, tags, cheatsheet.tool and the
+// cheatsheet.navi namespace; cheatsheet.schema is a format marker.
+func unexportedMetadata(metadata map[string]any) []string {
+	var dropped []string
+	for _, key := range sortedKeys(metadata) {
+		switch key {
+		case "title", "license", "attribution", "tags":
+		case "cheatsheet":
+			if cheat, ok := metadata[key].(map[string]any); ok {
+				for _, k := range sortedKeys(cheat) {
+					if k != "tool" && k != "navi" && k != "schema" {
+						dropped = append(dropped, "cheatsheet."+k)
 					}
 				}
 			}
+		default:
+			dropped = append(dropped, key)
 		}
 	}
-	return quote
+	return dropped
 }
 
 func tagList(metadata map[string]any, tool string, bad func(string)) []string {

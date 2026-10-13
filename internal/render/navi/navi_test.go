@@ -230,10 +230,64 @@ func TestMetadataErrorsFailBuild(t *testing.T) {
 	}
 }
 
-func TestConflictingDeclarations(t *testing.T) {
+func TestParametersAreCardLocal(t *testing.T) {
+	// Each card has its own navi context, so one name may be declared differently.
 	source := "---\ntitle: T\nlicense: x\ncheatsheet:\n  navi:\n    cards:\n      a: {params: {x: {type: string}}}\n      b: {params: {x: {type: int}}}\n---\n## S\n\n### A {.navi #a}\n\n```bash\necho <x>\n```\n\n### B {.navi #b}\n\n```bash\necho <x>\n```\n"
-	if _, errs := Render([]Sheet{sheet(t, source)}, Options{}); len(errs) == 0 || errs[0].Code != "NAV007" {
-		t.Fatalf("errors %v", errs)
+	p, errs := Render([]Sheet{sheet(t, source)}, Options{})
+	if len(errs) > 0 || len(parseCheat(p.Files["demo.cheat"]).cards) != 2 {
+		t.Fatalf("errors %v warnings %v", errs, p.Warnings)
+	}
+}
+
+func TestReviewFindings(t *testing.T) {
+	skipped := func(t *testing.T, source, code string) {
+		t.Helper()
+		p, errs := Render([]Sheet{sheet(t, source)}, Options{})
+		if len(errs) > 0 || len(p.Warnings) < 1 || p.Warnings[0].Code != code || len(p.Files) != 0 {
+			t.Fatalf("errors %v warnings %v files %d", errs, p.Warnings, len(p.Files))
+		}
+	}
+	// 1. navi's \\?<(\\w[\\w\\d\\-_]*)> also reads numbers, Unicode names and escapes.
+	for _, body := range []string{`echo "<1>"`, `echo \\<sheet> <sheet>`, `echo <ünï> <sheet>`, `echo <_x> <sheet>`} {
+		skipped(t, card("bash", body), "NAV103")
+	}
+	// 2. A title that is empty after normalization would be skipped silently by navi.
+	empty := strings.Replace(card("bash", "echo <sheet>"), "### Card", "### \u200b", 1)
+	d, ds := markdown.Parse([]byte(empty))
+	if len(ds) > 0 {
+		t.Fatalf("the source must parse: %v", ds)
+	}
+	if p, errs := Render([]Sheet{{ID: "demo", SourceName: "demo.md", Path: "demo.md", Document: d}}, Options{}); len(errs) > 0 || p.Warnings[0].Code != "NAV102" || !strings.Contains(p.Warnings[0].Message, "empty") {
+		t.Fatalf("errors %v warnings %v", errs, p.Warnings)
+	}
+	// 3. Valid shell with quotes nested in command substitutions is kept.
+	for _, body := range []string{
+		`echo "$(printf '"')" <sheet>`,
+		"echo \"`printf '\"'`\" <sheet>",
+		`echo $(echo "a 'b") <sheet>`,
+		`echo "a $(echo "b $(echo 'c)')") <sheet>"`,
+	} {
+		p, errs := Render([]Sheet{sheet(t, card("bash", body))}, Options{})
+		if len(errs) > 0 || len(p.Warnings) != 0 {
+			t.Fatalf("%s: errors %v warnings %v", body, errs, p.Warnings)
+		}
+	}
+	skipped(t, card("bash", `echo "$(printf 'x)" <sheet>`), "NAV102")
+	// 4. Metadata the file does not carry is diagnosed, not dropped silently.
+	source := strings.Replace(card("bash", "echo <sheet>"), "title: Demo", "title: Demo\ndescription: d\ncategory: c", 1)
+	p, errs := Render([]Sheet{sheet(t, source)}, Options{})
+	if len(errs) > 0 || len(p.Warnings) != 1 || p.Warnings[0].Code != "NAV107" || !strings.Contains(p.Warnings[0].Message, "category, description") {
+		t.Fatalf("errors %v warnings %v", errs, p.Warnings)
+	}
+}
+
+// TestItemHashVectors pins the FNV-1a model to values calculated independently
+// from navi's Rust hash input (bytes plus a trailing 0xff).
+func TestItemHashVectors(t *testing.T) {
+	for in, want := range map[string]uint64{"": 0x1c9d3adb639f298e, "abc": 0x64372d1c87d01e7c} {
+		if got := itemHash(in); got != want {
+			t.Errorf("itemHash(%q) = %#x, want %#x", in, got, want)
+		}
 	}
 }
 
