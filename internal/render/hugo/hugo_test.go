@@ -972,3 +972,23 @@ func TestCardKindLabels(t *testing.T) {
 		}
 	}
 }
+
+func TestSearchEntriesCarryTagsAndCategory(t *testing.T) {
+	p, ds := Render([]Sheet{described(t, "git", "title: Git\ncategory: version-control\ntags: [vcs]\n", "## S\n### Undo\nText.\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	var index []struct {
+		Title    string   `json:"title"`
+		Tags     []string `json:"tags"`
+		Category string   `json:"category"`
+	}
+	if err := json.Unmarshal(p.Files["static/search.json"], &index); err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range index {
+		if e.Category != "version-control" || len(e.Tags) != 1 || e.Tags[0] != "vcs" {
+			t.Fatal(e)
+		}
+	}
+}
