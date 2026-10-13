@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -728,5 +729,92 @@ func TestSourceDetailsEscapeControlCharacters(t *testing.T) {
 	}
 	if strings.ContainsAny(got, "\x00\r") {
 		t.Fatalf("HTML-normalized controls leaked: %q", got)
+	}
+}
+
+func nested(t *testing.T, id, sourcePath, body string) Sheet {
+	t.Helper()
+	s := sheet(t, id, body)
+	s.SourceName, s.Path = path.Base(sourcePath), sourcePath
+	return s
+}
+
+func TestNestedSheetLinks(t *testing.T) {
+	cli := nested(t, "cli", "cli.md", "## S\n### Usage {#usage}\n[Format](format/gfm-plus.md#ids) [Wrong](gfm-plus.md)\n")
+	format := nested(t, "gfm-plus", "format/gfm-plus.md", "## S\n### IDs {#ids}\n[Back](../cli.md#usage) [Same dir](compatibility.md)\n")
+	compat := nested(t, "compatibility", "format/compatibility.md", "## S\n### C\nText.\n")
+	p, ds := Render([]Sheet{cli, format, compat}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	for id, want := range map[string]string{"cli": `href="/gfm-plus/#ref-ids"`, "gfm-plus": `href="/cli/#ref-usage"`} {
+		if got := body(t, p, id); !strings.Contains(got, want) {
+			t.Error(id, want, got)
+		}
+	}
+	if got := body(t, p, "gfm-plus"); !strings.Contains(got, `href="/compatibility/"`) {
+		t.Error("same-directory link", got)
+	}
+	var unresolved []string
+	for _, w := range p.Warnings {
+		if w.Code == "REN103" {
+			unresolved = append(unresolved, w.Message)
+		}
+	}
+	if len(unresolved) != 1 || !strings.Contains(unresolved[0], "gfm-plus.md") {
+		t.Fatal("only the root-relative basename link must stay unresolved", unresolved)
+	}
+}
+
+func TestSourceBaseURL(t *testing.T) {
+	cli := nested(t, "cli", "cli.md", "## S\n### C\n[Policy](../AGENTS.md#scope) [Notes](e2e-notes.md) [Site](/elsewhere/) [Escape](../../../x.md)\n")
+	format := nested(t, "gfm-plus", "format/gfm-plus.md", "## S\n### C\n[Schema](../../schema/cheatsheet.schema.json)\n")
+	p, ds := Render([]Sheet{cli, format}, Options{SourceBaseURL: "https://github.com/wstein/sheetmill/blob/main/docs/"})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	for id, want := range map[string]string{
+		"cli":      `href="https://github.com/wstein/sheetmill/blob/main/AGENTS.md#scope"`,
+		"gfm-plus": `href="https://github.com/wstein/sheetmill/blob/main/schema/cheatsheet.schema.json"`,
+	} {
+		if got := body(t, p, id); !strings.Contains(got, want) {
+			t.Error(id, want, got)
+		}
+	}
+	if got := body(t, p, "cli"); !strings.Contains(got, `href="https://github.com/wstein/sheetmill/blob/main/docs/e2e-notes.md"`) {
+		t.Error("same-directory repository link", got)
+	}
+	// Site-absolute paths and links leaving the repository stay as written and are reported.
+	var unresolved []string
+	for _, w := range p.Warnings {
+		if w.Code == "REN103" {
+			unresolved = append(unresolved, w.Message)
+		}
+	}
+	if len(unresolved) != 2 || !strings.Contains(unresolved[0]+unresolved[1], "/elsewhere/") || !strings.Contains(unresolved[0]+unresolved[1], "../../../x.md") {
+		t.Fatal(unresolved)
+	}
+	for _, bad := range []string{"http://github.com/o/r/blob/main/", "https://example.com/o/r/blob/main/", "https://github.com/o/r/edit/main/", "https://github.com/o/r/blob/main/docs/?q", "https://github.com/o/r/blob/main/../x/"} {
+		if _, ds := Render([]Sheet{cli}, Options{SourceBaseURL: bad}); len(ds) == 0 || ds[0].Code != "REN003" {
+			t.Error(bad, ds)
+		}
+	}
+}
+
+func TestNestedEditLinkAndInvalidPath(t *testing.T) {
+	format := nested(t, "gfm-plus", "format/gfm-plus.md", "## S\n### C\nText.\n")
+	p, ds := Render([]Sheet{format}, Options{EditBaseURL: "https://github.com/wstein/sheetmill/edit/main/docs/"})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	if !strings.Contains(string(p.Files["data/sheets/gfm-plus.json"]), `https://github.com/wstein/sheetmill/edit/main/docs/format/gfm-plus.md`) {
+		t.Fatal(string(p.Files["data/sheets/gfm-plus.json"]))
+	}
+	for _, bad := range []string{"/abs/gfm-plus.md", "../gfm-plus.md", "format/../gfm-plus.md", "format/other.md", `format\gfm-plus.md`, "format//gfm-plus.md"} {
+		s := nested(t, "gfm-plus", "format/gfm-plus.md", "Intro.")
+		s.Path = bad
+		if _, ds := Render([]Sheet{s}, Options{}); len(ds) == 0 || ds[0].Code != "REN003" {
+			t.Error(bad, ds)
+		}
 	}
 }

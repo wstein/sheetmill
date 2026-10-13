@@ -35,7 +35,11 @@ var themeFiles, brandFiles fs.FS = theme, brand.Files
 
 type Sheet struct {
 	ID, SourceName string
-	Document       *model.Document
+	// Path is the slash-separated source path relative to the selection root,
+	// such as "format/gfm-plus.md". Empty means SourceName. Relative links resolve
+	// against it; it never contains host path components.
+	Path     string
+	Document *model.Document
 }
 type Options struct {
 	Title string
@@ -45,6 +49,10 @@ type Options struct {
 	// EditBaseURL is an explicit GitHub /owner/repository/edit/ref/directory/ base.
 	// It refers to authored sheets, never to upstream source provenance.
 	EditBaseURL string
+	// SourceBaseURL is an explicit GitHub /owner/repository/blob/ref/directory/ base
+	// for the selection root. Relative links that name no selected sheet resolve to
+	// the repository file instead of being reported as unresolved.
+	SourceBaseURL string
 }
 
 // basePath accepts "/" or "/seg/.../" with unreserved URL characters only, so the
@@ -100,13 +108,19 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if len(sheets) == 0 {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "select at least one sheet"}})
 	}
-	editBase, err := githubEditBase(options.EditBaseURL)
+	editBase, err := githubBase(options.EditBaseURL, "edit")
+	if err != nil {
+		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: err.Error()}})
+	}
+	sourceBase, err := githubBase(options.SourceBaseURL, "blob")
 	if err != nil {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: err.Error()}})
 	}
 	sheets = append([]Sheet(nil), sheets...)
 	sort.SliceStable(sheets, func(i, j int) bool { return sheets[i].ID < sheets[j].ID })
 	routes := map[string]string{}
+	paths := map[string]string{}
+	names := map[string]bool{}
 	ids := map[string]string{}
 	for _, s := range sheets {
 		if first, duplicate := ids[s.ID]; duplicate {
@@ -123,10 +137,18 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		if path.Base(s.SourceName) != s.SourceName || s.SourceName == "" || s.SourceName == "." || s.SourceName == ".." {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "source name must be a basename"}})
 		}
-		if _, exists := routes[s.SourceName]; exists {
+		if s.Path == "" {
+			s.Path = s.SourceName
+		}
+		if !localSheetPath(s.Path) || path.Base(s.Path) != s.SourceName {
+			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "sheet path must be a clean relative path ending in its source name: " + s.Path}})
+		}
+		if _, exists := names[s.SourceName]; exists {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "ambiguous source basename: " + s.SourceName}})
 		}
-		routes[s.SourceName] = s.ID
+		names[s.SourceName] = true
+		routes[s.Path] = s.ID
+		paths[s.ID] = s.Path
 		ids[s.ID] = s.SourceName
 	}
 	putJSON := func(name string, v any) error {
@@ -151,7 +173,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		}
 	}
 	for _, s := range sheets {
-		r := renderer{self: s.ID, base: base, routes: routes, anchors: anchors}
+		r := renderer{self: s.ID, path: paths[s.ID], base: base, source: sourceBase, routes: routes, anchors: anchors}
 		title, _ := s.Document.Metadata["title"].(string)
 		var b strings.Builder
 		r.nodes(&b, s.Document.Preamble, false)
@@ -191,7 +213,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		errors = append(errors, issues(s.SourceName, r.errors)...)
 		page := page{Title: title, URL: base + s.ID + "/", Body: b.String()}
 		if editBase != "" {
-			page.EditURL = editBase + url.PathEscape(s.SourceName)
+			page.EditURL = editBase + escapePath(paths[s.ID])
 		}
 		pages = append(pages, page)
 		if e := putJSON("data/sheets/"+s.ID+".json", page); e != nil {
@@ -320,7 +342,8 @@ func sourceText(value any, key bool) (string, error) {
 type renderer struct {
 	inLink           bool
 	routes           map[string]string
-	self, base       string
+	self, path, base string
+	source           string
 	anchors          map[string]map[string]bool
 	errors, warnings []diagnostic.Diagnostic
 }
@@ -494,11 +517,18 @@ func (r *renderer) url(n model.Node, destination string) string {
 		// Internal links resolve to a selected sheet and a section or card ID.
 		// Anything else is kept as written and reported, never silently broken.
 		target, routed := r.self, u.Path == ""
-		if id, ok := r.routes[path.Clean(u.Path)]; ok && !routed {
+		relative := !routed && !strings.HasPrefix(u.Path, "/")
+		joined := path.Join(path.Dir(r.path), u.Path)
+		if id, ok := r.routes[joined]; ok && relative {
 			u.Path, target, routed = r.base+id+"/", id, true
 		}
 		unresolved := func(message string) {
 			r.warnings = append(r.warnings, diagnostic.Diagnostic{Code: "REN103", Message: message + destination, Span: n.Span})
+		}
+		if !routed && relative && r.source != "" {
+			if resolved, ok := r.repositoryURL(joined, u); ok {
+				return resolved
+			}
 		}
 		switch {
 		case !routed && n.Kind != "Image": // images already report REN102
@@ -515,6 +545,19 @@ func (r *renderer) url(n model.Node, destination string) string {
 		return u.String() + "#"
 	}
 	return u.String()
+}
+
+// repositoryURL maps a selection-relative path to the source repository, refusing
+// paths that leave the repository (above /owner/repository/blob/ref/).
+func (r *renderer) repositoryURL(joined string, link *url.URL) (string, bool) {
+	base, _ := url.Parse(r.source)
+	root := strings.Join(strings.SplitN(strings.Trim(base.Path, "/"), "/", 5)[:4], "/")
+	target := path.Join(base.Path, joined)
+	if !strings.HasPrefix(target, "/"+root+"/") {
+		return "", false
+	}
+	resolved := url.URL{Scheme: base.Scheme, Host: base.Host, Path: target, RawQuery: link.RawQuery, Fragment: link.Fragment}
+	return resolved.String(), true
 }
 
 // labeled reports visible label content: text, or an image rendered as a reference.
@@ -582,22 +625,36 @@ func (r *renderer) heading(n model.Node) string {
 }
 
 // Operator-controlled edit links are intentionally separate from metadata.source.
-func githubEditBase(raw string) (string, error) {
+// githubBase validates an explicit https://github.com/owner/repository/<kind>/ref/
+// URL with an optional directory, and returns it with one trailing slash.
+func githubBase(raw, kind string) (string, error) {
 	if raw == "" {
 		return "", nil
 	}
 	u, err := url.Parse(raw)
 	if err != nil || u.Scheme != "https" || u.Host != "github.com" || u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" {
-		return "", fmt.Errorf("edit base must be an HTTPS github.com repository edit URL without credentials, query or fragment")
+		return "", fmt.Errorf("%s base must be an HTTPS github.com repository URL without credentials, query or fragment", kind)
 	}
 	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
-	if len(parts) < 4 || parts[2] != "edit" {
-		return "", fmt.Errorf("edit base must name /owner/repository/edit/ref/ and an optional sheet directory")
+	if len(parts) < 4 || parts[2] != kind {
+		return "", fmt.Errorf("%s base must name /owner/repository/%s/ref/ and an optional sheet directory", kind, kind)
 	}
 	for _, part := range parts {
 		if part == "" || part == "." || part == ".." || strings.Contains(part, "\\") {
-			return "", fmt.Errorf("invalid edit base path")
+			return "", fmt.Errorf("invalid %s base path", kind)
 		}
 	}
 	return strings.TrimRight(u.String(), "/") + "/", nil
+}
+
+func localSheetPath(p string) bool {
+	return p != "" && path.Clean(p) == p && !path.IsAbs(p) && p != ".." && !strings.HasPrefix(p, "../") && !strings.Contains(p, "\\")
+}
+
+func escapePath(p string) string {
+	parts := strings.Split(p, "/")
+	for i, part := range parts {
+		parts[i] = url.PathEscape(part)
+	}
+	return strings.Join(parts, "/")
 }
