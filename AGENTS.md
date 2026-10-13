@@ -10,7 +10,10 @@ Sibling repository policies do not govern this repository.
   fuzzing, vet and source/security checks are allowed within the requested work.
 - The current scope includes features 001–004: core, Reference import, finalized
   brand assets and a Hugo renderer with local site generation (authorized by the
-  user on 2026-10-13). PDF/Typst and navi renderers remain out of scope.
+  user on 2026-10-13). PDF/Typst renderers remain out of scope.
+- Feature 006 is authorized (user, 2026-10-14): `smill build navi` text generation
+  of `.cheat` files for bash, zsh, fish and nushell profiles. Never run navi, a shell
+  or an exported command; publishing generated cheats and distribution stay gated.
 - Feature 007 MVP T001–T018 and applicable final checks are authorized on
   2026-10-13: one smill sheet, temporary verification executable, Hugo and local
   browser E2E.

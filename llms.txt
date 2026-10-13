@@ -3,8 +3,9 @@
 > SheetMill is a Go reference-sheet compiler. Its CLI, `smill`, validates GFM
 > Markdown with YAML frontmatter, prints a versioned semantic JSON IR, converts
 > Reference sheets with provenance, exports self-contained Hugo 0.167.0 projects
-> and serves a read-only local preview. Nothing in a source sheet is executed or
-> fetched. Typst/PDF and navi output are planned, not implemented.
+> exports marked command cards as navi `.cheat` files and serves a read-only
+> local preview. Nothing in a source sheet is executed or fetched. Typst/PDF
+> output is planned, not implemented.
 
 Use this file to debug or investigate a SheetMill problem. To help a human set
 up SheetMill or write sheets, read the agent guide instead. Contributors working
