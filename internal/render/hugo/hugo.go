@@ -397,6 +397,10 @@ func (r *renderer) url(n model.Node, destination string) string {
 			unresolved("link fragment matches no section or card: ")
 		}
 	}
+	// url.URL cannot represent an empty fragment; keep "#" as the author wrote it.
+	if u.Fragment == "" && strings.HasSuffix(destination, "#") {
+		return u.String() + "#"
+	}
 	return u.String()
 }
 
