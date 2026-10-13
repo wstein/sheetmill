@@ -94,3 +94,31 @@ identity are injected into HTTP HTML responses only; exported/generated file
 bytes are unchanged. See [CLI usage](cli.md#local-saved-file-preview),
 [security boundary](studio-security.md) and [actual verification](studio-verification.md).
 No deployment is part of starting a Studio session.
+
+## GitHub page editing
+
+The demo's **Edit this page on GitHub** link opens the authored SheetMill Markdown,
+for example [bdock.md](https://github.com/wstein/sheetmill/edit/main/examples/sheets/bdock.md).
+It is separate from `source.repository/path/revision`, which records the upstream
+implementation used to write the reference. Provenance remains preserved verbatim.
+
+For your own library, opt in explicitly when exporting:
+
+```sh
+smill build hugo ./sheets --out ./new-project --edit-base-url https://github.com/OWNER/REPOSITORY/edit/main/sheets/
+```
+
+The base must be an HTTPS `github.com/owner/repository/edit/ref/` URL with an
+optional directory, without credentials, query, fragment or traversal. Each
+selected source basename is URL-escaped and appended. Select the repository,
+branch and directory containing the actual authored sheets; input files from
+unrelated directories should not share this option. Invalid configuration is
+reported as `REN003` before output is created. No destination is inferred from
+source metadata, and generic exports omit the link by default. Links do not fetch
+GitHub resources automatically or execute any source content.
+
+The existing main-only Pages workflow supplies the SheetMill edit base. This fix
+only changes its export configuration; no deployment was run while preparing it.
+Local actual-Hugo verification at `/sheetmill/` passed desktop/mobile and
+JavaScript-disabled checks for the visible bdock edit destination, unchanged
+BundleDock provenance and zero off-origin resource requests.

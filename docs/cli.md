@@ -7,7 +7,7 @@
 | `smill inspect <file>` | Validate one file and print canonical JSON |
 | `smill import reference <file> [options]` | [Controlled conversion](imports.md), dry-run and loss reports |
 | `smill serve [file-or-directory] [--open] [--port 0..65535] [--hugo /absolute/path]` | Authenticated read-only local live preview through installed Hugo 0.167.0 |
-| `smill build hugo <file-or-directory>... --out <new-project> [--title <name>] [--base-path </path/>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
+| `smill build hugo <file-or-directory>... --out <new-project> [--title <name>] [--base-path </path/>] [--edit-base-url <GitHub-edit-directory>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
 
 Cobra v1.10.2 parses commands and flags. `--help` works at every command level;
 import/build flags may precede or follow the positional input. Check/inspect
