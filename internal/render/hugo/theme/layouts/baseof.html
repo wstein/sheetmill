@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><title>{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ .Site.Title }}</title>
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml"><link rel="icon" href="/brand/favicon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css"><script src="/assets/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#app-main">Skip to content</a>
+<header class="site-header"><a href="/" aria-label="SheetMill home"><img class="logo-light" src="/brand/logo-accessible.svg" width="214" height="64" alt="SheetMill"><img class="logo-dark" src="/brand/logo-dark.svg" width="214" height="64" alt="SheetMill"></a><span class="edition">THE REFERENCE LIBRARY</span><button id="app-theme" type="button" hidden>Change theme</button></header>
+<div class="shell">
+<aside class="sidebar"><label for="app-search">Find a reference</label><input id="app-search" type="search" placeholder="Search cards…" disabled aria-describedby="app-search-status"><p id="app-search-status" role="status">Browse the library below.</p><ul id="app-results" hidden></ul><nav aria-label="Reference sheets"><p class="eyebrow">IN THE LIBRARY</p><ul>{{ range .Site.Data.library }}<li><a href="{{ .url }}">{{ .title }}</a></li>{{ end }}</ul></nav><div class="sidebar-note">One source.<br>Every reference.<p>Made for the work at hand.</p></div></aside>
+<main id="app-main">{{ block "main" . }}{{ end }}</main>
+</div>
+<footer>Compiled with SheetMill <span>Local assets · No trackers</span></footer>
+</body></html>
