@@ -1,4 +1,6 @@
 {{ define "main" }}
-<div class="hero"><p class="eyebrow">A LITTLE KNOWLEDGE, WELL ARRANGED</p><h1>Your working<br>reference shelf<span>.</span></h1><p class="intro">Clear, practical references. Find the detail you need, then get back to making things.</p><div class="hero-rule"><span>{{ len .Site.Data.library }} REFERENCES</span><span>COMPILED WITH CARE ↗</span></div></div>
-<div class="library-grid">{{ range $index, $sheet := .Site.Data.library }}<a class="library-item" href="{{ .url }}"><span class="shelf-number">{{ printf "%02d" (add $index 1) }}</span><h2>{{ .title }}</h2><p>Open reference <span aria-hidden="true">↗</span></p></a>{{ end }}</div>
+<div class="hero"><p class="eyebrow">A LITTLE KNOWLEDGE, WELL ARRANGED</p><h1>{{ site.Title }}</h1><p class="intro">{{ with site.Params.description }}{{ . }}{{ else }}Clear, practical references. Find the detail you need, then get back to making things.{{ end }}</p><div class="hero-rule"><span>{{ len .Site.Data.library }} REFERENCES</span><span>COMPILED WITH CARE ↗</span></div></div>
+{{ range .Site.Data.shelves }}<section class="shelf" aria-label="{{ or .category "Other references" }}"><h2 class="shelf-title">{{ or .category "Other references" }}</h2>
+<div class="library-grid">{{ range .sheets }}<a class="library-item" href="{{ .url }}"><h3>{{ .title }}</h3>{{ with .description }}<p class="library-description">{{ . }}</p>{{ end }}<p class="library-open">Open reference <span aria-hidden="true">↗</span></p></a>{{ end }}</div></section>
+{{ end }}
 {{ end }}

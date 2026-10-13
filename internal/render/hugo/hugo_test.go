@@ -846,3 +846,107 @@ func TestSectionColumnsClampCardSpans(t *testing.T) {
 		}
 	}
 }
+
+func described(t *testing.T, id, frontmatter, body string) Sheet {
+	t.Helper()
+	d, ds := markdown.Parse([]byte("---\n" + frontmatter + "---\n" + body))
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	return Sheet{ID: id, SourceName: id + ".md", Document: d}
+}
+
+func TestSheetMetadataAndShelves(t *testing.T) {
+	sheets := []Sheet{
+		described(t, "git", "title: Git\ndescription: Track changes.\ncategory: version-control\ntags: [vcs, cli]\n", "## S\n### C\nText.\n"),
+		described(t, "tar", "title: tar\ncategory: files\n", "## S\n### C\nText.\n"),
+		described(t, "misc", "title: Misc\n", "Intro.\n"),
+		described(t, "find", "title: find\ncategory: files\n", "Intro.\n"),
+	}
+	p, ds := Render(sheets, Options{Title: "Library", Description: "Ten tools, well arranged."})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	git := string(p.Files["data/sheets/git.json"])
+	for _, want := range []string{`"description": "Track changes."`, `"category": "version-control"`, `"vcs"`} {
+		if !strings.Contains(git, want) {
+			t.Error(want, git)
+		}
+	}
+	var shelves []struct {
+		Category string `json:"category"`
+		Sheets   []struct {
+			Title string `json:"title"`
+		} `json:"sheets"`
+	}
+	if err := json.Unmarshal(p.Files["data/shelves.json"], &shelves); err != nil {
+		t.Fatal(err)
+	}
+	var order []string
+	for _, s := range shelves {
+		var titles []string
+		for _, sheet := range s.Sheets {
+			titles = append(titles, sheet.Title)
+		}
+		order = append(order, s.Category+"="+strings.Join(titles, ","))
+	}
+	// Categories sort by name; sheets without a category come last.
+	if got := strings.Join(order, ";"); got != "files=find,tar;version-control=Git;=Misc" {
+		t.Fatal(got)
+	}
+	if !strings.Contains(string(p.Files["hugo.json"]), `"description": "Ten tools, well arranged."`) {
+		t.Fatal(string(p.Files["hugo.json"]))
+	}
+}
+
+func TestHugoIntegrationMetadata(t *testing.T) {
+	binary := os.Getenv("SHEETMILL_HUGO")
+	if binary == "" {
+		t.Skip("set SHEETMILL_HUGO to explicitly authorize installed tool")
+	}
+	p, ds := Render([]Sheet{
+		described(t, "git", "title: Git\ndescription: Track <changes>.\ncategory: version-control\ntags: [vcs, cli]\n", "## S\n### C\nText.\n"),
+		described(t, "misc", "title: Misc\n", "Intro.\n"),
+	}, Options{Title: "My Library", Description: "Ten tools, well arranged."})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	out := hugoBuild(t, binary, p)
+	home, _ := os.ReadFile(filepath.Join(out, "index.html"))
+	page, _ := os.ReadFile(filepath.Join(out, "git", "index.html"))
+	for _, want := range []string{"<h1>My Library</h1>", "Ten tools, well arranged.", `<h2 class="shelf-title">version-control</h2>`, `<h2 class="shelf-title">Other references</h2>`, "Track &lt;changes&gt;."} {
+		if !bytes.Contains(home, []byte(want)) {
+			t.Errorf("home lacks %s", want)
+		}
+	}
+	for _, want := range []string{`<p class="sheet-description">Track &lt;changes&gt;.</p>`, `<li>vcs</li>`, `version-control`} {
+		if !bytes.Contains(page, []byte(want)) {
+			t.Errorf("page lacks %s", want)
+		}
+	}
+	if misc, _ := os.ReadFile(filepath.Join(out, "misc", "index.html")); bytes.Contains(misc, []byte("sheet-description")) || bytes.Contains(misc, []byte("Keep the essentials")) {
+		t.Error("a sheet without description must not show a placeholder tagline")
+	}
+}
+
+// hugoBuild writes p to a temporary source tree and builds it with the pinned binary.
+func hugoBuild(t *testing.T, binary string, p Project) string {
+	t.Helper()
+	root := t.TempDir()
+	for name, data := range p.Files {
+		full := filepath.Join(root, name)
+		if err := os.MkdirAll(filepath.Dir(full), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, data, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out := filepath.Join(root, "public")
+	cmd := exec.Command(binary, "--source", root, "--destination", out, "--clock", "2000-01-01T00:00:00Z", "--noBuildLock", "--quiet")
+	cmd.Env = append(os.Environ(), "HUGO_CACHEDIR="+filepath.Join(root, "cache"))
+	if b, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("hugo: %v %s", err, b)
+	}
+	return out
+}
