@@ -182,6 +182,12 @@ func compile(ctx context.Context, tool, ownerRoot string, seq uint64, snap Snaps
 		if ids[id] > 1 || id == "studio" || id == "assets" || id == "brand" {
 			ds = append(ds, diagnostic.Diagnostic{Code: "REN003", Message: "duplicate or reserved sheet route: " + id})
 		}
+		if d != nil && len(ds) == 0 {
+			_, errors := hugo.Render([]hugo.Sheet{{ID: id, SourceName: e.Name, Document: d}}, hugo.Options{})
+			for _, issue := range errors {
+				ds = append(ds, issue.Diagnostic)
+			}
+		}
 		if len(ds) > 0 {
 			state.Status = "invalid"
 			state.Diagnostics = ds
