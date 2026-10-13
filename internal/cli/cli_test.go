@@ -197,3 +197,14 @@ func TestHelpWriteFailure(t *testing.T) {
 		}
 	}
 }
+
+func TestNilArgsMeansNoArguments(t *testing.T) {
+	// Cobra falls back to the host process arguments for nil; embedders must not inherit them.
+	previous := os.Args
+	os.Args = []string{"host", "version"}
+	defer func() { os.Args = previous }()
+	var out, errout bytes.Buffer
+	if code := Run(nil, &out, &errout); code != 2 || !strings.Contains(errout.String(), "a command is required") {
+		t.Fatal(code, errout.String())
+	}
+}
