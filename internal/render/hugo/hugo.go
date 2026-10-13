@@ -239,7 +239,7 @@ func (r *renderer) node(b *strings.Builder, n model.Node, header bool) {
 		r.nodes(b, n.Children, header)
 		b.WriteByte('\n')
 	case "Text", "String":
-		if yes("raw") || yes("code") {
+		if verbatim(n) {
 			b.WriteString(esc(n.Text))
 		} else {
 			b.WriteString(normal(n.Text))
@@ -373,13 +373,23 @@ func (r *renderer) url(n model.Node, destination string) string {
 	}
 	return u.String()
 }
+func verbatim(n model.Node) bool {
+	raw, _ := n.Properties["raw"].(bool)
+	code, _ := n.Properties["code"].(bool)
+	return raw || code || n.Kind == "CodeBlock" || n.Kind == "FencedCodeBlock"
+}
 func plain(nodes []model.Node) string {
 	var b strings.Builder
 	var walk func([]model.Node)
 	walk = func(ns []model.Node) {
 		for _, n := range ns {
 			if n.Kind != "RawHTML" && n.Kind != "HTMLBlock" {
-				b.WriteString(html.UnescapeString(normal(n.Text)))
+				// Index code exactly as node() displays it; only prose has escapes.
+				if verbatim(n) {
+					b.WriteString(n.Text)
+				} else {
+					b.WriteString(html.UnescapeString(normal(n.Text)))
+				}
 				b.WriteByte(' ')
 				walk(n.Children)
 			}

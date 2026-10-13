@@ -315,3 +315,20 @@ func TestEmbeddedAssetFailureIsFatal(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchIndexKeepsCodeVerbatim(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### C\n`\\*` and \\*x\\* &amp;\n\n```\nC:\\\\Temp a &amp;amp; b\n```\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	var index []entry
+	if err := json.Unmarshal(p.Files["static/search.json"], &index); err != nil {
+		t.Fatal(err)
+	}
+	text := index[0].Text
+	for _, want := range []string{`\*`, `and *x* &`, `C:\\Temp`, `a &amp;amp; b`} {
+		if !strings.Contains(text, want) {
+			t.Errorf("search text %q lacks %q", text, want)
+		}
+	}
+}
