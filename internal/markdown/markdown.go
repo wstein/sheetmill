@@ -107,7 +107,7 @@ func ParseDecoded(src []byte, fm frontmatter.Result) (*model.Document, []diagnos
 				if attrs.SectionColumns != 0 {
 					ds = append(ds, diagnostic.Diagnostic{Code: "ATTR001", Message: ".cols-N applies to ## sections; use .col-span-N on cards", Span: node.Span})
 				}
-				section.Cards = append(section.Cards, model.Card{ID: contentID, Title: title, Span: node.Span, Heading: node, Layout: attrs.Layout, Classes: attrs.Classes, Compatibility: attrs.Compatibility, Content: []model.Node{}})
+				section.Cards = append(section.Cards, model.Card{ID: contentID, IDExplicit: attrs.ID != "", Title: title, Span: node.Span, Heading: node, Layout: attrs.Layout, Classes: attrs.Classes, Compatibility: attrs.Compatibility, Content: []model.Node{}})
 				card = &section.Cards[len(section.Cards)-1]
 			}
 			continue
