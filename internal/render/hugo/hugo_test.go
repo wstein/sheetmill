@@ -504,7 +504,7 @@ func TestHugoIntegrationBasePath(t *testing.T) {
 	}
 	a := sheet(t, "a", "## S\n### C\n[Other](b.md#target)\n")
 	b := sheet(t, "b", "## S\n### Target {#target}\nText.\n")
-	p, ds := Render([]Sheet{a, b}, Options{BasePath: "/sheetmill/"})
+	p, ds := Render([]Sheet{a, b}, Options{BasePath: "/sheetmill/", EditBaseURL: "https://github.com/wstein/sheetmill/edit/main/examples/sheets/"})
 	if len(ds) > 0 {
 		t.Fatal(ds)
 	}
@@ -537,6 +537,12 @@ func TestHugoIntegrationBasePath(t *testing.T) {
 				t.Errorf("%s lacks %s", name, want)
 			}
 		}
+		if name == "a/index.html" && !bytes.Contains(html, []byte(`href="https://github.com/wstein/sheetmill/edit/main/examples/sheets/a.md"`)) {
+			t.Error("built sheet lacks GitHub edit link")
+		}
+		if name == "index.html" && bytes.Contains(html, []byte("Edit this page on GitHub")) {
+			t.Error("home page guessed a sheet edit destination")
+		}
 		for _, bad := range []string{`href="/assets`, `src="/brand`, `href="/a/"`, `href="/"`} {
 			if bytes.Contains(html, []byte(bad)) {
 				t.Errorf("%s contains root-relative %s", name, bad)
@@ -545,5 +551,37 @@ func TestHugoIntegrationBasePath(t *testing.T) {
 	}
 	if html, _ := os.ReadFile(filepath.Join(out, "a", "index.html")); !bytes.Contains(html, []byte(`href="/sheetmill/b/#ref-target"`)) {
 		t.Error("cross-sheet link lacks base path")
+	}
+}
+
+func TestGitHubEditLinksAreSeparateFromProvenance(t *testing.T) {
+	s := sheet(t, "bdock", "## CLI\n### Help\n`bdock --help`\n")
+	s.SourceName = "Bundle Dock.md"
+	s.Document.Metadata["source"] = map[string]any{"repository": "https://github.com/wstein/bundledock", "path": "cmd/bdock/tools.go", "revision": "81c2688ea8dcb782f34b51f96c3c2f18bdd00d85"}
+	p, ds := Render([]Sheet{s}, Options{EditBaseURL: "https://github.com/wstein/sheetmill/edit/main/examples/sheets/"})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	var page map[string]any
+	json.Unmarshal(p.Files["data/sheets/bdock.json"], &page)
+	if page["edit_url"] != "https://github.com/wstein/sheetmill/edit/main/examples/sheets/Bundle%20Dock.md" {
+		t.Fatal(page["edit_url"])
+	}
+	if !strings.Contains(body(t, p, "bdock"), "cmd/bdock/tools.go") || !strings.Contains(body(t, p, "bdock"), "wstein/bundledock") {
+		t.Fatal("provenance was replaced by edit destination")
+	}
+	p, ds = Render([]Sheet{s}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	page = map[string]any{}
+	json.Unmarshal(p.Files["data/sheets/bdock.json"], &page)
+	if _, ok := page["edit_url"]; ok {
+		t.Fatal("generic export guessed a GitHub destination")
+	}
+	for _, base := range []string{"javascript:alert(1)", "http://github.com/o/r/edit/main/", "https://evil.invalid/o/r/edit/main/", "https://user@github.com/o/r/edit/main/", "https://github.com/o/r/blob/main/", "https://github.com/o/r/edit/main/?x=1", "https://github.com/o/r/edit/main/#fragment", "https://github.com/o/r/edit/main/../"} {
+		if p, ds := Render([]Sheet{s}, Options{EditBaseURL: base}); len(ds) == 0 || len(p.Files) > 0 {
+			t.Fatal("invalid edit base accepted", base)
+		}
 	}
 }

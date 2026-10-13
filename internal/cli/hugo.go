@@ -17,13 +17,14 @@ import (
 
 func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	build := &cobra.Command{Use: "build", Short: "Export a renderer project (no tool execution)"}
-	var destination, title, base string
+	var destination, title, base, editBase string
 	command := &cobra.Command{Use: "hugo <file-or-directory>...", Short: "Export a self-contained Hugo project to a new directory", Args: cobra.MinimumNArgs(1), Run: func(cmd *cobra.Command, args []string) {
-		*status = runHugo(args, destination, hugo.Options{Title: title, BasePath: base}, out, errout)
+		*status = runHugo(args, destination, hugo.Options{Title: title, BasePath: base, EditBaseURL: editBase}, out, errout)
 	}}
 	command.Flags().StringVar(&destination, "out", "", "new project directory; never overwritten")
 	command.Flags().StringVar(&title, "title", "SheetMill References", "reference library title")
 	command.Flags().StringVar(&base, "base-path", "/", "URL path the site is served under, such as /sheetmill/")
+	command.Flags().StringVar(&editBase, "edit-base-url", "", "GitHub edit URL base for the authored sheets (optional; never inferred from provenance)")
 	command.MarkFlagRequired("out")
 	build.AddCommand(command)
 	build.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a renderer is required") }

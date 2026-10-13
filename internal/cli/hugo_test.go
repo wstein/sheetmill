@@ -155,3 +155,18 @@ func TestHugoBuildBasePath(t *testing.T) {
 		t.Fatal("invalid base path created output")
 	}
 }
+
+func TestHugoEditBaseFlag(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "bdock.md")
+	os.WriteFile(input, []byte("---\ntitle: BundleDock CLI\n---\n## CLI\n### Help\nContent.\n"), 0600)
+	destination := filepath.Join(dir, "site")
+	var out, errout bytes.Buffer
+	if status := Run([]string{"build", "hugo", input, "--out", destination, "--edit-base-url", "https://github.com/wstein/sheetmill/edit/main/examples/sheets/"}, &out, &errout); status != 0 {
+		t.Fatal(status, errout.String())
+	}
+	page, _ := os.ReadFile(filepath.Join(destination, "data/sheets/bdock.json"))
+	if !bytes.Contains(page, []byte("https://github.com/wstein/sheetmill/edit/main/examples/sheets/bdock.md")) {
+		t.Fatal("CLI omitted authored sheet edit link")
+	}
+}
