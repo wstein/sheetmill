@@ -20,10 +20,15 @@ function recordTo(path,records) {return record=>{records.push(record);appendFile
 
 export const test=base.extend({
   sourceSuffix:['',{option:true}],
-  corpus:[async({},use)=>{
-    if(process.env.SHEETMILL_E2E_CORPUS&&process.env.SHEETMILL_E2E_CORPUS!=='smill')throw Error('Only smill is implemented in the MVP');
-    await use(await loadCorpus(root,JSON.parse(await readFile(join(root,'tests/e2e/corpus.json'),'utf8'))));
+  corpusID:['smill',{option:true}],
+  corpusCases:[async({},use)=>{
+    await use(await loadCorpus(root,JSON.parse(await readFile(join(root,'tests/e2e/corpus.json'),'utf8')),process.env.SHEETMILL_E2E_CORPUS??'smill'));
   },{scope:'worker'}],
+  corpus:async({corpusCases,corpusID},use)=>{
+    const item=corpusCases.find(c=>c.id===corpusID);
+    if(!item)throw Error('Requested corpus case is not selected: '+corpusID);
+    await use(item);
+  },
   tools:[async({browser},use)=>{
     const directory=await evidence(),log=join(directory,'tools.jsonl'),records=[];
     await writeFile(log,'');
@@ -46,21 +51,28 @@ export const test=base.extend({
       throw Error(`${error.message} (setup evidence: ${log})`,{cause:error});
     } finally {await owner.close();}
   },{scope:'worker',timeout:300_000}],
-  site:async({tools,corpus,sourceSuffix},use,testInfo)=>{
+  site:async({tools,corpus,corpusCases,sourceSuffix},use,testInfo)=>{
     const directory=await evidence(),log=join(directory,'stages.jsonl'),records=[];
     await writeFile(log,'');
     const owner=await OwnedWorkspace.create();registerInterruptCleanup(owner);
-    const originalHash=hash(corpus.sourceBytes);
-    let source,sourceHash;
+    const sources=[];
     const exec=(executable,args,options={})=>owner.run(executable,args,{env:tools.env,cwd:owner.root,...options,onRecord:recordTo(log,records)});
     try {
-      source=join(owner.root,'smill.md');await writeFile(source,Buffer.concat([corpus.sourceBytes,Buffer.from(sourceSuffix)]));
-      sourceHash=hash(await readFile(source));
-      const checked=await exec(tools.smill,['check',source]);expect(checked.stdout).toBe('');
-      const inspected=JSON.parse((await exec(tools.smill,['inspect',source])).stdout);
-      expect(inspected.schema).toBe(1);expect(inspected.metadata.title).toBe(corpus.title);
-      const ids=inspected.sections.flatMap(s=>s.cards.map(c=>c.id));
-      for(const id of corpus.cards)expect(ids).toContain(id);
+      const input=join(owner.root,'sheets');await mkdir(input);
+      for(const item of corpusCases) {
+        const source=join(input,item.id+'.md');
+        await writeFile(source,Buffer.concat([item.sourceBytes,Buffer.from(item.id===corpus.id?sourceSuffix:'')]));
+        sources.push({item,source,sourceHash:hash(await readFile(source)),originalHash:hash(item.sourceBytes)});
+        const checked=await exec(tools.smill,['check',source]);expect(checked.stdout).toBe('');
+        const inspected=JSON.parse((await exec(tools.smill,['inspect',source])).stdout);
+        expect(inspected.schema).toBe(1);expect(inspected.metadata.title).toBe(item.title);
+        expect(inspected.metadata.source.revision).toBe(item.product.revision);
+        expect(inspected.metadata.source.license).toBe(item.attribution.license);
+        expect(inspected.metadata.source.attribution).toBe(item.attribution.author);
+        const ids=inspected.sections.flatMap(s=>s.cards.map(c=>c.id));
+        for(const id of item.cards)expect(ids).toContain(id);
+      }
+      const source=corpusCases.length===1?sources[0].source:input;
       const sites=[];
       for(const name of ['first','second']) {
         const project=join(owner.root,name),destination=join(project,'public');
@@ -70,13 +82,15 @@ export const test=base.extend({
       }
       compareSites(...sites);
       const digest=createHash('sha256');for(const [name,bytes] of sites[0])digest.update(name+'\0').update(bytes).update('\0');
-      await writeFile(join(directory,'result.json'),JSON.stringify({files:sites[0].size,sha256:digest.digest('hex'),sourceHash},null,2));
+      await writeFile(join(directory,'result.json'),JSON.stringify({files:sites[0].size,sha256:digest.digest('hex'),sourceHashes:Object.fromEntries(sources.map(s=>[s.item.id,s.sourceHash]))},null,2));
       const server=await serveSite(sites[0]);owner.defer(server.close);
       await use({...server,records,toolRecords:tools.records,workspace:owner.root,log});
     } finally {
       try {
-        if(sourceHash)expect(hash(await readFile(source))).toBe(sourceHash);
-        expect(hash(await readFile(corpus.sourcePath))).toBe(originalHash);
+        for(const {item,source,sourceHash,originalHash} of sources) {
+          expect(hash(await readFile(source))).toBe(sourceHash);
+          expect(hash(await readFile(item.sourcePath))).toBe(originalHash);
+        }
         await expect(access(join(owner.root,'SHEETMILL_SNIPPET_MUST_NOT_RUN'))).rejects.toThrow();
       } finally {
         await owner.close();

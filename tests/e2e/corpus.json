@@ -2,12 +2,120 @@
   {
     "id": "smill",
     "input": "examples/sheets/smill.md",
-    "product": { "name": "SheetMill", "revision": "0f87dfb7b2fc5a3269e76f6c6f579cb863e430a3" },
+    "product": {
+      "name": "SheetMill",
+      "revision": "0f87dfb7b2fc5a3269e76f6c6f579cb863e430a3"
+    },
     "title": "SheetMill CLI",
-    "search": { "query": "Build a local library", "card": "build-library", "label": "SheetMill CLI · Build a local library" },
-    "cards": ["build-library", "check-sheet", "inspect-ir", "version-help", "choose-inputs", "exit-status", "import-provenance", "inert-examples"],
-    "copy": { "card": "build-library", "text": "smill check ./sheets\nsmill build hugo ./sheets --out ./new-project\n" },
-    "attribution": { "license": "EUPL-1.2", "author": "SheetMill contributors" },
-    "crossLinks": []
+    "search": {
+      "query": "Build a local library",
+      "card": "build-library",
+      "label": "SheetMill CLI \u00b7 Build a local library"
+    },
+    "cards": [
+      "build-library",
+      "check-sheet",
+      "inspect-ir",
+      "version-help",
+      "choose-inputs",
+      "exit-status",
+      "import-provenance",
+      "inert-examples"
+    ],
+    "copy": {
+      "card": "build-library",
+      "text": "smill check ./sheets\nsmill build hugo ./sheets --out ./new-project\n"
+    },
+    "attribution": {
+      "license": "EUPL-1.2",
+      "author": "SheetMill contributors"
+    },
+    "crossLinks": [],
+    "permalink": {
+      "card": "exit-status",
+      "label": "Permalink to Exit status"
+    }
+  },
+  {
+    "id": "bdock",
+    "input": "examples/sheets/bdock.md",
+    "product": {
+      "name": "BundleDock",
+      "revision": "81c2688ea8dcb782f34b51f96c3c2f18bdd00d85"
+    },
+    "title": "BundleDock CLI",
+    "search": {
+      "query": "Discover BundleDock commands",
+      "card": "discover-commands",
+      "label": "BundleDock CLI \u00b7 Discover BundleDock commands"
+    },
+    "cards": [
+      "discover-commands",
+      "volume-help",
+      "initialize-volume",
+      "bundle-options",
+      "upgrade-catalog",
+      "reference-boundary"
+    ],
+    "copy": {
+      "card": "discover-commands",
+      "text": "bdock --help\nbdock tools --help\nbdock --version\n"
+    },
+    "permalink": {
+      "card": "bundle-options",
+      "label": "Permalink to Choose a bundle identity"
+    },
+    "attribution": {
+      "license": "EUPL-1.2",
+      "author": "SheetMill contributors"
+    },
+    "crossLinks": [
+      {
+        "label": "SheetMill semantic inspection",
+        "sheet": "smill",
+        "card": "inspect-ir"
+      }
+    ]
+  },
+  {
+    "id": "whr",
+    "input": "examples/sheets/whr.md",
+    "product": {
+      "name": "WorkHarbor",
+      "revision": "5d6a8a423ec509383e1cf169bdea0a76d58ecd92"
+    },
+    "title": "WorkHarbor CLI",
+    "search": {
+      "query": "List WorkHarbor tasks",
+      "card": "list-tasks",
+      "label": "WorkHarbor CLI \u00b7 List WorkHarbor tasks"
+    },
+    "cards": [
+      "list-tasks",
+      "discover-help",
+      "follow-events",
+      "start-task",
+      "pending-decisions",
+      "tool-boundary"
+    ],
+    "copy": {
+      "card": "list-tasks",
+      "text": "whr ls\nwhr ls --all\nwhr --json ls\n"
+    },
+    "permalink": {
+      "card": "pending-decisions",
+      "label": "Permalink to Inspect pending decisions"
+    },
+    "attribution": {
+      "license": "EUPL-1.2",
+      "author": "SheetMill contributors"
+    },
+    "crossLinks": [
+      {
+        "label": "BundleDock volume options",
+        "sheet": "bdock",
+        "card": "volume-help"
+      }
+    ]
   }
 ]

@@ -139,3 +139,22 @@ test('offline tool environment precedes every prerequisite process',async()=>{
   const report=await run(process.execPath,['-e','process.stdout.write(JSON.stringify({toolchain:process.env.GOTOOLCHAIN,proxy:process.env.GOPROXY,sum:process.env.GOSUMDB,flags:process.env.GOFLAGS}))'],{env});
   assert.deepEqual(JSON.parse(report.stdout),{toolchain:'local',proxy:'off',sum:'off',flags:''});
 });
+
+test('explicit all corpus selection validates identities and cross-card targets',async()=>{
+  const {loadCorpus}=await import('./helpers/corpus.mjs');
+  const root=await scratch();
+  try {
+    const data=['smill','bdock','whr'].map(id=>({id,input:id+'.md',product:{name:id,revision:'a'.repeat(40)},title:id,search:{query:id,label:id,card:'card'},copy:{card:'card',text:id+'\n'},cards:['card'],permalink:{card:'card',label:'Permalink to Card'},attribution:{license:'EUPL-1.2',author:'SheetMill contributors'},crossLinks:[]}));
+    for(const item of data)await writeFile(join(root,item.input),'source');
+    data[1].crossLinks=[{label:'Related reference',sheet:'smill',card:'card'}];
+    assert.deepEqual((await loadCorpus(root,data)).map(c=>c.id),['smill']);
+    assert.deepEqual((await loadCorpus(root,data,'all')).map(c=>c.id),['smill','bdock','whr']);
+    for(const selection of ['bdock','','ALL'])await assert.rejects(loadCorpus(root,data,selection),/selection/);
+    for(const invalid of [
+      [...data,data[0]],
+      data.map(c=>c.id==='bdock'?{...c,crossLinks:[{label:'Related',sheet:'smill',card:'missing'}]}:c),
+      data.map(c=>c.id==='bdock'?{...c,crossLinks:[{label:'Related',sheet:'unknown',card:'card'}]}:c),
+      data.map(c=>c.id==='bdock'?{...c,permalink:{card:'missing',label:'Permalink'}}:c),
+    ])await assert.rejects(loadCorpus(root,invalid,'all'));
+  } finally {await rm(root,{recursive:true});}
+});
