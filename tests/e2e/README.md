@@ -66,3 +66,11 @@ sets tracing **off**, including failures, because authenticated traces can expos
 cookies. Every browser request still obeys the exact-origin guard. No artifact
 upload or deployment step is added. See `docs/studio-verification.md` and
 `docs/studio-security.md`; this suite does not claim T049 performance/usability.
+
+## Asset fingerprints
+
+`assets.spec.mjs` runs six cases: origin-root and `/sheetmill/` mounts in each
+browser project. It verifies SHA-256 filenames against actual response bytes,
+CSS/script/font resource loading, shared home/sheet URLs and absence of unversioned
+asset requests. JavaScript-disabled contexts still load CSS and fonts. These
+checks run in both default and all-corpus selections; no deployment is involved.
