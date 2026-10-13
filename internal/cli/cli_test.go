@@ -159,3 +159,32 @@ func TestImportErrorJSON(t *testing.T) {
 		t.Fatalf("%d %s %s", code, out.String(), errout.String())
 	}
 }
+
+func TestCobraHelpAndFlags(t *testing.T) {
+	for _, args := range [][]string{{"--help"}, {"check", "--help"}, {"import", "reference", "--help"}} {
+		var out, errout bytes.Buffer
+		if code := Run(args, &out, &errout); code != 0 || !strings.Contains(out.String(), "Usage:") || errout.Len() != 0 {
+			t.Fatalf("%v: %d %s %s", args, code, out.String(), errout.String())
+		}
+	}
+	dir := tempDir(t)
+	input := filepath.Join(dir, "reference.md")
+	if err := os.WriteFile(input, []byte("---\ntitle: Example\n---\n## Section\n### Card\nText.\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"import", "reference", "--dry-run", input},
+		{"import", "reference", input, "--dry-run"},
+	} {
+		args = append(args, "--repository", "https://github.com/example/reference", "--source-path", "source/example.md", "--revision", strings.Repeat("a", 40), "--license", "EXAMPLE", "--attribution", "Example")
+		var out, errout bytes.Buffer
+		if code := Run(args, &out, &errout); code != 0 {
+			t.Fatalf("%v: %d %s", args, code, errout.String())
+		}
+	}
+	for _, args := range [][]string{{"version", "extra"}, {"check", "--unknown"}, {"import", "reference", input, "--unknown"}} {
+		if code := Run(args, &bytes.Buffer{}, &bytes.Buffer{}); code != 2 {
+			t.Fatalf("%v: %d", args, code)
+		}
+	}
+}

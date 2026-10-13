@@ -9,31 +9,58 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/wstein/sheetmill/internal/markdown"
 )
 
 const Version = "dev"
 const usage = "usage: smill version | smill check <file-or-directory>... | smill inspect <file> | smill import reference <file> [options]"
 
+// Run constructs a fresh command tree for each invocation, keeping flag state and
+// writers isolated for embedders and tests. Cobra owns all command/flag parsing.
 func Run(args []string, out, errout io.Writer) int {
-	if len(args) > 0 && args[0] == "import" {
-		return runImport(args[1:], out, errout)
-	}
-	fail := func(message string) int { fmt.Fprintln(errout, message); return 2 }
-	if len(args) == 1 && args[0] == "version" {
+	status := 0
+	root := &cobra.Command{Use: "smill", Short: "Compile reference sheets from GFM and YAML", SilenceErrors: true, SilenceUsage: true}
+	root.SetOut(out)
+	root.SetErr(errout)
+	root.SetArgs(args)
+	root.CompletionOptions.DisableDefaultCmd = true
+	root.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a command is required") }
+	root.AddCommand(&cobra.Command{Use: "version", Short: "Print the compiler version", Args: cobra.NoArgs, Run: func(cmd *cobra.Command, args []string) {
 		if _, err := fmt.Fprintln(out, "smill "+Version); err != nil {
-			return fail("IO002: " + err.Error())
+			fmt.Fprintln(errout, "IO002: "+err.Error())
+			status = 2
 		}
-		return 0
+	}})
+	for _, name := range []string{"check", "inspect"} {
+		command := &cobra.Command{Use: name + " <file-or-directory>...", Short: "Validate source sheets", Args: cobra.MinimumNArgs(1)}
+		if name == "inspect" {
+			command.Use = "inspect <file>"
+			command.Short = "Print the semantic IR as JSON"
+			command.Args = cobra.ExactArgs(1)
+		}
+		command.Run = func(cmd *cobra.Command, paths []string) { status = runSources(cmd.Name(), paths, out, errout) }
+		root.AddCommand(command)
 	}
-	if len(args) < 2 || (args[0] != "check" && args[0] != "inspect") || (args[0] == "inspect" && len(args) != 2) {
-		return fail(usage)
+	imports := &cobra.Command{Use: "import", Short: "Convert existing reference sheets"}
+	imports.AddCommand(referenceCommand(out, errout, &status))
+	imports.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("an import format is required") }
+	root.AddCommand(imports)
+	if err := root.Execute(); err != nil {
+		fmt.Fprintf(errout, "%v\n%s\n", err, usage)
+		return 2
 	}
+	return status
+}
+
+func runSources(command string, args []string, out, errout io.Writer) int {
+	fail := func(message string) int { fmt.Fprintln(errout, message); return 2 }
+
 	var files []string
 	seen := map[string]bool{}
 	status := 0
-	for _, p := range args[1:] {
-		paths, err := inputs(p, args[0] == "check")
+	for _, p := range args {
+		paths, err := inputs(p, command == "check")
 		if err != nil {
 			fmt.Fprintf(errout, "%s:1:1: IO001: %v\n", p, err)
 			status = 2
@@ -62,7 +89,7 @@ func Run(args []string, out, errout io.Writer) int {
 			status = max(status, 1)
 			continue
 		}
-		if args[0] == "inspect" {
+		if command == "inspect" {
 			b, err := d.JSON()
 			if err != nil {
 				return fail("IO002: " + err.Error())

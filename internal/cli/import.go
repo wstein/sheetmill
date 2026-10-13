@@ -2,54 +2,58 @@
 package cli
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/wstein/sheetmill/internal/importer/reference"
 )
 
 const importUsage = "usage: smill import reference <file> --repository <https-url> --source-path <repo-path> --revision <full-sha> --license <id> --attribution <text> (--out <new.md> | --dry-run) [--report json]"
 
-func runImport(args []string, out, errout io.Writer) int {
+type importOptions struct {
+	provenance          reference.Provenance
+	destination, report string
+	dry                 bool
+}
+
+func referenceCommand(out, errout io.Writer, status *int) *cobra.Command {
+	var options importOptions
+	cmd := &cobra.Command{Use: "reference <file>", Short: "Convert a Reference sheet with explicit provenance", Args: cobra.ExactArgs(1), Run: func(cmd *cobra.Command, args []string) { *status = runImport(args[0], options, out, errout) }}
+	flags := cmd.Flags()
+	flags.StringVar(&options.provenance.Repository, "repository", "", "source repository HTTPS URL")
+	flags.StringVar(&options.provenance.Path, "source-path", "", "relative repository source path")
+	flags.StringVar(&options.provenance.Revision, "revision", "", "full source commit ID")
+	flags.StringVar(&options.provenance.License, "license", "", "source license identifier (does not approve redistribution)")
+	flags.StringVar(&options.provenance.Attribution, "attribution", "", "source attribution")
+	flags.StringVar(&options.destination, "out", "", "new canonical .md file; never overwritten")
+	flags.StringVar(&options.report, "report", "", "json for machine-readable loss report")
+	flags.BoolVar(&options.dry, "dry-run", false, "validate and report without writing files")
+	return cmd
+}
+
+func runImport(input string, options importOptions, out, errout io.Writer) int {
 	fail := func(message string) int { fmt.Fprintln(errout, message); return 2 }
-	if len(args) < 2 || args[0] != "reference" {
+	p, destination, report, dry := options.provenance, options.destination, options.report, options.dry
+	if (!dry && destination == "") || (report != "" && report != "json") {
 		return fail(importUsage)
 	}
-	fs := flag.NewFlagSet("import reference", flag.ContinueOnError)
-	fs.SetOutput(errout)
-	var p reference.Provenance
-	var destination, report string
-	var dry bool
-	fs.StringVar(&p.Repository, "repository", "", "source repository HTTPS URL")
-	fs.StringVar(&p.Path, "source-path", "", "relative repository source path")
-	fs.StringVar(&p.Revision, "revision", "", "full source commit ID")
-	fs.StringVar(&p.License, "license", "", "source license identifier (does not approve redistribution)")
-	fs.StringVar(&p.Attribution, "attribution", "", "source attribution")
-	fs.StringVar(&destination, "out", "", "new canonical .md file; never overwritten")
-	fs.StringVar(&report, "report", "", "json for machine-readable loss report")
-	fs.BoolVar(&dry, "dry-run", false, "validate and report without writing files")
-	if err := fs.Parse(args[2:]); err != nil {
-		return fail(importUsage)
-	}
-	if fs.NArg() != 0 || (!dry && destination == "") || (report != "" && report != "json") {
-		return fail(importUsage)
-	}
-	paths, err := inputs(args[1], false)
+
+	paths, err := inputs(input, false)
 	if err != nil {
-		return fail(fmt.Sprintf("%s:1:1: IO001: %v", args[1], err))
+		return fail(fmt.Sprintf("%s:1:1: IO001: %v", input, err))
 	}
 	b, err := read(paths[0])
 	if err != nil {
-		return fail(fmt.Sprintf("%s:1:1: IO001: %v", args[1], err))
+		return fail(fmt.Sprintf("%s:1:1: IO001: %v", input, err))
 	}
 	result, ds := reference.Convert(b, p)
 	if len(ds) > 0 {
 		for _, d := range ds {
-			fmt.Fprintf(errout, "%s:%s\n", args[1], d.Error())
+			fmt.Fprintf(errout, "%s:%s\n", input, d.Error())
 		}
 		if report == "json" {
 			b, e := result.Report.JSON()
@@ -77,7 +81,7 @@ func runImport(args []string, out, errout io.Writer) int {
 		}
 	} else {
 		for _, f := range result.Report.Findings {
-			fmt.Fprintf(errout, "%s:%d:%d: %s: warning: %s\n", args[1], f.Span.Start.Line, f.Span.Start.Column, f.Code, f.Message)
+			fmt.Fprintf(errout, "%s:%d:%d: %s: warning: %s\n", input, f.Span.Start.Line, f.Span.Start.Column, f.Code, f.Message)
 		}
 	}
 	return 0
