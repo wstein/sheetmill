@@ -114,3 +114,28 @@ test('OS interruption closes owned children and preserves separate evidence',asy
     assert.equal(await readFile(evidence,'utf8'),'prepared\ncleaned\n');
   } finally {clearTimeout(deadline);child.kill('SIGKILL');await rm(evidenceRoot,{recursive:true,force:true});}
 });
+
+test('one signal waits for every fixture owner before worker exit',async()=>{
+  const {spawn}=await import('node:child_process');
+  const {once}=await import('node:events');
+  const {fileURLToPath}=await import('node:url');
+  const root=await scratch();let owned=[];
+  const child=spawn(process.execPath,[fileURLToPath(new URL('./helpers/interrupt-probe.mjs',import.meta.url)),join(root,'evidence.log'),'--two'],{stdio:['ignore','pipe','pipe']});
+  const closed=once(child,'close');const deadline=setTimeout(()=>child.kill('SIGKILL'),5000);
+  try {
+    const [chunk]=await once(child.stdout,'data');owned=JSON.parse(chunk.toString());
+    child.kill('SIGTERM');const [code]=await closed;assert.equal(code,143);
+    for(const path of owned)await assert.rejects(access(path));
+  } finally {
+    clearTimeout(deadline);child.kill('SIGKILL');
+    for(const path of owned)await rm(path,{recursive:true,force:true});
+    await rm(root,{recursive:true,force:true});
+  }
+});
+
+test('offline tool environment precedes every prerequisite process',async()=>{
+  const {toolEnvironment}=await import('./helpers/process.mjs');
+  const env=toolEnvironment('/owned-cache',{PATH:process.env.PATH,GOTOOLCHAIN:'auto',GOPROXY:'https://proxy.invalid',GOSUMDB:'sum.invalid',GOFLAGS:'-toolexec=unexpected'});
+  const report=await run(process.execPath,['-e','process.stdout.write(JSON.stringify({toolchain:process.env.GOTOOLCHAIN,proxy:process.env.GOPROXY,sum:process.env.GOSUMDB,flags:process.env.GOFLAGS}))'],{env});
+  assert.deepEqual(JSON.parse(report.stdout),{toolchain:'local',proxy:'off',sum:'off',flags:''});
+});

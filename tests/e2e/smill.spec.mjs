@@ -2,6 +2,7 @@
 import { test, expect } from './helpers/fixtures.mjs';
 
 test('one smill sheet through the complete reader journey', async ({ page, context, site, corpus }, testInfo) => {
+  for(const stage of site.toolRecords) expect(stage.environment).toEqual({GOPROXY:'off',GOSUMDB:'off',GOTOOLCHAIN:'local'});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto(site.origin);
   await expect(page).toHaveTitle('SheetMill References');
