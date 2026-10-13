@@ -13,6 +13,7 @@ They are judgments, not measured adoption or guarantees.
 | Navi importer after typed command metadata is designed | 7.5/10 | Valuable, but dynamic suggestions and shell semantics add substantial safety work |
 | Broad automatic multi-ecosystem import now | 4/10 | Ambiguous recognition and conversion loss would widen the milestone too far |
 | Editorial Stack with coral/periwinkle | 9/10 | User-selected direction; use dark accent tokens for ordinary text and review final SVG masters before locking geometry |
+| Parser emits structural headings without the `{...}` attribute suffix | 7/10 | Follow-up: the Hugo renderer re-derives the suffix separately from `markdown.heading()` and the rules already differ (contiguous segments); changes IR/schema, so needs its own reviewed PR with golden updates |
 
 Recommended next step: accept the finalized brand board and review the local Hugo
 library (9.5/10), then merge only after independent review and CI (9/10).
