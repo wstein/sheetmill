@@ -230,3 +230,35 @@ func TestHugoBuildDescription(t *testing.T) {
 		t.Fatal(string(b))
 	}
 }
+
+func TestCheckStrict(t *testing.T) {
+	dir := tempDir(t)
+	good := filepath.Join(dir, "good.md")
+	broken := filepath.Join(dir, "broken.md")
+	os.WriteFile(good, []byte("---\ntitle: Good\n---\n## S\n### C {#c}\n[Self](#c) [Policy](../AGENTS.md)\n"), 0600)
+	os.WriteFile(broken, []byte("---\ntitle: Broken\n---\n## S\n### C\n[Gone](good.md#missing)\n"), 0600)
+	run := func(args ...string) (int, string, string) {
+		var out, errout bytes.Buffer
+		code := Run(args, &out, &errout)
+		return code, out.String(), errout.String()
+	}
+	if code, out, e := run("check", dir); code != 0 || out != "" || e != "" {
+		t.Fatal("plain check must stay structural", code, e)
+	}
+	code, out, e := run("check", "--strict", dir)
+	if code != 1 || out != "" || !strings.Contains(e, broken+":6:1: REN103: link fragment matches no section or card: good.md#missing") || strings.Contains(e, "(warning)") {
+		t.Fatal(code, e)
+	}
+	if !strings.Contains(e, good+":6:") {
+		t.Fatal("the repository link must be reported without --source-base-url", e)
+	}
+	if code, _, e := run("check", "--strict", good, "--source-base-url", "https://github.com/o/r/blob/main/docs/"); code != 0 || e != "" {
+		t.Fatal("repository links resolve with --source-base-url", code, e)
+	}
+	if code, _, e := run("check", good, "--source-base-url", "https://github.com/o/r/blob/main/docs/"); code != 2 || !strings.Contains(e, "--source-base-url requires --strict") {
+		t.Fatal(code, e)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "site")); !os.IsNotExist(err) {
+		t.Fatal("strict check must not write a project")
+	}
+}
