@@ -8,7 +8,8 @@ Sibling repository policies do not govern this repository.
 
 - Routine local source/document edits, dependency inspection, formatting, tests,
   fuzzing, vet and source/security checks are allowed within the requested work.
-- The current milestone is the parser, validator, deterministic JSON IR and CLI.
+- The current milestone is the parser, validator, deterministic JSON IR, CLI and
+  controlled Reference importer (features 001–003).
   Do not implement web, PDF, Typst or navi renderers yet.
 - Use `codex/` feature branches and Conventional Commits. Topic pushes and draft
   PRs belong to an authorized implementation handoff; otherwise ask before publishing.

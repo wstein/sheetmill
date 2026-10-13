@@ -5,8 +5,10 @@
 | `smill version` | Print `smill dev` and LF |
 | `smill check <file-or-directory>...` | Validate selected Markdown; no success output |
 | `smill inspect <file>` | Validate one file and print canonical JSON |
+| `smill import reference <file> [options]` | [Controlled conversion](imports.md), dry-run and loss reports |
 
-There are no flags, recursive mode, stdin mode or `build` command in v0.1.
+Core commands have no flags; import has explicit conversion/provenance flags.
+There is no recursive mode, stdin mode or `build` command in v0.1.
 Directories are scanned only one level, in sorted order, for lowercase `.md` files.
 Subdirectories and other extensions are ignored; an empty selection is an error.
 Duplicate explicitly selected paths are checked once. Selected files must be
@@ -35,7 +37,8 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `MD001`, `MD002` | Card without section; empty structural heading |
 | `ATTR001`, `ATTR002` | Unsupported/malformed attribute; duplicate/conflict |
 | `ID001` | Duplicate explicit/reserved ID |
-| `IO001`, `IO002` | Input access/selection; output failure |
+| `IO001`, `IO002`, `IO003` | Input access/selection; stdout failure; import file creation/write |
+| `IMP001`–`IMP104` | See [import diagnostic codes](imports.md) |
 
 Go package tests exercise the same `Run` entrypoint as the executable, without
 building a distributable CLI binary. Parser fuzz targets run via:

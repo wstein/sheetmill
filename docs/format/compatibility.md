@@ -9,7 +9,8 @@ Accepted headings, spans, IDs and inert `.wrap` are specified in
 [gfm-plus.md](gfm-plus.md). The semantic classes `.note`, `.tip`,
 `.warning` and reserved `.navi` belong to SheetMill's contract, without an upstream
 Reference compatibility guarantee. Unknown heading attributes are errors in v0.1;
-a permissive importer may be designed separately later.
+the [controlled Reference adapter](../imports.md) reports supported conversions
+and rejects unsupported structural attrs explicitly.
 
 `testdata/reference-compatible/` contains independently authored examples, not
 copied upstream sheets. Fixtures cover ordinary content, tables/alignment, task

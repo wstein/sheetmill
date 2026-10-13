@@ -13,9 +13,12 @@ import (
 )
 
 const Version = "dev"
-const usage = "usage: smill version | smill check <file-or-directory>... | smill inspect <file>"
+const usage = "usage: smill version | smill check <file-or-directory>... | smill inspect <file> | smill import reference <file> [options]"
 
 func Run(args []string, out, errout io.Writer) int {
+	if len(args) > 0 && args[0] == "import" {
+		return runImport(args[1:], out, errout)
+	}
 	fail := func(message string) int { fmt.Fprintln(errout, message); return 2 }
 	if len(args) == 1 && args[0] == "version" {
 		if _, err := fmt.Fprintln(out, "smill "+Version); err != nil {
