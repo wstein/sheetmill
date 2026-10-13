@@ -135,3 +135,23 @@ func TestHugoBuildReportsMidWriteFailure(t *testing.T) {
 		t.Fatal("input modified")
 	}
 }
+
+func TestHugoBuildBasePath(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "sheet.md")
+	os.WriteFile(input, []byte("---\ntitle: Sheet\n---\n## S\n### C\nText.\n"), 0600)
+	var out, errout bytes.Buffer
+	if code := Run([]string{"build", "hugo", input, "--out", filepath.Join(dir, "site"), "--base-path", "/sheetmill/"}, &out, &errout); code != 0 {
+		t.Fatal(code, errout.String())
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, "site", "hugo.json")); !bytes.Contains(b, []byte(`"base": "/sheetmill/"`)) {
+		t.Fatal(string(b))
+	}
+	errout.Reset()
+	if code := Run([]string{"build", "hugo", input, "--out", filepath.Join(dir, "bad"), "--base-path", "sheetmill"}, &out, &errout); code != 1 || !strings.Contains(errout.String(), "REN003: invalid base path") {
+		t.Fatal(code, errout.String())
+	}
+	if _, err := os.Stat(filepath.Join(dir, "bad")); !os.IsNotExist(err) {
+		t.Fatal("invalid base path created output")
+	}
+}
