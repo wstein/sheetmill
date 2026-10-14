@@ -60,14 +60,14 @@ type Options struct {
 	// for the selection root. Relative links that name no selected sheet resolve to
 	// the repository file instead of being reported as unresolved.
 	SourceBaseURL string
-	// Theme selects the page layout: "" or "editorial" (default) or "classic-compact".
+	// Theme selects the page layout: "" or "editorial" (default), "classic-compact" or "reference-cards".
 	Theme string
 	// Palette selects a color palette independently of the layout; empty uses graphite-coral.
 	Palette string
 }
 
 // Themes lists the accepted Options.Theme values.
-var Themes = []string{"editorial", "classic-compact"}
+var Themes = []string{"editorial", "classic-compact", "reference-cards"}
 
 // basePath accepts "/" or "/seg/.../" with unreserved URL characters only, so the
 // value is safe in HTML attributes, CSS, JSON and JavaScript without escaping.
@@ -424,7 +424,8 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if len(errors) > 0 {
 		return Project{}, errors
 	}
-	classic := options.Theme == "classic-compact"
+	cards := options.Theme == "reference-cards"
+	classic := options.Theme == "classic-compact" || cards
 	if options.Theme != "" && !classic && options.Theme != "editorial" {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "unknown theme: " + options.Theme}})
 	}
@@ -442,6 +443,9 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	params := map[string]any{"base": base, "description": options.Description, "palette": paletteName}
 	if classic {
 		params["classic"] = true
+	}
+	if cards {
+		params["cards"] = true
 	}
 	if origin != "" {
 		params["origin"] = origin
@@ -483,12 +487,15 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if !classic {
 		delete(p.Files, "static/assets/classic.css")
 	}
+	if !cards {
+		delete(p.Files, "static/assets/cards.css")
+	}
 	// Hash the exact exported bytes; keep assets in the same directory so CSS's
 	// relative local-font URLs continue to resolve. No unversioned aliases remain.
-	for _, asset := range []struct{ key, stem, ext string }{{"stylesheet", "site", "css"}, {"script", "app", "js"}, {"classicstylesheet", "classic", "css"}} {
+	for _, asset := range []struct{ key, stem, ext string }{{"stylesheet", "site", "css"}, {"script", "app", "js"}, {"classicstylesheet", "classic", "css"}, {"cardsstylesheet", "cards", "css"}} {
 		original := "static/assets/" + asset.stem + "." + asset.ext
 		data, ok := p.Files[original]
-		if !ok && asset.key == "classicstylesheet" {
+		if !ok && (asset.key == "classicstylesheet" || asset.key == "cardsstylesheet") {
 			continue
 		}
 		if !ok {
