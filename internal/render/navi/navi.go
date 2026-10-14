@@ -205,6 +205,7 @@ func renderSheet(s Sheet, profile Profile) ([]byte, []entry, []Issue, []Issue) {
 	line("; Source: ", firstNonEmpty(s.Path, s.SourceName))
 	line("; Title: ", title)
 	line("; Shell: ", profile.Name)
+	line("; Parameters: ", "trusted raw shell text; type hints are not enforced")
 	if v, ok := d.Metadata["attribution"].(string); ok && strings.TrimSpace(v) != "" {
 		line("; Attribution: ", v)
 	}
