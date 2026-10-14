@@ -4,9 +4,11 @@ package reference
 import (
 	"bytes"
 	"flag"
+	"github.com/wstein/sheetmill/internal/frontmatter"
 	"github.com/wstein/sheetmill/internal/markdown"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -314,14 +316,17 @@ func TestLegacyMappingKeepsExplicitFields(t *testing.T) {
 }
 
 func TestUpstreamNavigationIsArchivedInert(t *testing.T) {
-	cases := map[string]string{
-		"valid":     "navigation:\n  group: Tools\n  order: 3\n",
-		"malformed": "navigation: [1, {a: b}]\n",
-		"scalar":    "navigation: nope\n",
-	}
-	for name, block := range cases {
+	for _, name := range []string{"valid", "malformed", "scalar", "null", "unknown"} {
 		t.Run(name, func(t *testing.T) {
-			src := []byte("---\ntitle: T\n" + block + "theme: dark\n---\n## S\n### Card\nText.\n")
+			src, err := os.ReadFile(filepath.Join("../../../testdata/import/reference/navigation", name+".md"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			decoded, dds := frontmatter.Decode(src)
+			if len(dds) > 0 {
+				t.Fatal(dds)
+			}
+
 			r, ds := Convert(src, provenance())
 			if len(ds) > 0 {
 				t.Fatal(ds)
@@ -334,7 +339,7 @@ func TestUpstreamNavigationIsArchivedInert(t *testing.T) {
 				t.Fatal("navigation remains active metadata")
 			}
 			orig := d.Metadata["source"].(map[string]any)["original_metadata"].(map[string]any)
-			if _, ok := orig["navigation"]; !ok {
+			if value, ok := orig["navigation"]; !ok || !reflect.DeepEqual(value, decoded.Metadata["navigation"]) {
 				t.Fatal("navigation not archived", orig)
 			}
 			var codes []string

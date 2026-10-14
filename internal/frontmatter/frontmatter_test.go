@@ -75,3 +75,20 @@ func FuzzParse(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, b []byte) { Parse(b) })
 }
+
+func TestNavigationExactPositionsAndNoPartialResult(t *testing.T) {
+	for _, key := range []string{"ordr", "order", "group"} {
+		value := "bad"
+		if key == "group" {
+			value = "''"
+		}
+		src := []byte("---\ntitle: T\nnavigation:\n  " + key + ": " + value + "\n---\n")
+		result, ds := Parse(src)
+		if len(ds) != 1 || ds[0].Code != "VAL003" || ds[0].Span.Start.Line != 4 || ds[0].Span.Start.Column != 3 {
+			t.Fatalf("%s: %+v", key, ds)
+		}
+		if result.Metadata != nil || result.Body != nil {
+			t.Fatal("partial result returned")
+		}
+	}
+}
