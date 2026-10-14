@@ -84,7 +84,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	}
 	profile, ok := profiles[shell]
 	if !ok {
-		return Project{}, []Issue{{Diagnostic: diagnostic.Diagnostic{Code: "NAV001", Message: fmt.Sprintf("unsupported shell profile %q; use one of %s", shell, strings.Join(ProfileNames(), ", "))}}}
+		return Project{}, []Issue{issue(Sheet{}, "NAV001", fmt.Sprintf("unsupported shell profile %q; use one of %s", shell, strings.Join(ProfileNames(), ", ")), diagnostic.Span{})}
 	}
 	p := Project{Files: map[string][]byte{}}
 	var errs []Issue
@@ -125,6 +125,11 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 }
 
 func issue(s Sheet, code, message string, span diagnostic.Span) Issue {
+	// IR metadata has no individual key spans. Use the documented document-start
+	// anchor for global issues, preserving actual card/code spans when available.
+	if span.Start.Line == 0 {
+		span = diagnostic.NewSource(nil).Span(0, 0)
+	}
 	return Issue{s.SourceName, diagnostic.Diagnostic{Code: code, Message: message, Span: span}}
 }
 
