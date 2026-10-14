@@ -1,6 +1,7 @@
 # Feature 016: reference-cards Hugo layout
 
-**Status**: Implemented in PR #35; independent review CLEAR at fdee8ff, P3 follow-ups applied afterwards.
+**Status**: Implemented in draft PR #35; review fixes and local verification complete.
+Exact-head review and CI evidence are tracked on the PR.
 **Authorization**: user, 2026-10-14 ("write a spec and implement reference-cards as a
 reviewed PR"). Extends feature 004; no merge, deployment or source-format change.
 
@@ -17,7 +18,8 @@ branding, wording, logo, colors, fonts, scripts or external requests are copied.
 - **FR-1** `--theme reference-cards` is accepted by `smill build hugo` and
   `hugo.Options.Theme`; unknown themes still fail with `REN003`. The rendered HTML
   of `editorial` and `classic-compact` stays byte-identical (the exported `baseof.html`
-  template source differs; verified by building both revisions).
+  template source differs; initial author comparison reported both revisions;
+  subsequent review limits are recorded in [review evidence](review-evidence.md)).
 - **FR-2** The layout reuses the classic markup (top bar, search, in-page card filter,
   density toggle, section jump list) and adds a body class `reference-cards` and one
   fingerprinted `cards.css`, shipped only for this theme.
