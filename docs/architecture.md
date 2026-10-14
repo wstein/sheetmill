@@ -26,7 +26,8 @@ Future renderers consume IR and must establish their own layout and escaping
 contracts. The Hugo renderer consumes the semantic IR directly and exports a complete
 project; it never reparses original Markdown. See [Hugo contracts](hugo.md).
 The navi renderer (`internal/render/navi`, [navi export](format/navi-profile.md)) likewise consumes
-the IR: a card is exported only when it carries `.navi` and an explicit ID, and the
+the IR, preserving complete frontmatter in a versioned `.navi.json` companion
+for each exported sheet: a card is exported only when it carries `.navi` and an explicit ID, and the
 package can neither execute commands nor use the network.
 
 Go 1.27.2 was selected after checking Go release support and sibling policy on
