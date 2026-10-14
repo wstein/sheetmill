@@ -146,6 +146,9 @@ percent-encode every byte outside `[A-Za-z0-9_./-]`. The final `!` terminates th
 context so tags and titles cannot concatenate into another card's text. `tool`
 and root `tags` follow, in source order, for filtering. Before writing, every entry's
 pinned item hash is computed across the batch; equal hashes are `NAV008` (error).
+`--root` must name an existing directory without symlinks, and every input must
+be inside it. An invalid root or outside input fails with `IO001` before writing.
+
 Titles, tags and header values are collapsed to one line, so they cannot create a
 navi line. A title that is empty after that (for example only U+200B) or contains
 U+2800 skips the card, because navi ignores entries without a description. A tag
