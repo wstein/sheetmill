@@ -2,12 +2,11 @@
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md),
 [data-model.md](data-model.md), [contract](contracts/navigation.md).
-**State**: Implemented through T017 (user authorization 2026-10-14, recorded in
-`AGENTS.md`). Open: T002 baseline record, T018 browser journeys (the pinned Node 24.21.0
-Playwright harness was not available locally), T019 race/e2e remainder, T020, T021.
-Deviations: ordering/import fixtures are inline in tests, not files under `testdata/`;
-sidebar/home agreement is verified with real Hugo in both layouts
-(`TestNavigationHugoIntegration`).
+**State**: Implementation and reader checks complete under the 2026-10-14 handoff.
+T019/T020 await the performance rerun; T021 awaits final documentation review
+and PR/CI evidence.
+Ordering fixtures are shared files; import fixtures preserve arbitrary upstream
+values. No real library content was reordered.
 
 `[P]` marks independent files that may be worked on concurrently once their stated
 prerequisites pass. Story labels map to the specification. Write behavioral tests
@@ -16,7 +15,7 @@ first and observe the expected failure before implementing their corresponding r
 ## Phase 1: Scope and baseline
 
 - [x] T001 Confirm explicit user implementation authorization and record its exact boundaries in `AGENTS.md`; retain an isolated `codex/` worktree and exclude deployment, PDF, navi execution and real-library reordering.
-- [ ] T002 Record the implementation base, existing parser/import golden checksums and baseline checks in `specs/014-library-navigation/quickstart.md`; inspect current renderer tests and the pinned `tests/e2e/` harness before extending them.
+- [x] T002 Record the implementation base, existing parser/import golden checksums and baseline checks in `specs/014-library-navigation/quickstart.md`; inspect current renderer tests and the pinned `tests/e2e/` harness before extending them.
 
 ## Phase 2: Shared validation foundation
 
@@ -68,7 +67,7 @@ has gained navigation behavior beyond the specified preservation boundary.
 
 ## Phase 6: Browser verification and final checks
 
-- [ ] T018 Extend the existing `tests/e2e/navigation.spec.mjs` suite using the GFM → Hugo → browser harness and the new fixture, preserving its tag/disclosure/palette regressions; verify sidebar/home agreement, current-group expansion, keyboard disclosure and sheet links in both layouts, root/subpath sites, desktop/mobile and JavaScript-disabled mode. Wait for loaded assets/fonts before geometry assertions; commands remain displayed content.
+- [x] T018 Extend the existing `tests/e2e/navigation.spec.mjs` suite using the GFM → Hugo → browser harness and the new fixture, preserving its tag/disclosure/palette regressions; verify sidebar/home agreement, current-group expansion, keyboard disclosure and sheet links in both layouts, root/subpath sites, desktop/mobile and JavaScript-disabled mode. Wait for loaded assets/fonts before geometry assertions; commands remain displayed content.
 - [ ] T019 Run the targeted source/import/Hugo/navi tests, full `go test ./...`, applicable race checks, `go vet ./...`, gofmt and `git diff --check`; confirm old golden bytes and generated route/card identities remain unchanged and run the existing browser/performance regression suites appropriate to this renderer change.
 - [ ] T020 Execute and record the actual local verification from `specs/014-library-navigation/quickstart.md`; reconcile this checklist and `specs/README.md` against evidence, leaving unrun checks pending and excluding content-library reordering.
 - [ ] T021 Obtain independent Sol review of the exact implementation revision, fix actionable findings with focused Conventional Commits, re-review, and attach the final evidence to the authorized PR; check CI before marking it ready. Do not merge or deploy.

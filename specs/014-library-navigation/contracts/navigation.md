@@ -1,6 +1,7 @@
-# Proposed public contract — 014
+# Public contract — 014
 
-Not implemented yet; update public format/schema/diagnostic docs with implementation.
+Implemented under the 2026-10-14 handoff; public format/schema/diagnostic docs
+carry the same contract.
 
 ```yaml
 ---

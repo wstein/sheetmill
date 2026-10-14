@@ -1,8 +1,12 @@
-# Future validation guide — 014
+# Validation guide and evidence — 014
 
-These checks describe implementation acceptance; they have not been run for a
-014 implementation. Start only after implementation scope is explicitly recorded
-in AGENTS.md. Use an isolated worktree and existing pinned Go/Hugo/Node/Playwright.
+Implementation authorized 2026-10-14 in AGENTS.md. Worktree:
+`/private/tmp/sheetmill-navigation-impl-20261014`. Original production implementation
+was inherited as commits `fb14f79` and `e08e72f`; verification additions follow.
+The author’s test-first history was not independently reconstructed.
+Baseline: main `de3e08e55c5e42a1eedc4ea24e749219ae35f1f5`.
+[Checksums](baseline-checksums.json) record every pre-existing parser/import fixture;
+all match byte-for-byte. The following remains a reproducible acceptance guide.
 
 1. Add independently authored multi-sheet fixtures covering group overrides,
    category fallback, uncategorized, omitted/zero/cap orders, duplicate orders,
@@ -35,3 +39,24 @@ in AGENTS.md. Use an isolated worktree and existing pinned Go/Hugo/Node/Playwrig
 8. Run gofmt, `go test ./...`, `go test -race ./...`, `go vet ./...`, applicable
    browser suites and `git diff --check`. Record exact revision, actual results
    and limitations, then obtain independent review. Do not merge or deploy.
+
+## Local results (2026-10-14)
+
+- `go test ./...`, `go test -race ./...`, `go vet ./...`: pass.
+- `SHEETMILL_HUGO=/opt/homebrew/bin/hugo go test ./internal/render/hugo`: pass,
+  including real Hugo integration in both layouts.
+- Complete reader/corpus Playwright suite: 45/45 pass. This includes 12 authored
+  placement journeys across two layouts, two mounts and three browser profiles,
+  plus existing tags, palettes, assets, copy, inert-input and product-sheet journeys.
+- Node harness/performance-unit/search checks: 23/23 pass.
+- Ordering checks cover all 24 four-sheet permutations and 50 seeded full-fixture
+  shuffles, Unicode/title/route ties and exact group identity. Source checks assert
+  nested 4:3 positions and no partial parse; imports compare complete values.
+- Only new fixtures and one new parser golden were added; prior fixture/golden
+  bytes are unchanged. Metadata companions preserve valid navigation without
+  changing `.cheat` bytes or card identities; navi was not executed.
+- gofmt and `git diff --check`: pass. No extension hooks configured.
+
+The first performance attempt stopped at the harness’s clean-tree guard after
+startup sampling because verification edits were not committed. No acceptance
+result is claimed for that attempt; the committed-input rerun is recorded below.

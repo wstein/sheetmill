@@ -1,10 +1,10 @@
 # Implementation Plan: Library navigation
 
-**Branch**: `codex/014-library-navigation` | **Date**: 2026-10-14 | **Spec**: [spec.md](spec.md)
+**Branch**: `codex/014-navigation-complete` | **Date**: 2026-10-14 | **Spec**: [spec.md](spec.md)
 
 **Input**: Settled first-slice specification in `specs/014-library-navigation/spec.md`.
-**State**: Planning artifacts only. Runtime tasks remain unimplemented and require
-recorded implementation authorization before execution.
+**State**: Implemented under the user’s 2026-10-14 handoff; see tasks and
+quickstart for verification. No deployment.
 
 ## Summary
 
@@ -33,7 +33,7 @@ uncategorized groups, direct IR, imports and metadata companions.
 
 ## Constitution Check
 
-Pre-research and post-design: PASS for documentation scope.
+Pre-research, post-design and implementation: PASS within recorded scope.
 
 - Determinism: explicit total comparison; stable source/card/URL identity.
 - Canonical source: public format/schema/diagnostic changes planned with tests;
@@ -41,8 +41,7 @@ Pre-research and post-design: PASS for documentation scope.
 - Loss-aware imports: early inert archival preserves arbitrary upstream values.
 - Inert input: no snippets, navi, dynamic providers or source resources execute.
 - Focused design: existing dependencies and shared functions; no manifest/config I/O.
-- Review/publication: this local docs branch grants no runtime or publication
-  approval. Implementation tasks start with an authorization check in AGENTS.md;
+- Review/publication: implementation authorization is recorded in AGENTS.md;
   exact-revision independent review is required before merge.
 
 ## Project Structure
