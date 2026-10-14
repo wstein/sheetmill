@@ -44,29 +44,24 @@ jobs:
           echo '4d84519b9f619e6d4c3fb45a50157abeabeb724f859c60605f44c23def6e1169  '"$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" -C "$RUNNER_TEMP/sheetmill-hugo" hugo
       - name: Verify harness boundaries
-        working-directory: tests/e2e
-        run: npm run test:harness
+        run: make test-harness
       - name: Run all reader journeys (no missing-tool skips)
-        working-directory: tests/e2e
         env:
           GOPROXY: 'off'
           GOSUMDB: 'off'
           GOTOOLCHAIN: local
-        run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" npm test
+        run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" make test-browser
       - name: Run the explicit three-sheet corpus (commands remain inert)
-        working-directory: tests/e2e
         env:
           GOPROXY: 'off'
           GOSUMDB: 'off'
           GOTOOLCHAIN: local
-          SHEETMILL_E2E_CORPUS: all
-        run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" npm test
+        run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" make test-browser-corpus
       - name: Verify authenticated read-only Studio journeys (no traces)
-        working-directory: tests/e2e
         env:
           GOPROXY: 'off'
           GOSUMDB: 'off'
           GOTOOLCHAIN: local
-        run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" npm run test:studio
+        run: SHEETMILL_HUGO="$RUNNER_TEMP/sheetmill-hugo/hugo" make test-browser-studio
       - name: Verify tracked files remain unchanged
-        run: git diff --exit-code && git diff --check
+        run: make verify-clean
