@@ -56,5 +56,6 @@ func Metadata(m map[string]any, locations map[string]diagnostic.Span) []diagnost
 		}
 	}
 	_, nav := Navigation(m, locations)
-	return append(ds, nav...)
+	ds = append(ds, nav...)
+	return append(ds, CommandMetadata(m, locations)...)
 }
