@@ -16,5 +16,7 @@
   checks are not review.
 - [ ] T008 Obtain separate publication approval if requested.
 - [ ] T009 Metadata sidecar (`<sheet>.navi.json`) preserving non-navi metadata.
-- [ ] T010 Pin a pure Go shell parser for bash/zsh/fish syntax checks.
+- [ ] T010 Stronger shell syntax checks. Bash/Zsh quote diagnostics now use only
+  pinned `mvdan.cc/sh/v3/syntax` v3.14.1; full syntax validation and a suitable
+  Fish parser remain pending.
 - [ ] T011 Later: choice lists, shared contexts, nushell raw strings.

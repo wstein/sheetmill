@@ -41,3 +41,20 @@ assuming current master behaves identically.
   (omitted when false); the exporter never reparses Markdown or infers it from a slug.
 - Escaping literal placeholders, choice lists and provider capabilities require
   subsequent scope/design approval.
+
+## Quote parser refinement
+
+The primary Bash quote checker now imports only `mvdan.cc/sh/v3/syntax` v3.14.1
+(commit `a3f0c75d21d918756fa38de8b5d3429efde7948b`). A grammar-aware parser is
+justified because the custom parenthesis/quote scanner mistook a `case` pattern
+terminator for the end of a command substitution. The package follows Bash 5.2
+and provides experimental Zsh grammar. No interpreter package is imported.
+Only unclosed-quote parser diagnostics become NAV102; non-quote syntax errors are
+ignored, not misreported as quotes. Distinct inert placeholder sentinels exist only in a validation copy; repeated
+tokens retain identity and the sentinel prefix is absent from the original input,
+so masking does not accidentally terminate a heredoc. Original payload bytes
+remain unchanged. Pure regression tests
+cover case patterns, actual open quotes, heredocs and nested substitutions.
+
+The Fish heuristic and full syntax validation remain T010 work. This does not
+claim compatibility with execution in a real shell or navi.
