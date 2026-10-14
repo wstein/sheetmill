@@ -429,7 +429,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		sitemap.WriteString("</urlset>\n")
 		p.Files["static/sitemap.xml"] = []byte(sitemap.String())
 	}
-	config := map[string]any{"baseURL": "https://example.invalid/", "title": title, "languageCode": "en", "disableKinds": []string{"taxonomy", "term", "RSS", "sitemap"}, "enableRobotsTXT": false, "disableHugoGeneratorInject": true, "params": params, "outputs": map[string]any{"home": []string{"HTML"}, "page": []string{"HTML"}}, "security": map[string]any{"enableInlineShortcodes": false, "exec": map[string]any{"allow": []string{"none"}, "osEnv": []string{"none"}}, "http": map[string]any{"methods": []string{"none"}, "urls": []string{"none"}}}}
+	config := map[string]any{"baseURL": "https://example.invalid/", "title": title, "languageCode": "en", "taxonomies": map[string]string{}, "disableKinds": []string{"taxonomy", "term", "RSS", "sitemap"}, "enableRobotsTXT": false, "disableHugoGeneratorInject": true, "params": params, "outputs": map[string]any{"home": []string{"HTML"}, "page": []string{"HTML"}}, "security": map[string]any{"enableInlineShortcodes": false, "exec": map[string]any{"allow": []string{"none"}, "osEnv": []string{"none"}}, "http": map[string]any{"methods": []string{"none"}, "urls": []string{"none"}}}}
 	// Every remaining file is required; never return a partial project.
 	copyTree := func(files fs.FS, from, to string) error {
 		return fs.WalkDir(files, from, func(name string, d fs.DirEntry, e error) error {

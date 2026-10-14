@@ -81,9 +81,11 @@ if (typeof document !== 'undefined') (() => {
       const stored = localStorage.getItem(key);
       if (group.dataset.current !== 'true' && stored !== null) group.open = stored === 'open';
     } catch {}
-    group.addEventListener('toggle', () => {
+    const save = () => {
       try { localStorage.setItem(key, group.open ? 'open' : 'closed'); } catch {}
-    });
+    };
+    group.addEventListener('toggle', save);
+    window.addEventListener('pagehide', save);
   }
   if (document.body.classList.contains('classic')) {
     const density = document.querySelector('#app-density');

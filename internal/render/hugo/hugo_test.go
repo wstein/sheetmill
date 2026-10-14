@@ -912,6 +912,10 @@ func TestHugoIntegrationMetadata(t *testing.T) {
 		t.Fatal(ds)
 	}
 	out := hugoBuild(t, binary, p)
+	tagIndex, err := os.ReadFile(filepath.Join(out, "tags", "index.html"))
+	if err != nil || !bytes.Contains(tagIndex, []byte("<h1>Tags</h1>")) {
+		t.Fatalf("tag index: %v %s", err, tagIndex)
+	}
 	home, _ := os.ReadFile(filepath.Join(out, "index.html"))
 	page, _ := os.ReadFile(filepath.Join(out, "git", "index.html"))
 	for _, want := range []string{"<h1>My Library</h1>", "Ten tools, well arranged.", `<h2 class="shelf-title">version-control</h2>`, `<h2 class="shelf-title">Other references</h2>`, "Track &lt;changes&gt;."} {
