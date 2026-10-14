@@ -6,7 +6,8 @@ import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const source=(title,category,tags)=>'---\n'+JSON.stringify({title,...(category?{category}:{}),tags})+'\n---\n## Basics\n### Wide {.col-span-3 #wide}\n```sh\necho "SHEETMILL_SNIPPET_MUST_NOT_RUN"\n```\n### Small {#small}\nVisible reference content.\n';
-const inputs=[['alpha',source('Alpha','Networking',['shared','C++','C#','日本語','<unsafe>/../x'])],['beta',source('Beta','Development',['shared'])],['other',source('Other','',['solo'])]];
+const longTag='longtag'.repeat(30);
+const inputs=[['alpha',source('Alpha','Networking',['shared','C++','C#','日本語','<unsafe>/../x',longTag])],['beta',source('Beta','Development',['shared'])],['other',source('Other','',['solo'])]];
 const test=base.extend({
   layoutTheme:['editorial',{option:true}],
   site:async({tools,layoutTheme,basePath},use)=>{
@@ -55,11 +56,20 @@ for(const layoutTheme of ['editorial','classic-compact'])for(const basePath of [
     await page.reload();await expect(page.locator('.tag-count')).toHaveText('2 references');
     await page.getByRole('link',{name:'← All tags',exact:true}).click();
     await expect(page.getByRole('heading',{name:'Tags',exact:true})).toBeVisible();
-    await expect(page.locator('.tag-results a')).toHaveCount(6);
+    await expect(page.locator('.tag-results a')).toHaveCount(7);
+    await page.setViewportSize({width:320,height:844});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'long tag index fits').toBe(true);
+    await page.locator('.tag-results').getByRole('link',{name:longTag,exact:true}).click();
+    await expect(page.getByRole('heading',{name:'Tag: '+longTag,exact:true})).toBeVisible();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'long tag heading fits').toBe(true);
+    await page.getByRole('link',{name:'← All tags',exact:true}).click();
+
     const unsafe=page.locator('.tag-results').getByRole('link',{name:'<unsafe>/../x',exact:true});
     await unsafe.click();await expect(page.getByRole('heading',{name:'Tag: <unsafe>/../x',exact:true})).toBeVisible();
     await expect(page.locator('.tag-count')).toHaveText('1 reference');
     await page.locator('.tag-results').getByRole('link',{name:'Alpha',exact:true}).click();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'long tag chip fits').toBe(true);
+    await page.setViewportSize(testInfo.project.use.viewport);
     if(testInfo.project.name==='no-js') {
       await expect(page.locator('#app-palette')).toBeHidden();
       await page.emulateMedia({colorScheme:'dark'});
@@ -79,7 +89,7 @@ for(const layoutTheme of ['editorial','classic-compact'])for(const basePath of [
           if(await page.locator('html').getAttribute('data-theme')!==mode)await page.locator('#app-theme').click();
           const values=await page.evaluate(()=>{const s=getComputedStyle(document.documentElement);return Object.fromEntries(['bg','surface','code','text','muted','link','accent'].map(k=>[k,s.getPropertyValue('--'+k).trim()]));});
           for(const fg of ['text','muted','link','accent'])for(const bg of ['bg','surface','code'])expect(contrast(values[fg],values[bg]),name+' '+mode+' '+fg+'/'+bg).toBeGreaterThanOrEqual(4.5);
-          if(mode==='dark' && testInfo.project.name==='desktop' && basePath==='/sheetmill/')await page.screenshot({path:testInfo.outputPath(name+'.png'),fullPage:true});
+          if(testInfo.project.name==='desktop' && basePath==='/sheetmill/')await page.screenshot({path:testInfo.outputPath(name+'-'+mode+'.png'),fullPage:true});
         }
         await page.reload();await expect(page.locator('html')).toHaveAttribute('data-palette',name);
       }
