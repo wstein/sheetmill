@@ -60,6 +60,16 @@ if (typeof document !== 'undefined') (() => {
     try { localStorage.setItem('sheetmill-theme', root.dataset.theme); } catch {}
     label();
   });
+  for (const group of document.querySelectorAll('[data-library-group]')) {
+    const key = 'sheetmill-library:' + root.dataset.base + ':' + group.dataset.libraryGroup;
+    try {
+      const stored = localStorage.getItem(key);
+      if (group.dataset.current !== 'true' && stored !== null) group.open = stored === 'open';
+    } catch {}
+    group.addEventListener('toggle', () => {
+      try { localStorage.setItem(key, group.open ? 'open' : 'closed'); } catch {}
+    });
+  }
   if (document.body.classList.contains('classic')) {
     const density = document.querySelector('#app-density');
     const apply = comfortable => {

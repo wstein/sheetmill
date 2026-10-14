@@ -1,0 +1,9 @@
+{{ $current := "" }}{{ with .Params.sheetid }}{{ $current = printf "%s%s/" site.Params.base . }}{{ end }}
+<nav class="library-nav" aria-label="Reference sheets"><p class="eyebrow">IN THE LIBRARY</p>
+{{ range site.Data.shelves }}{{ $active := false }}{{ range .sheets }}{{ if eq .url $current }}{{ $active = true }}{{ end }}{{ end }}
+<details class="library-group" data-library-group="{{ .category }}"{{ if $active }} data-current="true"{{ end }}{{ if or $active (eq $current "") }} open{{ end }}>
+<summary>{{ or .category "Other references" }} <span class="library-count">{{ len .sheets }}</span></summary>
+<ul class="library-links">{{ range .sheets }}<li><a href="{{ .url }}"{{ if eq .url $current }} aria-current="page"{{ end }}>{{ .title }}</a></li>{{ end }}</ul>
+</details>{{ end }}
+{{ if site.Data.tagindex }}<a class="browse-tags" href="{{ site.Params.base }}tags/">Browse tags</a>{{ end }}
+</nav>

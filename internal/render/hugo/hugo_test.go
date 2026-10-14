@@ -919,7 +919,7 @@ func TestHugoIntegrationMetadata(t *testing.T) {
 			t.Errorf("home lacks %s", want)
 		}
 	}
-	for _, want := range []string{`<p class="sheet-description">Track &lt;changes&gt;.</p>`, `<li>vcs</li>`, `version-control`} {
+	for _, want := range []string{`<p class="sheet-description">Track &lt;changes&gt;.</p>`, `<li><a href="/tags/vcs-a8d1cfa1fc63/">vcs</a></li>`, `version-control`} {
 		if !bytes.Contains(page, []byte(want)) {
 			t.Errorf("page lacks %s", want)
 		}
@@ -1095,7 +1095,7 @@ func TestSiteURLSitemapAndValidation(t *testing.T) {
 	if len(ds) > 0 {
 		t.Fatal(ds)
 	}
-	want := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n<url><loc>https://wstein.github.io/sheetmill/</loc></url>\n<url><loc>https://wstein.github.io/sheetmill/ab/</loc></url>\n<url><loc>https://wstein.github.io/sheetmill/c/</loc></url>\n</urlset>\n"
+	want := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n<url><loc>https://wstein.github.io/sheetmill/</loc></url>\n<url><loc>https://wstein.github.io/sheetmill/ab/</loc></url>\n<url><loc>https://wstein.github.io/sheetmill/c/</loc></url>\n<url><loc>https://wstein.github.io/sheetmill/tags/</loc></url>\n<url><loc>https://wstein.github.io/sheetmill/tags/sample-af2bdbe1aa9b/</loc></url>\n</urlset>\n"
 	if got := string(p.Files["static/sitemap.xml"]); got != want {
 		t.Fatalf("%q", got)
 	}
