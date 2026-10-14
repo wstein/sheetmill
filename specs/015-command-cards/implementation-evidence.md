@@ -61,3 +61,21 @@ quality review from docs PR #34 / baseline `9f132df`. Its unimplemented/runtime-
 pending note describes that earlier documentation revision. This evidence and
 `tasks.md` record the subsequent implementation; the old checklist is not used
 as a claim about current runtime verification.
+
+## Rebase verification — 2026-10-14
+
+Rebased onto main `484cb77` in the same isolated worktree. The only conflict
+was the spec index; both the implemented 015 row and main's 016 row were retained.
+`git range-diff` confirms the four implementation commits are unchanged and the
+final documentation commit differs only in that surrounding index context.
+
+At rebased head `bd83f10`, full Go tests, full race tests, vet, explicit installed
+Hugo integration, gofmt and diff checks passed. All 28 baseline fixture checksums
+remain unchanged. The complete browser harness passed **51/51**, including main's
+reference-cards journeys on desktop, mobile and without JavaScript. An initial
+browser invocation omitted the required `SHEETMILL_HUGO` environment variable;
+it was stopped and rerun with `/opt/homebrew/bin/hugo` before claiming this pass.
+
+A separately assigned Sol reviewer independently reviewed the rebased diff and
+ran targeted/full Go tests, vet and diff checks: **CLEAR**, no actionable findings.
+This follow-up changes evidence only. No navi execution, PDF, merge or deployment.
