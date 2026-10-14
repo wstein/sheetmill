@@ -8,6 +8,21 @@
 - [x] T006 Real-Hugo integration test: body class, Browse panel with 014 order and `aria-current`, no sidebar, both a home and a sheet page.
 - [x] T007 Docs: `docs/hugo.md`, `docs/cli.md`, `specs/README.md`.
 - [x] T008 Browser check (Chrome) at desktop, 390px and 320px, light/dark; print was not previewed; record limits honestly.
-- [x] T009 Review round 1 NOT CLEAR at fff1223; fixed in fdee8ff and CLEAR; P3 follow-ups (print tint/grid, title-only corner, card-kind tint, contrast pairs, stronger contract test) applied after review. CI at fdee8ff passed. gofmt, vet, full tests with Hugo, race, diff check; independent review of the exact head; fix findings; draft PR, then mark ready only after CI and review. Do not merge or deploy.
+- [ ] T009 Final readiness: Go/Hugo tests, vet, diff checks and the 51-journey reader/corpus suite pass after review fixes. Exact-head Sol re-review and current-head CI must be clear before leaving draft. Do not merge or deploy.
 
-T008 evidence: Chrome check of the built `examples/sheets` demo (desktop screenshot, iframe measurements at 320px and 390px with the Browse panel open: no horizontal overflow, no badge overflow; dark badge uses `--link` on `--bg`). Real print and Firefox/WebKit were not tested; the pinned Playwright suite was not run locally (Node 26 installed, 24.21.0 required).
+T008 is now covered by the pinned Playwright harness as well as the original Chrome
+check. Six new root/subpath journeys exercise desktop, mobile and no-JavaScript;
+compact/comfortable state is asserted where JavaScript provides the toggle. Tests
+cover centering, native navigation, palette contrast, exact copying without the
+CSS prompt, 320–1280px widths, badge flow, readable table scrolling and print-media
+wrapping. No-JavaScript mode tests its default compact layout and system dark mode.
+
+The initial author check did not use the pinned harness. The subsequent review
+ran all 51 reader/corpus journeys successfully; see [review evidence](review-evidence.md).
+Print **media emulation** was checked, not physical printing, PDF pagination,
+Firefox or WebKit. T009 stays open until PR-level review/CI readiness is recorded.
+
+Historical author review cleared `fdee8ff` after an earlier fix round. Concurrent
+follow-ups `5815002` and `74f0291` then strengthened print rules, corner/tint
+selectors and contrast tests. Those changes are preserved in this review branch.
+T009 is pending for the combined final head rather than reusing an older CI result.
