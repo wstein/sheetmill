@@ -68,7 +68,7 @@ warnings end with `(warning)` and do not change the exit status unless you use `
 | `NAV001` | Unsupported `--shell` profile. Use `bash`, `zsh`, `fish` or `nu`. |
 | `NAV006` | Invalid or unknown `cheatsheet.navi` metadata, a reference to a missing/unmarked card or generated ID, a wrong `shell`, conflicting complete old/new parameter declarations, or an unusable tag. |
 | `NAV008` | Two exported entries share a pinned navi identity hash; navi would silently drop one. |
-| `NAV101`–`NAV107` | Warnings: a marked card was skipped (shape, command text, placeholder, declarations), the license is unstated, a sheet exported nothing, or frontmatter is not carried. `NAV007` is retired. See [navi export](format/navi-profile.md). |
+| `NAV101`–`NAV106` | Warnings: a marked card was skipped (shape, command text, placeholder, declarations), the license is unstated, or a sheet exported nothing. `NAV007` and `NAV107` are retired: frontmatter is preserved in the `.navi.json` sidecar. See [navi export](format/navi-profile.md). |
 
 ## Input and output {#io}
 ### Files and streams {#io-codes}
