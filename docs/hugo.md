@@ -199,3 +199,56 @@ in three columns. Editorial Stack remains the default (`--theme editorial`).
 The layout adds one fingerprinted stylesheet, uses system fonts (no new font files),
 needs no inline styles, and works without JavaScript. Open decisions: A4 vs Letter,
 the minimum column width (270px) and whether to ship IBM Plex Mono/600.
+
+## Tags and grouped navigation
+
+Sheet tags link to generated result pages listing matching references and their
+unique sheet count. `Browse tags` opens the complete tag index at `<base-path>tags/`.
+These are ordinary static links: tag discovery and category disclosure controls
+work without JavaScript. Tags match exact, case-sensitive source labels; duplicate
+tags on one sheet do not duplicate its results. This increment supports one tag
+per result page, not combinations of tags or card-level tagging.
+
+A tag URL is `<base-path>tags/<ascii-stem>-<digest>/`: the stem is at most 32 ASCII
+characters and the digest is the first 12 hexadecimal SHA-256 characters of the
+original UTF-8 label. Punctuation, Unicode and differently cased labels therefore
+have stable, distinct routes independent of source ordering or other tags. Route
+collisions fail with `REN003`. The top-level sheet route `tags` is reserved.
+Canonical URLs and the generated sitemap include the tag index/results when a
+site origin is configured; tag pages exist without an origin as well.
+
+Both layouts have a left library sidebar grouped by `category`; uncategorized
+sheets appear under Other references. Native disclosure controls expand or collapse
+groups using mouse, Enter or Space. The current sheet's group opens on navigation,
+and its link has a visible marker and `aria-current="page"`. With JavaScript,
+other disclosure preferences persist per site base path. At narrow widths the
+library moves above the content and remains collapsible. Existing section jump
+links remain in the content; the sidebar does not enumerate individual cards.
+
+## Color palettes
+
+Palette, layout and light/dark appearance are independent:
+
+```text
+smill build hugo sheets --out local-site --theme classic-compact --palette dracula
+```
+
+| `--palette` | Reading surfaces and accents |
+| --- | --- |
+| `graphite-coral` (default) | Neutral dark charcoal or pale light surfaces, coral and periwinkle |
+| `paper-ink` | Warm paper/ink surfaces and restrained coral |
+| `midnight-periwinkle` | Deep navy or cool pale surfaces, periwinkle links |
+| `monochrome` | Neutral black/white surfaces and grayscale accents |
+| `teal-copper` | Teal surfaces/links with copper accents |
+| `dracula` | Purple/pink accents on dark charcoal, plus a SheetMill light adaptation |
+
+The Color palette selector remembers the browser choice independently of light/dark
+mode and density. Without JavaScript, the configured palette still applies and
+follows the system color-scheme preference. Unknown palette names fail with
+`REN003` before writing. Print uses neutral readable colors.
+
+Styles are implemented locally with no external requests or new dependencies.
+Dracula's dark palette draws from its [published color values](https://draculatheme.com/contribute);
+SheetMill's light adaptation, muted text and code surfaces are adjusted for
+readability. Browser checks measure text, muted text, link and accent token contrast
+against page, card and code surfaces at 4.5:1 or better in every palette/mode.
