@@ -12,13 +12,14 @@ never grants execution, merge or publication permission.
 | [003](003-reference-import/spec.md) | Controlled Reference conversion implemented ([#3](https://github.com/wstein/sheetmill/pull/3)) | Provenance does not grant redistribution rights |
 | [004](004-hugo-renderer/spec.md) | Hugo renderer and local generation implemented | Hosting authorization is scoped separately by 012 |
 | [005](005-typst-renderer/spec.md) | Specification only | Version/fonts/accessibility and layout decisions pending; no implementation/PDF generation |
-| [006](006-navi-renderer/spec.md) | Exporter and review fixes merged ([#27](https://github.com/wstein/sheetmill/pull/27), [#28](https://github.com/wstein/sheetmill/pull/28)) | T009 sidecars implemented in [#30](https://github.com/wstein/sheetmill/pull/30), not yet merged; stronger syntax/provider work remains pending; never execute navi |
+| [006](006-navi-renderer/spec.md) | Exporter and review fixes merged ([#27](https://github.com/wstein/sheetmill/pull/27), [#28](https://github.com/wstein/sheetmill/pull/28)) | T009 sidecars merged in [#30](https://github.com/wstein/sheetmill/pull/30); stronger syntax/provider work remains pending; never execute navi |
 | [007](007-live-preview/spec.md) | Read-only serve, reader corpus and automated performance checks implemented | T049 five-author usability study remains pending; no browser editing |
 | 008–010 | Reserved; no feature directories | Visual editing, disposable and online playgrounds remain proposals ([roadmap](../docs/studio-roadmap.md)) |
 | [011](011-heading-attribute-ir/spec.md) | Specification only | Resolve heading-boundary and IR schema decisions before separate implementation authorization |
 | [012](012-public-hosting/spec.md) | Base path, approved manual/demo hosting and canonical sitemap implemented | General redistribution gate and header/CSP follow-up remain pending; no deployment in this increment |
 | [013](013-tldr-import/spec.md) | Specification only | Pin source evidence and settle conversion decisions before implementation authorization |
 | [014](014-library-navigation/spec.md) | Implemented and locally verified ([#33](https://github.com/wstein/sheetmill/pull/33)); Sol review clear; CI readiness tracked on PR | Per-sheet group/order first slice; manifest, titles, IDs and deployment deferred |
+| [015](015-command-cards/spec.md) | Docs-only shared command-card and migration proposal; not implemented | Core `.command` / `cheatsheet.cards` revision needs separate implementation handoff; 006 consumes it with unchanged navi bytes/hashes |
 
 The public source contract is [docs/format](../docs/format/gfm-plus.md). Each feature
 has spec, plan and tasks; use `SPECIFY_FEATURE_DIRECTORY=specs/NNN-name` with Spec
