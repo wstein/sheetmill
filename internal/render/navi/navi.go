@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/wstein/sheetmill/internal/diagnostic"
 	"github.com/wstein/sheetmill/internal/model"
+	"github.com/wstein/sheetmill/internal/validate"
 )
 
 // Version is the export format version recorded in every file header.
@@ -100,6 +102,12 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	for _, s := range ordered {
 		if s.Document == nil || s.Document.Schema != 1 {
 			errs = append(errs, issue(s, "REN001", "renderer requires schema-1 IR", diagnostic.Span{}))
+			continue
+		}
+		if ds := validate.Commands(s.Document, nil); len(ds) > 0 {
+			for _, d := range ds {
+				errs = append(errs, issue(s, d.Code, d.Message, d.Span))
+			}
 			continue
 		}
 		name := s.ID + ".cheat"
@@ -213,6 +221,21 @@ func renderSheet(s Sheet, profile Profile) ([]byte, []entry, []Issue, []Issue) {
 	if raw, present := cheat["navi"]; present {
 		cards = parseMetadata(raw, profile, bad)
 	}
+	// Both namespaces are validated before comparing complete per-card settings.
+	// Shared validation has already rejected malformed shared shapes/references.
+	if shared, ok := cheat["cards"].(map[string]any); ok {
+		if cards == nil {
+			cards = map[string]*cardMeta{}
+		}
+		for _, id := range sortedKeys(shared) {
+			meta := parseCard(id, shared[id], bad)
+			if prior, present := cards[id]; present && !reflect.DeepEqual(prior.params, meta.params) {
+				bad(fmt.Sprintf("cheatsheet.cards.%s conflicts with cheatsheet.navi.cards.%s; complete parameter declarations must agree", id, id))
+			} else {
+				cards[id] = meta
+			}
+		}
+	}
 	tags := tagList(d.Metadata, tool, bad)
 	// Parameters are card-local: every card has its own navi context, so one name
 	// may be declared differently in different cards.
@@ -231,7 +254,7 @@ func renderSheet(s Sheet, profile Profile) ([]byte, []entry, []Issue, []Issue) {
 		card, present := existing[id]
 		if !present {
 			bad(fmt.Sprintf("cheatsheet.navi.cards.%s refers to no card", id))
-		} else if !card.IDExplicit || !contains(card.Classes, "navi") {
+		} else if !card.IDExplicit || !validate.IsCommand(card) {
 			bad(fmt.Sprintf("cheatsheet.navi.cards.%s must refer to a card with an explicit ID and .navi", id))
 		}
 	}
@@ -255,7 +278,7 @@ func renderSheet(s Sheet, profile Profile) ([]byte, []entry, []Issue, []Issue) {
 	var entries []entry
 	for _, section := range d.Sections {
 		for _, card := range section.Cards {
-			if !contains(card.Classes, "navi") {
+			if !validate.IsCommand(card) {
 				continue
 			}
 			// The context comes first and is unique per card; the sheet's tags follow
@@ -404,7 +427,14 @@ func renderCard(s Sheet, card model.Card, tagLine string, profile Profile, metas
 			return skip("NAV103", fmt.Sprintf("<%s> looks like a navi placeholder but names match [a-z][a-z0-9_]{0,31}", name), block.Span)
 		}
 		if _, ok := declared[name]; !ok {
-			return skip("NAV104", fmt.Sprintf("placeholder <%s> has no declaration under cheatsheet.navi.cards.%s.params", name, card.ID), block.Span)
+			namespace := "cheatsheet.navi.cards"
+			cheat, _ := s.Document.Metadata["cheatsheet"].(map[string]any)
+			shared, _ := cheat["cards"].(map[string]any)
+			_, sharedCard := shared[card.ID]
+			if contains(card.Classes, "command") || sharedCard {
+				namespace = "cheatsheet.cards"
+			}
+			return skip("NAV104", fmt.Sprintf("placeholder <%s> has no declaration under %s.%s.params", name, namespace, card.ID), block.Span)
 		}
 		used[name] = true
 	}
