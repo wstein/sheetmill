@@ -1,8 +1,10 @@
 # SheetMill Studio roadmap and design inputs
 
 Specification request: 2026-10-13. These are staged product intentions, not
-implementation or deployment authorization. This invocation creates only
-[007 local live preview](../specs/007-live-preview/spec.md).
+implementation or deployment authorization. Updated 2026-10-14: the
+[007 local live preview](../specs/007-live-preview/spec.md), three-sheet reader
+corpus and automated performance checks are implemented; the five-author study
+remains pending. Items 008–010 still have no specification directories.
 
 ## Delivery order
 
@@ -27,9 +29,9 @@ implementation or deployment authorization. This invocation creates only
    remote compile service or public deployment is authorized by this roadmap.
 
 The first slice must ship independently; server/editor work must not become a
-prerequisite for testing the existing GFM → Hugo → browser workflow. Typst/PDF and
-navi remain their existing specification-only features 005/006. Preview integration
-can follow their implementation and authorization; neither blocks 007 web preview.
+prerequisite for testing the existing GFM → Hugo → browser workflow. Typst/PDF remains specification-only (005); navi text export (006) is implemented
+separately, with sidecars authorized as a follow-up. Studio remains web-only.
+PDF/navi preview integration requires its own scope and neither blocks 007 web preview.
 
 ## Architecture constraints to carry into planning
 

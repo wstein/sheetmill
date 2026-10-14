@@ -168,7 +168,8 @@ Keep tool execution fixed and content inert. Preserve the same Go compiler/IR/Hu
 path and use manual browser QA only as complementary evidence, not the automated gate.
 MVP implementation was authorized on 2026-10-13. The private test package and
 matching browser were provisioned explicitly; tests themselves download nothing.
-No product server or later runtime feature was implemented. Independent source
+No product server was implemented in that MVP-only handoff. The subsequent
+server increment is recorded below. Independent source
 re-review is clear; final documentation is reviewed at handoff. See
 `docs/e2e-verification.md`.
 

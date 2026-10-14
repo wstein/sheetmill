@@ -19,9 +19,10 @@ They are judgments, not measured adoption or guarantees.
 | Runnable snippets (third-party playgrounds) | Rejected | Conflicts with "nothing in a sheet is executed or fetched", adds CDN and supply-chain risk |
 | Parser emits structural headings without the `{...}` attribute suffix | 7/10 | Follow-up: the Hugo renderer re-derives the suffix separately from `markdown.heading()` and the rules already differ (contiguous segments); changes IR/schema, so needs its own reviewed PR with golden updates |
 
-Recommended next step: accept the finalized brand board and review the local Hugo
-library (9.5/10), then merge only after independent review and CI (9/10).
-Before public hosting, review content licenses and choose the intended base path
-(9/10). A separately authorized Typst milestone with explicit font profiles is
-next for print output (8.5/10); features 005–006 remain specs only. Deployment is
-not included in the current authorization.
+Current sequence (2026-10-14): reconcile spec status, complete the authorized
+006 T009 metadata sidecar (9.7/10), then refine 011's heading-boundary/IR schema
+decisions before implementation (9.2/10). The 012 general publication gate remains
+a separate follow-up (8.7/10); 007's five-author usability study can proceed
+independently (8.5/10). Typst/PDF and playground implementation remain gated.
+Navi export and read-only Studio are implemented; neither implies command
+execution, browser editing or new deployment authorization.

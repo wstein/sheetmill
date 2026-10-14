@@ -12,10 +12,12 @@
 - [x] T005 Implement `internal/render/navi` and `smill build navi`; document in
   docs/format/navi-profile.md, docs/cli.md and docs/architecture.md.
 - [ ] T006 Obtain generation/build approval before producing published artifacts.
-- [ ] T007 Independent review of the final revision before human merge. Author
-  checks are not review.
+- [x] T007 Exporter candidate independently reviewed at `caf1fc6` (see spec delivery
+  evidence); integration followed through #27/#28. This does not approve new commits.
 - [ ] T008 Obtain separate publication approval if requested.
-- [ ] T009 Metadata sidecar (`<sheet>.navi.json`) preserving non-navi metadata.
+- [ ] T009 Metadata sidecar (`<sheet>.navi.json`) preserving complete metadata.
+  Authorized 2026-10-14; schema, determinism, strict/export boundaries and new
+  exact-revision review required in this increment.
 - [ ] T010 Stronger shell syntax checks. Bash/Zsh quote diagnostics now use only
   pinned `mvdan.cc/sh/v3/syntax` v3.14.1; full syntax validation and a suitable
   Fish parser remain pending.

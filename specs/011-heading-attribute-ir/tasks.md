@@ -1,6 +1,6 @@
 # Tasks — 011
 
-- [ ] T001 Obtain separate authorization (AGENTS.md scope is 001–004).
+- [ ] T001 Obtain separate authorization for the 011 IR heading-contract change.
 - [ ] T002 Decide additive field vs schema bump and the field shape; record it.
 - [ ] T003 Write failing table-driven tests for the edge cases in spec.md.
 - [ ] T004 Record Hugo fixture baseline bytes and current golden JSON.
