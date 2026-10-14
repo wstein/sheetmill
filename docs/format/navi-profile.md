@@ -140,8 +140,8 @@ selected profile. `cards` lists only successfully exported cards, in source orde
 with their original titles and exact generated contexts; metadata for skipped
 cards remains in `metadata`.
 
-JSON uses two-space indentation, lexically sorted mapping keys, source-ordered
-arrays, HTML escaping and a final newline. It contains no generated timestamps or
+JSON uses two-space indentation, fixed schema-field order, lexically sorted
+metadata mapping keys, source-ordered arrays, HTML escaping and a final newline. It contains no generated timestamps or
 absolute host paths introduced by the exporter. Author-supplied metadata is kept
 unchanged, so review it before sharing. Companion schema and `.cheat` format
 versions are independent. navi consumes only `.cheat`; SheetMill does not load or

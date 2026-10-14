@@ -512,7 +512,7 @@ func TestSidecarFailureDiscardsBatch(t *testing.T) {
 	good := sheet(t, card("bash", "echo <sheet>"))
 	bad := sheet(t, card("bash", "echo <sheet>"))
 	bad.ID = "bad"
-	bad.Path = "bad.md"
+	bad.Path = "z-bad.md"
 	bad.Document.Metadata["invalid"] = math.NaN()
 	p, errs := Render([]Sheet{good, bad}, Options{})
 	if len(errs) != 1 || errs[0].Code != "REN001" || len(p.Files) != 0 {
@@ -635,11 +635,19 @@ func TestSidecarGolden(t *testing.T) {
 }
 
 func TestSidecarListsOnlyExportedCards(t *testing.T) {
-	source := card("bash", "echo <sheet>") + "\n### Skipped {.navi #bad}\n```python\nprint('inert')\n```\n"
+	source := strings.Replace(card("bash", "echo <sheet>"), "cards:\n      c:", "cards:\n      bad:\n        params:\n          ignored: {type: path, description: Preserved even when skipped}\n      c:", 1)
+	source += "\n### Skipped {.navi #bad}\n```python\nprint('<ignored>')\n```\n\n### Last {.navi #a}\n```bash\necho last\n```\n"
 	s := sheet(t, source)
 	p, errs := Render([]Sheet{s}, Options{})
-	if len(errs) > 0 || len(p.Files) != 2 || !bytes.Contains(p.Files["demo.navi.json"], []byte(`"id": "c"`)) || bytes.Contains(p.Files["demo.navi.json"], []byte(`"id": "bad"`)) {
-		t.Fatalf("%v %v", errs, p.Files)
+	var got struct {
+		Metadata json.RawMessage
+		Cards    []struct{ ID string }
+	}
+	if err := json.Unmarshal(p.Files["demo.navi.json"], &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(errs) > 0 || len(p.Files) != 2 || len(p.Warnings) != 1 || p.Warnings[0].Code != "NAV101" || len(got.Cards) != 2 || got.Cards[0].ID != "c" || got.Cards[1].ID != "a" || !bytes.Contains(got.Metadata, []byte("Preserved even when skipped")) {
+		t.Fatalf("%v %v %s", errs, p.Warnings, p.Files["demo.navi.json"])
 	}
 	empty := sheet(t, card("python", "echo <sheet>"))
 	p, errs = Render([]Sheet{empty}, Options{})
