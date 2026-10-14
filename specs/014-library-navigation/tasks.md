@@ -3,7 +3,8 @@
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md),
 [data-model.md](data-model.md), [contract](contracts/navigation.md).
 **State**: Implementation and local checks complete under the 2026-10-14 handoff.
-T021 awaits final documentation review and PR/CI evidence.
+T021 review and PR handoff are recorded below. CI readiness remains a separate
+publication-state gate: do not mark the PR ready until its current checks pass.
 Ordering fixtures are shared files; import fixtures preserve arbitrary upstream
 values. No real library content was reordered.
 
@@ -69,7 +70,7 @@ has gained navigation behavior beyond the specified preservation boundary.
 - [x] T018 Extend the existing `tests/e2e/navigation.spec.mjs` suite using the GFM → Hugo → browser harness and the new fixture, preserving its tag/disclosure/palette regressions; verify sidebar/home agreement, current-group expansion, keyboard disclosure and sheet links in both layouts, root/subpath sites, desktop/mobile and JavaScript-disabled mode. Wait for loaded assets/fonts before geometry assertions; commands remain displayed content.
 - [x] T019 Run the targeted source/import/Hugo/navi tests, full `go test ./...`, applicable race checks, `go vet ./...`, gofmt and `git diff --check`; confirm old golden bytes and generated route/card identities remain unchanged and run the existing browser/performance regression suites appropriate to this renderer change.
 - [x] T020 Execute and record the actual local verification from `specs/014-library-navigation/quickstart.md`; reconcile this checklist and `specs/README.md` against evidence, leaving unrun checks pending and excluding content-library reordering.
-- [ ] T021 Obtain independent Sol review of the exact implementation revision, fix actionable findings with focused Conventional Commits, re-review, and attach the final evidence to the authorized PR; check CI before marking it ready. Do not merge or deploy.
+- [x] T021 Obtain independent Sol review of the exact implementation revision, fix actionable findings with focused Conventional Commits, re-review, and attach the final evidence to the authorized PR; check CI before marking it ready. Do not merge or deploy.
 
 ## Dependencies and execution order
 
@@ -94,3 +95,13 @@ Implement and validate the shared foundation, then US1, US2 and US3 in focused
 increments. US1 is the first demonstrable placement slice; all three stories and
 final checks are required for the agreed first-slice handoff. Keep a future manifest,
 group-order configuration, navigation title, stable IDs and deployment deferred.
+
+## Review and PR handoff
+
+[PR #33](https://github.com/wstein/sheetmill/pull/33) contains the implementation
+and focused verification commits. Sol’s final review is clear at `e4c4572`;
+[posted summary](https://github.com/wstein/sheetmill/pull/33#issuecomment-6165958344).
+The final status-only commit does not change runtime/tests. CI has been inspected:
+core passed at the reviewed head; web-e2e was running its final Studio checks.
+The PR remains draft until all current-head checks pass; readiness evidence will
+be posted on the PR. No merge or deployment.
