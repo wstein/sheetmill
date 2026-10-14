@@ -6,11 +6,11 @@ category: reference
 | Command | Behavior |
 | --- | --- |
 | `smill version` | Print `smill dev` and LF |
-| `smill check <file-or-directory>...` | Validate selected Markdown; no success output |
+| `smill check <file-or-directory>... [--strict [--source-base-url <GitHub-blob-directory>]]` | Validate selected Markdown; no success output. `--strict` also renders the selection in memory and fails on renderer warnings such as unresolved links (`REN103`) |
 | `smill inspect <file>` | Validate one file and print canonical JSON |
 | `smill import reference <file> [options]` | [Controlled conversion](imports.md), dry-run and loss reports |
 | `smill serve [file-or-directory] [--open] [--port 0..65535] [--hugo /absolute/path]` | Authenticated read-only local live preview through installed Hugo 0.167.0 |
-| `smill build hugo <file-or-directory>... --out <new-project> [--title <name>] [--base-path </path/>] [--edit-base-url <GitHub-edit-directory>] [--source-base-url <GitHub-blob-directory>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
+| `smill build hugo <file-or-directory>... --out <new-project> [--title <name>] [--description <text>] [--base-path </path/>] [--site-url <https-site-url>] [--edit-base-url <GitHub-edit-directory>] [--source-base-url <GitHub-blob-directory>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
 | `smill build navi <file-or-directory>... --out <new-dir> [--shell bash\|zsh\|fish\|nu] [--root <dir>] [--strict]` | Export `{.navi #id}` cards as [navi `.cheat` files](format/navi-profile.md); never runs navi or any command |
 
 Cobra v1.10.2 parses commands and flags. `--help` works at every command level;
@@ -44,7 +44,7 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `VAL002` | Invalid general known metadata field |
 | `VAL003` | Invalid cheatsheet metadata/schema |
 | `MD001`, `MD002` | Card without section; empty structural heading |
-| `ATTR001`, `ATTR002` | Unsupported/malformed attribute; duplicate/conflict |
+| `ATTR001`, `ATTR002`, `ATTR003` | Unsupported/malformed attribute; duplicate/conflict; attribute group outside a root `##`/`###` heading |
 | `ID001` | Duplicate explicit/reserved ID |
 | `IO001`, `IO002`, `IO003` | Input access/selection; stdout failure; output creation/write |
 | `REN001`, `REN002`, `REN003` | Unsupported IR; unsafe URL; invalid/ambiguous route or base path |

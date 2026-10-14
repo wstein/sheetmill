@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -214,6 +215,98 @@ func TestManualBuildsWithoutWarnings(t *testing.T) {
 	args = append(args, "--out", filepath.Join(tempDir(t), "manual"), "--base-path", "/sheetmill/", "--source-base-url", "https://github.com/wstein/sheetmill/blob/main/docs/", "--edit-base-url", "https://github.com/wstein/sheetmill/edit/main/docs/")
 	var out, errout bytes.Buffer
 	if code := Run(args, &out, &errout); code != 0 || errout.Len() != 0 {
+		t.Fatal(code, errout.String())
+	}
+}
+
+func TestHugoBuildDescription(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "sheet.md")
+	os.WriteFile(input, []byte("---\ntitle: Sheet\n---\n## S\n### C\nText.\n"), 0600)
+	var out, errout bytes.Buffer
+	if code := Run([]string{"build", "hugo", input, "--out", filepath.Join(dir, "site"), "--description", "A tidy shelf."}, &out, &errout); code != 0 {
+		t.Fatal(code, errout.String())
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, "site", "hugo.json")); !bytes.Contains(b, []byte(`"description": "A tidy shelf."`)) {
+		t.Fatal(string(b))
+	}
+}
+
+func TestCheckStrict(t *testing.T) {
+	dir := tempDir(t)
+	good := filepath.Join(dir, "good.md")
+	broken := filepath.Join(dir, "broken.md")
+	os.WriteFile(good, []byte("---\ntitle: Good\n---\n## S\n### C {#c}\n[Self](#c) [Policy](../AGENTS.md)\n"), 0600)
+	os.WriteFile(broken, []byte("---\ntitle: Broken\n---\n## S\n### C\n[Gone](good.md#missing)\n"), 0600)
+	run := func(args ...string) (int, string, string) {
+		var out, errout bytes.Buffer
+		code := Run(args, &out, &errout)
+		return code, out.String(), errout.String()
+	}
+	if code, out, e := run("check", dir); code != 0 || out != "" || e != "" {
+		t.Fatal("plain check must stay structural", code, e)
+	}
+	code, out, e := run("check", "--strict", dir)
+	if code != 1 || out != "" || !strings.Contains(e, broken+":6:1: REN103: link fragment matches no section or card: good.md#missing") || strings.Contains(e, "(warning)") {
+		t.Fatal(code, e)
+	}
+	if !strings.Contains(e, good+":6:") {
+		t.Fatal("the repository link must be reported without --source-base-url", e)
+	}
+	if code, _, e := run("check", "--strict", good, "--source-base-url", "https://github.com/o/r/blob/main/docs/"); code != 0 || e != "" {
+		t.Fatal("repository links resolve with --source-base-url", code, e)
+	}
+	if code, _, e := run("check", good, "--source-base-url", "https://github.com/o/r/blob/main/docs/"); code != 2 || !strings.Contains(e, "--source-base-url requires --strict") {
+		t.Fatal(code, e)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "site")); !os.IsNotExist(err) {
+		t.Fatal("strict check must not write a project")
+	}
+}
+
+// Every diagnostic code the sources can emit must be documented.
+func TestDiagnosticsCatalogueIsComplete(t *testing.T) {
+	code := regexp.MustCompile(`"((?:SRC|FM|VAL|MD|ATTR|ID|IO|REN|IMP)[0-9]{3})"`)
+	documented := ""
+	for _, doc := range []string{"diagnostics.md", "imports.md"} {
+		b, err := os.ReadFile(filepath.Join("..", "..", "docs", doc))
+		if err != nil {
+			t.Fatal(err)
+		}
+		documented += string(b)
+	}
+	found := 0
+	err := filepath.WalkDir(filepath.Join("..", ".."), func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return err
+		}
+		b, err := os.ReadFile(path)
+		for _, m := range code.FindAllStringSubmatch(string(b), -1) {
+			found++
+			if !strings.Contains(documented, "`"+m[1]+"`") && !strings.Contains(documented, m[1]+"`–") && !strings.Contains(documented, "–`"+m[1]) {
+				t.Errorf("%s emits undocumented %s", path, m[1])
+			}
+		}
+		return err
+	})
+	if err != nil || found == 0 {
+		t.Fatal(err, found)
+	}
+}
+
+func TestHugoBuildSiteURL(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "sheet.md")
+	os.WriteFile(input, []byte("---\ntitle: Sheet\n---\n## S\n### C\nText.\n"), 0600)
+	var out, errout bytes.Buffer
+	if code := Run([]string{"build", "hugo", input, "--out", filepath.Join(dir, "site"), "--base-path", "/docs/", "--site-url", "https://example.org/docs/"}, &out, &errout); code != 0 {
+		t.Fatal(code, errout.String())
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, "site", "static", "sitemap.xml")); !bytes.Contains(b, []byte("<loc>https://example.org/docs/sheet/</loc>")) {
+		t.Fatal(string(b))
+	}
+	errout.Reset()
+	if code := Run([]string{"build", "hugo", input, "--out", filepath.Join(dir, "bad"), "--site-url", "https://example.org/docs/"}, &out, &errout); code != 1 || !strings.Contains(errout.String(), "REN003: site URL must be https://host/") {
 		t.Fatal(code, errout.String())
 	}
 }

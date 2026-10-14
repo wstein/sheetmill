@@ -13,6 +13,10 @@ They are judgments, not measured adoption or guarantees.
 | Navi importer after typed command metadata is designed | 7.5/10 | Valuable, but dynamic suggestions and shell semantics add substantial safety work |
 | Broad automatic multi-ecosystem import now | 4/10 | Ambiguous recognition and conversion loss would widen the milestone too far |
 | Editorial Stack with coral/periwinkle | 9/10 | User-selected direction; use dark accent tokens for ordinary text and review final SVG masters before locking geometry |
+| KaTeX math rendering | Declined (2026-10-14) | Needs a vendored third-party library (~300 KB) against the asset budget and standard-library-first policy; importer archives `plugins: katex` |
+| Offline mode (web manifest, service worker) | Declined (2026-10-14) | Low reader value for references, with cache-invalidation risk on path-mounted sites; revisit only with a concrete need |
+| Tooltips (`data-tooltip`) | Declined (2026-10-14) | No Markdown syntax; raw HTML is shown inertly by design |
+| Runnable snippets (third-party playgrounds) | Rejected | Conflicts with "nothing in a sheet is executed or fetched", adds CDN and supply-chain risk |
 | Parser emits structural headings without the `{...}` attribute suffix | 7/10 | Follow-up: the Hugo renderer re-derives the suffix separately from `markdown.heading()` and the rules already differ (contiguous segments); changes IR/schema, so needs its own reviewed PR with golden updates |
 
 Recommended next step: accept the finalized brand board and review the local Hugo

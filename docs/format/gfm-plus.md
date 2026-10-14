@@ -59,20 +59,26 @@ inside inline code/emphasis are ordinary content. The structural `title` exclude
 the attribute group and decodes punctuation escapes; `heading` retains original
 inline nodes for source fidelity. An escaped opening brace remains literal text;
 only an unescaped trailing group defines attributes.
-Nested content headings do not interpret attributes.
+Nested content headings do not interpret attributes. Attribute groups anywhere
+else fail with `ATTR003` instead of silently becoming text: a line holding only a
+group (for example `{.marker-none}` after a list or table) or a group ending
+any other heading. Escape the brace (`\{.x}`) or use a code span to show one.
 
 | Attribute | Meaning |
 | --- | --- |
 | `{#id}` | Explicit globally unique ID; ASCII letter then letters, digits, `_`, `-` |
+| `{.cols-N}` | Section grid hint, decimal `N` from 1 through 6 (default 3); sections only |
 | `{.col-span-N}` | Card web-layout hint, decimal `N` from 1 through 12 |
 | `{.row-span-N}` | Card web-layout hint, decimal `N` from 1 through 12 |
 | `{.note}`, `{.tip}`, `{.warning}` | SheetMill semantic card classes |
+| `{.keys}` | Key table card: inline code in a table's first column renders as keys (`Ctrl+C` shows two keys) |
 | `{.navi}` | Marks a command card for `smill build navi`, which also needs an explicit `{#id}`; see [navi export](navi-profile.md) |
 | `{.wrap}` | Inert legacy compatibility hint; does not change semantic content |
 
 Combine tokens inside one group, for example `{.col-span-2 .note #example}`.
 Repeated/conflicting tokens, unsupported attributes and malformed groups fail.
-Sections allow only `#id`. No arbitrary CSS, Tailwind rules or theme classes enter
+Sections allow only `#id` and `.cols-N`; cards never span more columns than their
+section provides, and narrow screens reduce every grid to two and then one column. No arbitrary CSS, Tailwind rules or theme classes enter
 layout semantics. Layout hints never dictate future PDF pagination.
 
 ## IDs, spans and JSON
@@ -87,7 +93,7 @@ that must survive title edits.
 JSON `schema: 1` is the IR version, independent of future source-format versions.
 Output has fixed struct field order, lexically sorted map keys, two-space indent,
 Go JSON escaping and one trailing LF. Lists representing document structure use
-empty arrays. Optional node properties/children/text are omitted when empty.
+empty arrays. A section's `columns` field appears only when `.cols-N` is given. Optional node properties/children/text are omitted when empty.
 No absolute filename, timestamp, host metadata or random ID enters this output.
 Identical source bytes produce identical JSON; different line endings are not
 normalized and may produce different output.

@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "playwright test",
-    "test:harness": "node --test harness.test.mjs performance.test.mjs",
+    "test:harness": "node --test harness.test.mjs performance.test.mjs search.test.mjs",
     "test:studio": "playwright test --config studio.config.mjs",
     "test:performance": "playwright test --config performance.config.mjs"
   },

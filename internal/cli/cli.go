@@ -66,6 +66,22 @@ func Run(args []string, out, errout io.Writer) int {
 			command.Args = cobra.ExactArgs(1)
 		}
 		command.Run = func(cmd *cobra.Command, paths []string) { status = runSources(cmd.Name(), paths, out, errout) }
+		if name == "check" {
+			var strict bool
+			var sourceBase string
+			command.Flags().BoolVar(&strict, "strict", false, "also render in memory and treat renderer warnings (links, HTML, images) as errors")
+			command.Flags().StringVar(&sourceBase, "source-base-url", "", "with --strict: GitHub blob URL of the selection root for repository links")
+			command.RunE = func(cmd *cobra.Command, paths []string) error {
+				if sourceBase != "" && !strict {
+					return fmt.Errorf("--source-base-url requires --strict")
+				}
+				if status = runSources("check", paths, out, errout); status == 0 && strict {
+					status = runStrict(paths, sourceBase, errout)
+				}
+				return nil
+			}
+			command.Run = nil
+		}
 		root.AddCommand(command)
 	}
 	imports := &cobra.Command{Use: "import", Short: "Convert existing reference sheets"}

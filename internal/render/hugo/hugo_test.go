@@ -211,10 +211,14 @@ func TestLargeLayoutHints(t *testing.T) {
 		t.Fatal(ds)
 	}
 	css := string(p.Files["static/"+assetPath(t, p, "stylesheet")])
-	for _, selector := range []string{".col-span-4", ".col-span-12", ".row-span-4", ".row-span-12"} {
+	for _, selector := range []string{".row-span-4", ".row-span-12"} {
 		if !strings.Contains(css, selector) {
 			t.Error("missing responsive hint", selector)
 		}
+	}
+	// Column spans beyond the default three-column grid are clamped, never dropped.
+	if got := body(t, p, "test"); strings.Count(got, `class="card col-span-3 `) != 2 {
+		t.Error("wide spans must clamp to the section grid", got)
 	}
 }
 
@@ -816,5 +820,369 @@ func TestNestedEditLinkAndInvalidPath(t *testing.T) {
 		if _, ds := Render([]Sheet{s}, Options{}); len(ds) == 0 || ds[0].Code != "REN003" {
 			t.Error(bad, ds)
 		}
+	}
+}
+
+func TestSectionColumnsClampCardSpans(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## Two {.cols-2}\n### Wide {.col-span-3}\nA.\n## Default\n### Huge {.col-span-12}\nB.\n## Six {.cols-6}\n### Five {.col-span-5}\nC.\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "test")
+	for _, want := range []string{`<div class="cards cols-2"><article class="card col-span-2 `, `<div class="cards cols-3"><article class="card col-span-3 `, `<div class="cards cols-6"><article class="card col-span-5 `} {
+		if !strings.Contains(got, want) {
+			t.Error(want, got)
+		}
+	}
+	css := string(p.Files["static/"+assetPath(t, p, "stylesheet")])
+	for n := 1; n <= 6; n++ {
+		for _, want := range []string{fmt.Sprintf(".cards.cols-%d{", n), fmt.Sprintf(".col-span-%d{grid-column:span %d}", n, n)} {
+			if n == 1 && strings.HasPrefix(want, ".col-span") {
+				continue
+			}
+			if !strings.Contains(css, want) {
+				t.Error("missing", want)
+			}
+		}
+	}
+}
+
+func described(t *testing.T, id, frontmatter, body string) Sheet {
+	t.Helper()
+	d, ds := markdown.Parse([]byte("---\n" + frontmatter + "---\n" + body))
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	return Sheet{ID: id, SourceName: id + ".md", Document: d}
+}
+
+func TestSheetMetadataAndShelves(t *testing.T) {
+	sheets := []Sheet{
+		described(t, "git", "title: Git\ndescription: Track changes.\ncategory: version-control\ntags: [vcs, cli]\n", "## S\n### C\nText.\n"),
+		described(t, "tar", "title: tar\ncategory: files\n", "## S\n### C\nText.\n"),
+		described(t, "misc", "title: Misc\n", "Intro.\n"),
+		described(t, "find", "title: find\ncategory: files\n", "Intro.\n"),
+	}
+	p, ds := Render(sheets, Options{Title: "Library", Description: "Ten tools, well arranged."})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	git := string(p.Files["data/sheets/git.json"])
+	for _, want := range []string{`"description": "Track changes."`, `"category": "version-control"`, `"vcs"`} {
+		if !strings.Contains(git, want) {
+			t.Error(want, git)
+		}
+	}
+	var shelves []struct {
+		Category string `json:"category"`
+		Sheets   []struct {
+			Title string `json:"title"`
+		} `json:"sheets"`
+	}
+	if err := json.Unmarshal(p.Files["data/shelves.json"], &shelves); err != nil {
+		t.Fatal(err)
+	}
+	var order []string
+	for _, s := range shelves {
+		var titles []string
+		for _, sheet := range s.Sheets {
+			titles = append(titles, sheet.Title)
+		}
+		order = append(order, s.Category+"="+strings.Join(titles, ","))
+	}
+	// Categories sort by name; sheets without a category come last.
+	if got := strings.Join(order, ";"); got != "files=find,tar;version-control=Git;=Misc" {
+		t.Fatal(got)
+	}
+	if !strings.Contains(string(p.Files["hugo.json"]), `"description": "Ten tools, well arranged."`) {
+		t.Fatal(string(p.Files["hugo.json"]))
+	}
+}
+
+func TestHugoIntegrationMetadata(t *testing.T) {
+	binary := os.Getenv("SHEETMILL_HUGO")
+	if binary == "" {
+		t.Skip("set SHEETMILL_HUGO to explicitly authorize installed tool")
+	}
+	p, ds := Render([]Sheet{
+		described(t, "git", "title: Git\ndescription: Track <changes>.\ncategory: version-control\ntags: [vcs, cli]\n", "## S\n### C\nText.\n"),
+		described(t, "misc", "title: Misc\n", "Intro.\n"),
+	}, Options{Title: "My Library", Description: "Ten tools, well arranged."})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	out := hugoBuild(t, binary, p)
+	home, _ := os.ReadFile(filepath.Join(out, "index.html"))
+	page, _ := os.ReadFile(filepath.Join(out, "git", "index.html"))
+	for _, want := range []string{"<h1>My Library</h1>", "Ten tools, well arranged.", `<h2 class="shelf-title">version-control</h2>`, `<h2 class="shelf-title">Other references</h2>`, "Track &lt;changes&gt;."} {
+		if !bytes.Contains(home, []byte(want)) {
+			t.Errorf("home lacks %s", want)
+		}
+	}
+	for _, want := range []string{`<p class="sheet-description">Track &lt;changes&gt;.</p>`, `<li>vcs</li>`, `version-control`} {
+		if !bytes.Contains(page, []byte(want)) {
+			t.Errorf("page lacks %s", want)
+		}
+	}
+	if misc, _ := os.ReadFile(filepath.Join(out, "misc", "index.html")); bytes.Contains(misc, []byte("sheet-description")) || bytes.Contains(misc, []byte("Keep the essentials")) {
+		t.Error("a sheet without description must not show a placeholder tagline")
+	}
+}
+
+// hugoBuild writes p to a temporary source tree and builds it with the pinned binary.
+func hugoBuild(t *testing.T, binary string, p Project) string {
+	t.Helper()
+	root := t.TempDir()
+	for name, data := range p.Files {
+		full := filepath.Join(root, name)
+		if err := os.MkdirAll(filepath.Dir(full), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, data, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out := filepath.Join(root, "public")
+	cmd := exec.Command(binary, "--source", root, "--destination", out, "--clock", "2000-01-01T00:00:00Z", "--noBuildLock", "--quiet")
+	cmd.Env = append(os.Environ(), "HUGO_CACHEDIR="+filepath.Join(root, "cache"))
+	if b, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("hugo: %v %s", err, b)
+	}
+	return out
+}
+
+func TestCardKindLabels(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### A {.tip}\nA.\n### B {.warning}\nB.\n### C {.note}\nC.\n### D\nD.\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "test")
+	for _, want := range []string{`<p class="card-kind">Tip</p>`, `<p class="card-kind">Warning</p>`, `<p class="card-kind">Note</p>`} {
+		if !strings.Contains(got, want) {
+			t.Error(want, got)
+		}
+	}
+	if strings.Count(got, "card-kind") != 3 {
+		t.Error("plain cards must not get a label", got)
+	}
+	css := string(p.Files["static/"+assetPath(t, p, "stylesheet")])
+	for _, want := range []string{".card.tip{", ".card.warning{", ".card.note{", ".card-kind{"} {
+		if !strings.Contains(css, want) {
+			t.Error("missing", want)
+		}
+	}
+}
+
+func TestSearchEntriesCarryTagsAndCategory(t *testing.T) {
+	p, ds := Render([]Sheet{described(t, "git", "title: Git\ncategory: version-control\ntags: [vcs]\n", "## S\n### Undo\nText.\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	var index []struct {
+		Title    string   `json:"title"`
+		Tags     []string `json:"tags"`
+		Category string   `json:"category"`
+	}
+	if err := json.Unmarshal(p.Files["static/search.json"], &index); err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range index {
+		if e.Category != "version-control" || len(e.Tags) != 1 || e.Tags[0] != "vcs" {
+			t.Fatal(e)
+		}
+	}
+}
+
+func TestLicenseInSearchAndLibrary(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### C\nText.\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	if !strings.Contains(string(p.Files["static/search.json"]), `"license": "EXAMPLE"`) {
+		t.Fatal(string(p.Files["static/search.json"]))
+	}
+	if !strings.Contains(string(p.Files["data/library.json"]), `"license": "EXAMPLE"`) {
+		t.Fatal(string(p.Files["data/library.json"]))
+	}
+	if !strings.Contains(string(p.Files["layouts/home.html"]), "library-license") {
+		t.Fatal("home cards must show the license")
+	}
+}
+
+func TestKeyTables(t *testing.T) {
+	p, ds := Render([]Sheet{sheet(t, "test", "## S\n### Keys {.keys}\n| Key | Action |\n| --- | --- |\n| `Ctrl+C` | Copy `text` |\n| `+` | Zoom |\n| `<Esc>` | Leave |\n\nUse `Ctrl+V` too.\n### Plain\n| Key | Action |\n| --- | --- |\n| `Ctrl+C` | Copy |\n")}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "test")
+	for _, want := range []string{
+		`<td><kbd><kbd>Ctrl</kbd>+<kbd>C</kbd></kbd></td>`,
+		`<td>Copy <code>text</code></td>`,
+		`<td><kbd>+</kbd></td>`,
+		`<td><kbd>&lt;Esc&gt;</kbd></td>`,
+		`Use <code>Ctrl+V</code> too.`,
+		`<th>Key</th>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Error(want, got)
+		}
+	}
+	if strings.Count(got, "<kbd>") != 5 {
+		t.Error("only first-column code in .keys cards becomes keys", got)
+	}
+}
+
+func TestSectionJumpList(t *testing.T) {
+	p, ds := Render([]Sheet{
+		sheet(t, "many", "Intro.\n\n## First *steps* {#first}\n### C\nA.\n## Second\n### D\nB.\n"),
+		sheet(t, "one", "## Only\n### C\nA.\n"),
+	}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	got := body(t, p, "many")
+	want := `<nav class="sheet-toc" aria-label="On this page"><ul><li><a href="#ref-first">First steps</a></li><li><a href="#ref-second">Second</a></li></ul></nav>`
+	if !strings.Contains(got, want) {
+		t.Fatal(want, got)
+	}
+	if strings.Index(got, want) > strings.Index(got, `<section`) || strings.Index(got, "Intro.") > strings.Index(got, want) {
+		t.Fatal("the jump list belongs between the preamble and the first section", got)
+	}
+	if strings.Contains(body(t, p, "one"), "sheet-toc") {
+		t.Fatal("a single section needs no jump list")
+	}
+}
+
+// Performance budget: the theme ships at most 32 KiB of CSS and JavaScript, and
+// the search index stays within twice the size of the sources it indexes.
+func TestPerformanceBudget(t *testing.T) {
+	files, err := filepath.Glob(filepath.Join("..", "..", "..", "examples", "sheets", "*.md"))
+	if err != nil || len(files) == 0 {
+		t.Fatal(err, files)
+	}
+	var sheets []Sheet
+	sources := 0
+	for _, f := range files {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sources += len(b)
+		d, ds := markdown.Parse(b)
+		if len(ds) > 0 {
+			t.Fatal(f, ds)
+		}
+		name := filepath.Base(f)
+		sheets = append(sheets, Sheet{ID: strings.TrimSuffix(name, ".md"), SourceName: name, Document: d})
+	}
+	p, ds := Render(sheets, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	assets := len(p.Files["static/"+assetPath(t, p, "stylesheet")]) + len(p.Files["static/"+assetPath(t, p, "script")])
+	if assets > 32<<10 {
+		t.Errorf("CSS and JavaScript use %d bytes; budget is 32 KiB", assets)
+	}
+	if index := len(p.Files["static/search.json"]); index > 2*sources {
+		t.Errorf("search index is %d bytes for %d source bytes; budget is 2x", index, sources)
+	}
+}
+
+func TestSiteURLSitemapAndValidation(t *testing.T) {
+	sheets := []Sheet{sheet(t, "a&b", "Intro."), sheet(t, "c", "Intro.")}
+	sheets[0].ID = "ab"
+	p, ds := Render(sheets, Options{BasePath: "/sheetmill/", SiteURL: "https://wstein.github.io/sheetmill/"})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	want := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n<url><loc>https://wstein.github.io/sheetmill/</loc></url>\n<url><loc>https://wstein.github.io/sheetmill/ab/</loc></url>\n<url><loc>https://wstein.github.io/sheetmill/c/</loc></url>\n</urlset>\n"
+	if got := string(p.Files["static/sitemap.xml"]); got != want {
+		t.Fatalf("%q", got)
+	}
+	if !strings.Contains(string(p.Files["hugo.json"]), `"origin": "https://wstein.github.io"`) || len(p.Files["static/brand/social-preview.png"]) == 0 {
+		t.Fatal("missing origin param or social image")
+	}
+	if p, _ := Render(sheets, Options{}); p.Files["static/sitemap.xml"] != nil {
+		t.Fatal("no sitemap without a canonical origin")
+	}
+	for _, bad := range []string{"http://wstein.github.io/sheetmill/", "https://wstein.github.io/other/", "https://wstein.github.io/sheetmill/?x", "https://user@wstein.github.io/sheetmill/", "https:///sheetmill/", "wstein.github.io/sheetmill/"} {
+		if _, ds := Render(sheets, Options{BasePath: "/sheetmill/", SiteURL: bad}); len(ds) == 0 || ds[0].Code != "REN003" {
+			t.Error(bad, ds)
+		}
+	}
+}
+
+func TestHugoIntegrationSocialMetadata(t *testing.T) {
+	binary := os.Getenv("SHEETMILL_HUGO")
+	if binary == "" {
+		t.Skip("set SHEETMILL_HUGO to explicitly authorize installed tool")
+	}
+	p, ds := Render([]Sheet{
+		described(t, "git", "title: Git\ndescription: Track \"changes\" & <more>.\n", "## S\n### C\nText.\n"),
+		described(t, "misc", "title: Misc\n", "Intro.\n"),
+	}, Options{Title: "Library", Description: "Site intro.", BasePath: "/sheetmill/", SiteURL: "https://wstein.github.io/sheetmill/"})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	out := hugoBuild(t, binary, p)
+	page, _ := os.ReadFile(filepath.Join(out, "git", "index.html"))
+	for _, want := range []string{
+		`<meta name="description" content="Track &#34;changes&#34; &amp; &lt;more&gt;.">`,
+		`<meta property="og:title" content="Git · Library">`,
+		`<link rel="canonical" href="https://wstein.github.io/sheetmill/git/">`,
+		`<meta property="og:url" content="https://wstein.github.io/sheetmill/git/">`,
+		`<meta property="og:image" content="https://wstein.github.io/sheetmill/brand/social-preview.png">`,
+	} {
+		if !bytes.Contains(page, []byte(want)) {
+			t.Errorf("page lacks %s", want)
+		}
+	}
+	misc, _ := os.ReadFile(filepath.Join(out, "misc", "index.html"))
+	home, _ := os.ReadFile(filepath.Join(out, "index.html"))
+	if !bytes.Contains(misc, []byte(`<meta name="description" content="Site intro.">`)) || !bytes.Contains(home, []byte(`<link rel="canonical" href="https://wstein.github.io/sheetmill/">`)) {
+		t.Error("fallback description or home canonical missing")
+	}
+	if _, err := os.Stat(filepath.Join(out, "sitemap.xml")); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestRelatedSheets(t *testing.T) {
+	p, ds := Render([]Sheet{
+		described(t, "git", "title: Git\ncategory: vcs\ntags: [cli, history]\n", "Intro.\n"),
+		described(t, "hg", "title: Mercurial\ncategory: vcs\ntags: [history]\n", "Intro.\n"),
+		described(t, "svn", "title: Subversion\ncategory: vcs\n", "Intro.\n"),
+		described(t, "tar", "title: tar\ncategory: files\ntags: [cli]\n", "Intro.\n"),
+		described(t, "zip", "title: zip\ncategory: files\n", "Intro.\n"),
+		described(t, "alone", "title: Alone\n", "Intro.\n"),
+	}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	related := func(id string) string {
+		var data struct {
+			Related []struct {
+				Title string `json:"title"`
+				URL   string `json:"url"`
+			} `json:"related"`
+		}
+		if err := json.Unmarshal(p.Files["data/sheets/"+id+".json"], &data); err != nil {
+			t.Fatal(err)
+		}
+		var titles []string
+		for _, r := range data.Related {
+			titles = append(titles, r.Title)
+		}
+		return strings.Join(titles, ",")
+	}
+	// hg: shared tag + category = 3; svn: category = 1; tar: shared tag = 2.
+	if got := related("git"); got != "Mercurial,tar,Subversion" {
+		t.Fatal(got)
+	}
+	if got := related("alone"); got != "" {
+		t.Fatal("unrelated sheets get no list", got)
+	}
+	if !strings.Contains(string(p.Files["layouts/page.html"]), "related") {
+		t.Fatal("page template must show related sheets")
 	}
 }

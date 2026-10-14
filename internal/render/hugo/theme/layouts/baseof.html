@@ -2,7 +2,8 @@
 <html lang="en" data-base="{{ site.Params.base }}">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark"><title>{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ .Site.Title }}</title>
+<meta name="color-scheme" content="light dark">{{ $description := site.Params.description }}{{ $path := site.Params.base }}{{ if not .IsHome }}{{ with index site.Data.sheets .Params.sheetid }}{{ with .description }}{{ $description = . }}{{ end }}{{ $path = .url }}{{ end }}{{ end }}
+{{ with $description }}<meta name="description" content="{{ . }}"><meta property="og:description" content="{{ . }}">{{ end }}<meta property="og:type" content="website"><meta property="og:title" content="{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ site.Title }}">{{ with site.Params.origin }}<link rel="canonical" href="{{ . }}{{ $path }}"><meta property="og:url" content="{{ . }}{{ $path }}"><meta property="og:image" content="{{ . }}{{ site.Params.base }}brand/social-preview.png">{{ end }}<title>{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ .Site.Title }}</title>
 <link rel="icon" href="{{ site.Params.base }}brand/favicon.svg" type="image/svg+xml"><link rel="icon" href="{{ site.Params.base }}brand/favicon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="{{ site.Params.base }}brand/apple-touch-icon.png">
 <link rel="stylesheet" href="{{ site.Params.base }}{{ site.Params.stylesheet }}"><script src="{{ site.Params.base }}{{ site.Params.script }}" defer></script>
 </head>
@@ -10,7 +11,7 @@
 <a class="skip" href="#app-main">Skip to content</a>
 <header class="site-header"><a href="{{ site.Params.base }}" aria-label="SheetMill home"><img class="logo-light" src="{{ site.Params.base }}brand/logo-accessible.svg" width="214" height="64" alt="SheetMill"><img class="logo-dark" src="{{ site.Params.base }}brand/logo-dark.svg" width="214" height="64" alt="SheetMill"></a><span class="edition">THE REFERENCE LIBRARY</span><button id="app-theme" type="button" hidden>Change theme</button></header>
 <div class="shell">
-<aside class="sidebar"><label for="app-search">Find a reference</label><input id="app-search" type="search" placeholder="Search cards…" disabled aria-describedby="app-search-status"><p id="app-search-status" role="status">Browse the library below.</p><ul id="app-results" hidden></ul><nav aria-label="Reference sheets"><p class="eyebrow">IN THE LIBRARY</p><ul>{{ range .Site.Data.library }}<li><a href="{{ .url }}">{{ .title }}</a></li>{{ end }}</ul></nav><div class="sidebar-note">One source.<br>Every reference.<p>Made for the work at hand.</p></div></aside>
+<aside class="sidebar"><label for="app-search">Find a reference</label><input id="app-search" type="search" placeholder="Search cards (press /)…" aria-keyshortcuts="/ Control+K Meta+K" disabled aria-describedby="app-search-status"><p id="app-search-status" role="status">Browse the library below.</p><ul id="app-results" hidden></ul><nav aria-label="Reference sheets"><p class="eyebrow">IN THE LIBRARY</p><ul>{{ range .Site.Data.library }}<li><a href="{{ .url }}">{{ .title }}</a></li>{{ end }}</ul></nav><div class="sidebar-note">One source.<br>Every reference.<p>Made for the work at hand.</p></div></aside>
 <main id="app-main">{{ block "main" . }}{{ end }}</main>
 </div>
 <footer>Compiled with SheetMill <span>Local assets · No trackers</span></footer>

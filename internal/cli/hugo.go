@@ -18,20 +18,52 @@ import (
 
 func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	build := &cobra.Command{Use: "build", Short: "Export a renderer project (no tool execution)"}
-	var destination, title, base, editBase, sourceBase string
+	var destination, title, description, base, editBase, sourceBase, siteURL string
 	command := &cobra.Command{Use: "hugo <file-or-directory>...", Short: "Export a self-contained Hugo project to a new directory", Args: cobra.MinimumNArgs(1), Run: func(cmd *cobra.Command, args []string) {
-		*status = runHugo(args, destination, hugo.Options{Title: title, BasePath: base, EditBaseURL: editBase, SourceBaseURL: sourceBase}, out, errout)
+		*status = runHugo(args, destination, hugo.Options{Title: title, Description: description, BasePath: base, EditBaseURL: editBase, SourceBaseURL: sourceBase, SiteURL: siteURL}, out, errout)
 	}}
 	command.Flags().StringVar(&destination, "out", "", "new project directory; never overwritten")
 	command.Flags().StringVar(&title, "title", "SheetMill References", "reference library title")
+	command.Flags().StringVar(&description, "description", "", "home page introduction (optional)")
 	command.Flags().StringVar(&base, "base-path", "/", "URL path the site is served under, such as /sheetmill/")
 	command.Flags().StringVar(&editBase, "edit-base-url", "", "GitHub edit URL base for the authored sheets (optional; never inferred from provenance)")
 	command.Flags().StringVar(&sourceBase, "source-base-url", "", "GitHub blob URL of the selection root; other relative links resolve to repository files")
+	command.Flags().StringVar(&siteURL, "site-url", "", "canonical https://host/<base-path>/ of the published site; enables canonical links and a sitemap")
 	command.MarkFlagRequired("out")
 	build.AddCommand(command)
 	build.AddCommand(naviCommand(out, errout, status))
 	build.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a renderer is required") }
 	return build
+}
+func runHugo(args []string, destination string, options hugo.Options, out, errout io.Writer) int {
+	project, count, report, status := renderSelection(args, options, errout)
+	if status != 0 {
+		return status
+	}
+	report(project.Warnings, " (warning)")
+	if err := writeFiles(destination, project.Files); err != nil {
+		fmt.Fprintf(errout, "%s:1:1: IO003: %v\n", destination, err)
+		return 2
+	}
+	if _, err := fmt.Fprintf(out, "Exported %d sheets to %s (Hugo %s; local generation is a separate command).\n", count, destination, hugo.Version); err != nil {
+		fmt.Fprintln(errout, "IO002: "+err.Error())
+		return 2
+	}
+	return 0
+}
+
+// runStrict renders the selection in memory and reports every renderer warning
+// (unresolved links, inert HTML, unfetched images) as an error. Nothing is written.
+func runStrict(args []string, sourceBase string, errout io.Writer) int {
+	project, _, report, status := renderSelection(args, hugo.Options{SourceBaseURL: sourceBase}, errout)
+	if status != 0 {
+		return status
+	}
+	report(project.Warnings, "")
+	if len(project.Warnings) > 0 {
+		return 1
+	}
+	return 0
 }
 
 // selection is the parsed input of a build: sorted files, their parsed documents and
@@ -46,7 +78,8 @@ type loadedFile struct {
 }
 
 // loadSelection reads and parses every selected file, printing diagnostics. The
-// returned status is nonzero when the build must stop (1 invalid, 2 IO).
+// returned status is nonzero when the build must stop (1 invalid, 2 IO). A
+// nonempty root makes paths relative to it; otherwise the common directory is used.
 func loadSelection(args []string, root string, errout io.Writer) (selection, int) {
 	seen := map[string]bool{}
 	var files []string
@@ -103,10 +136,14 @@ func loadSelection(args []string, root string, errout io.Writer) (selection, int
 	}
 	return sel, 0
 }
-func runHugo(args []string, destination string, options hugo.Options, out, errout io.Writer) int {
+
+// renderSelection reads, parses and renders the selected sheets. The returned
+// report prints renderer issues against every selected path of their source.
+func renderSelection(args []string, options hugo.Options, errout io.Writer) (hugo.Project, int, func([]hugo.Issue, string), int) {
+	report := func([]hugo.Issue, string) {}
 	sel, status := loadSelection(args, "", errout)
 	if status != 0 {
-		return status
+		return hugo.Project{}, 0, report, status
 	}
 	sourcePaths := sel.sourcePaths
 	var sheets []hugo.Sheet
@@ -114,7 +151,7 @@ func runHugo(args []string, destination string, options hugo.Options, out, errou
 		sheets = append(sheets, hugo.Sheet{ID: sheetID(f.name), SourceName: f.name, Path: f.relative, Document: f.document})
 	}
 	project, ds := hugo.Render(sheets, options)
-	report := func(ds []hugo.Issue, suffix string) {
+	report = func(ds []hugo.Issue, suffix string) {
 		printed := map[string]bool{}
 		for _, d := range ds {
 			paths := sourcePaths[d.Source]
@@ -132,18 +169,9 @@ func runHugo(args []string, destination string, options hugo.Options, out, errou
 	}
 	report(ds, "")
 	if len(ds) > 0 {
-		return 1
+		return hugo.Project{}, 0, report, 1
 	}
-	report(project.Warnings, " (warning)")
-	if err := writeFiles(destination, project.Files); err != nil {
-		fmt.Fprintf(errout, "%s:1:1: IO003: %v\n", destination, err)
-		return 2
-	}
-	if _, err := fmt.Fprintf(out, "Exported %d sheets to %s (Hugo %s; local generation is a separate command).\n", len(sheets), destination, hugo.Version); err != nil {
-		fmt.Fprintln(errout, "IO002: "+err.Error())
-		return 2
-	}
-	return 0
+	return project, len(sheets), report, 0
 }
 
 // commonDir is the deepest directory containing every selected file. Sheet paths

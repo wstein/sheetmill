@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -49,6 +50,11 @@ type Options struct {
 	// EditBaseURL is an explicit GitHub /owner/repository/edit/ref/directory/ base.
 	// It refers to authored sheets, never to upstream source provenance.
 	EditBaseURL string
+	// Description introduces the library on the home page.
+	Description string
+	// SiteURL is the canonical https://host/<base path>/ of the published site.
+	// It enables canonical links, og:url/og:image and a sitemap.
+	SiteURL string
 	// SourceBaseURL is an explicit GitHub /owner/repository/blob/ref/directory/ base
 	// for the selection root. Relative links that name no selected sheet resolve to
 	// the repository file instead of being reported as unresolved.
@@ -79,17 +85,104 @@ type Project struct {
 	Warnings []Issue
 }
 type entry struct {
-	Title   string `json:"title"`
-	Sheet   string `json:"sheet"`
-	Section string `json:"section"`
-	Text    string `json:"text"`
-	URL     string `json:"url"`
+	Title    string   `json:"title"`
+	Sheet    string   `json:"sheet"`
+	Section  string   `json:"section"`
+	Text     string   `json:"text"`
+	URL      string   `json:"url"`
+	Tags     []string `json:"tags,omitempty"`
+	Category string   `json:"category,omitempty"`
+	License  string   `json:"license,omitempty"`
 }
+
+// sheetMetadata reads the displayed fields; validation already enforced their types.
+func sheetMetadata(m map[string]any) (description, category, license string, tags []string) {
+	if source, ok := m["source"].(map[string]any); ok {
+		license, _ = source["license"].(string)
+	}
+	description, _ = m["description"].(string)
+	category, _ = m["category"].(string)
+	if list, ok := m["tags"].([]any); ok {
+		for _, tag := range list {
+			if tag, ok := tag.(string); ok {
+				tags = append(tags, tag)
+			}
+		}
+	}
+	return description, category, license, tags
+}
+
 type page struct {
-	Title   string `json:"title"`
-	URL     string `json:"url"`
-	Body    string `json:"body"`
-	EditURL string `json:"edit_url,omitempty"`
+	Title       string   `json:"title"`
+	URL         string   `json:"url"`
+	Description string   `json:"description,omitempty"`
+	Category    string   `json:"category,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	License     string   `json:"license,omitempty"`
+	Body        string   `json:"body"`
+	EditURL     string   `json:"edit_url,omitempty"`
+	Related     []link   `json:"related,omitempty"`
+}
+
+type link struct {
+	Title string `json:"title"`
+	URL   string `json:"url"`
+}
+
+// related ranks other pages by shared tags (2 points each) and a shared
+// category (1 point) and keeps the best three; ties keep route order.
+func related(pages []page, self int) []link {
+	type candidate struct{ index, score int }
+	var candidates []candidate
+	for i, other := range pages {
+		if i == self {
+			continue
+		}
+		score := 0
+		for _, tag := range other.Tags {
+			if slices.Contains(pages[self].Tags, tag) {
+				score += 2
+			}
+		}
+		if other.Category != "" && other.Category == pages[self].Category {
+			score++
+		}
+		if score > 0 {
+			candidates = append(candidates, candidate{i, score})
+		}
+	}
+	sort.SliceStable(candidates, func(a, b int) bool { return candidates[a].score > candidates[b].score })
+	var out []link
+	for _, c := range candidates[:min(3, len(candidates))] {
+		out = append(out, link{pages[c.index].Title, pages[c.index].URL})
+	}
+	return out
+}
+
+// shelf groups library pages by category for the home page.
+type shelf struct {
+	Category string `json:"category"`
+	Sheets   []page `json:"sheets"`
+}
+
+// shelves sorts categories by name and puts uncategorized sheets last; pages
+// keep their deterministic route order. Bodies are omitted from the index.
+func shelves(pages []page) []shelf {
+	groups := map[string][]page{}
+	for _, p := range pages {
+		p.Body, p.Related = "", nil
+		groups[p.Category] = append(groups[p.Category], p)
+	}
+	names := make([]string, 0, len(groups))
+	for name := range groups {
+		names = append(names, name)
+	}
+	sort.Slice(names, func(i, j int) bool { return names[i] != "" && (names[j] == "" || names[i] < names[j]) })
+	out := make([]shelf, 0, len(names))
+	for _, name := range names {
+		out = append(out, shelf{name, groups[name]})
+	}
+	return out
 }
 
 var route = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
@@ -109,6 +202,10 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "select at least one sheet"}})
 	}
 	editBase, err := githubBase(options.EditBaseURL, "edit")
+	if err != nil {
+		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: err.Error()}})
+	}
+	origin, err := siteOrigin(options.SiteURL, base)
 	if err != nil {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: err.Error()}})
 	}
@@ -159,6 +256,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		return e
 	}
 	var pages []page
+	var sources []string
 	var index []entry
 	var errors []Issue
 	// Anchors of every selected sheet, so cross-sheet fragments can be resolved.
@@ -175,21 +273,44 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	for _, s := range sheets {
 		r := renderer{self: s.ID, path: paths[s.ID], base: base, source: sourceBase, routes: routes, anchors: anchors}
 		title, _ := s.Document.Metadata["title"].(string)
+		description, category, license, tags := sheetMetadata(s.Document.Metadata)
 		var b strings.Builder
 		r.nodes(&b, s.Document.Preamble, false)
+		// A jump list lets readers reach any section without JavaScript.
+		if len(s.Document.Sections) > 1 {
+			b.WriteString(`<nav class="sheet-toc" aria-label="On this page"><ul>`)
+			for _, section := range s.Document.Sections {
+				fmt.Fprintf(&b, `<li><a href="#ref-%s">%s</a></li>`, esc(section.ID), esc(section.Title))
+			}
+			b.WriteString(`</ul></nav>`)
+		}
 		for _, section := range s.Document.Sections {
 			fmt.Fprintf(&b, `<section class="sheet-section" id="ref-%s"><h2>%s</h2>`, esc(section.ID), r.heading(section.Heading))
 			r.nodes(&b, section.Content, false)
-			b.WriteString(`<div class="cards">`)
+			// Cards never span more columns than their section's grid provides.
+			columns := section.Columns
+			if columns == 0 {
+				columns = 3
+			}
+			fmt.Fprintf(&b, `<div class="cards cols-%d">`, columns)
 			for _, card := range section.Cards {
-				class := fmt.Sprintf("card col-span-%d row-span-%d", max(1, card.Layout.Columns), max(1, card.Layout.Rows))
+				class := fmt.Sprintf("card col-span-%d row-span-%d", min(max(1, card.Layout.Columns), columns), max(1, card.Layout.Rows))
 				for _, c := range card.Classes {
 					class += " " + c
 				}
 				fmt.Fprintf(&b, `<article class="%s" id="ref-%s"><h3>%s <a class="permalink" href="#ref-%s" aria-label="Permalink to %s">#</a></h3>`, esc(class), esc(card.ID), r.heading(card.Heading), esc(card.ID), esc(card.Title))
+				r.keys = slices.Contains(card.Classes, "keys")
+				// Card kinds carry a visible text label, never colour alone.
+				for _, kind := range []string{"warning", "tip", "note"} {
+					if slices.Contains(card.Classes, kind) {
+						fmt.Fprintf(&b, `<p class="card-kind">%s</p>`, strings.ToUpper(kind[:1])+kind[1:])
+						break
+					}
+				}
 				r.nodes(&b, card.Content, false)
+				r.keys = false
 				b.WriteString(`</article>`)
-				index = append(index, entry{card.Title, title, section.Title, plain(card.Content), base + s.ID + "/#ref-" + card.ID})
+				index = append(index, entry{Title: card.Title, Sheet: title, Section: section.Title, Text: plain(card.Content), URL: base + s.ID + "/#ref-" + card.ID, Tags: tags, Category: category, License: license})
 			}
 			b.WriteString(`</div></section>`)
 		}
@@ -211,14 +332,12 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		}
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
 		errors = append(errors, issues(s.SourceName, r.errors)...)
-		page := page{Title: title, URL: base + s.ID + "/", Body: b.String()}
+		page := page{Title: title, URL: base + s.ID + "/", Description: description, Category: category, Tags: tags, License: license, Body: b.String()}
 		if editBase != "" {
 			page.EditURL = editBase + escapePath(paths[s.ID])
 		}
 		pages = append(pages, page)
-		if e := putJSON("data/sheets/"+s.ID+".json", page); e != nil {
-			errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
-		}
+		sources = append(sources, s.SourceName)
 		ir, e := s.Document.JSON()
 		if e != nil {
 			errors = append(errors, Issue{s.SourceName, diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
@@ -228,7 +347,15 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		front, _ := json.Marshal(map[string]any{"title": title, "url": "/" + s.ID + "/", "sheetid": s.ID})
 		p.Files["content/"+s.ID+"/index.md"] = []byte("---\n" + string(front) + "\n---\n")
 		// Preamble-only sheets must also be discoverable by search.
-		index = append(index, entry{title, title, "", plain(s.Document.Preamble), page.URL})
+		index = append(index, entry{Title: title, Sheet: title, Text: plain(s.Document.Preamble), URL: page.URL, Tags: tags, Category: category, License: license})
+	}
+	// Related sheets need every page, so per-sheet data is written afterwards.
+	for i := range pages {
+		pages[i].Related = related(pages, i)
+		id := strings.TrimSuffix(strings.TrimPrefix(pages[i].URL, base), "/")
+		if e := putJSON("data/sheets/"+id+".json", pages[i]); e != nil {
+			errors = append(errors, Issue{sources[i], diagnostic.Diagnostic{Code: "REN001", Message: e.Error()}})
+		}
 	}
 	if len(errors) > 0 {
 		return Project{}, errors
@@ -237,7 +364,17 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if title == "" {
 		title = "SheetMill References"
 	}
-	params := map[string]any{"base": base}
+	params := map[string]any{"base": base, "description": options.Description}
+	if origin != "" {
+		params["origin"] = origin
+		var sitemap strings.Builder
+		sitemap.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n")
+		for _, loc := range append([]string{base}, urls(pages)...) {
+			fmt.Fprintf(&sitemap, "<url><loc>%s</loc></url>\n", esc(origin+loc))
+		}
+		sitemap.WriteString("</urlset>\n")
+		p.Files["static/sitemap.xml"] = []byte(sitemap.String())
+	}
 	config := map[string]any{"baseURL": "https://example.invalid/", "title": title, "languageCode": "en", "disableKinds": []string{"taxonomy", "term", "RSS", "sitemap"}, "enableRobotsTXT": false, "disableHugoGeneratorInject": true, "params": params, "outputs": map[string]any{"home": []string{"HTML"}, "page": []string{"HTML"}}, "security": map[string]any{"enableInlineShortcodes": false, "exec": map[string]any{"allow": []string{"none"}, "osEnv": []string{"none"}}, "http": map[string]any{"methods": []string{"none"}, "urls": []string{"none"}}}}
 	// Every remaining file is required; never return a partial project.
 	copyTree := func(files fs.FS, from, to string) error {
@@ -253,7 +390,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			return e
 		})
 	}
-	for _, e := range []error{putJSON("data/library.json", pages), putJSON("static/search.json", index), copyTree(themeFiles, "theme", ""), copyTree(brandFiles, ".", "static/brand")} {
+	for _, e := range []error{putJSON("data/library.json", pages), putJSON("data/shelves.json", shelves(pages)), putJSON("static/search.json", index), copyTree(themeFiles, "theme", ""), copyTree(brandFiles, ".", "static/brand")} {
 		if e != nil {
 			return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN001", Message: "project assembly failed: " + e.Error()}})
 		}
@@ -341,6 +478,7 @@ func sourceText(value any, key bool) (string, error) {
 
 type renderer struct {
 	inLink           bool
+	keys, keyCell    bool // inside a .keys card; inside its first table column
 	routes           map[string]string
 	self, path, base string
 	source           string
@@ -408,6 +546,10 @@ func (r *renderer) node(b *strings.Builder, n model.Node, header bool) {
 	case "ThematicBreak":
 		b.WriteString("<hr>")
 	case "CodeSpan":
+		if r.keyCell && !header {
+			b.WriteString(keys(n))
+			return
+		}
 		wrap("code")
 	case "Emphasis":
 		if n.Properties["level"] == 2 {
@@ -432,7 +574,13 @@ func (r *renderer) node(b *strings.Builder, n model.Node, header bool) {
 		r.nodes(b, n.Children, true)
 		b.WriteString("</tr></thead>")
 	case "TableRow":
-		wrap("tr")
+		b.WriteString("<tr>")
+		for i, cell := range n.Children {
+			r.keyCell = r.keys && i == 0
+			r.node(b, cell, header)
+		}
+		r.keyCell = false
+		b.WriteString("</tr>")
 	case "TableCell":
 		tag := "td"
 		if header {
@@ -560,6 +708,23 @@ func (r *renderer) repositoryURL(joined string, link *url.URL) (string, bool) {
 	return resolved.String(), true
 }
 
+// keys renders a key-table code span as keyboard input; "Ctrl+C" becomes a
+// combination of two keys, while "+" alone stays one key.
+func keys(n model.Node) string {
+	var text strings.Builder
+	for _, c := range n.Children {
+		text.WriteString(c.Text)
+	}
+	parts := strings.Split(text.String(), "+")
+	if len(parts) == 1 || slices.Contains(parts, "") {
+		return "<kbd>" + esc(text.String()) + "</kbd>"
+	}
+	for i, part := range parts {
+		parts[i] = "<kbd>" + esc(part) + "</kbd>"
+	}
+	return "<kbd>" + strings.Join(parts, "+") + "</kbd>"
+}
+
 // labeled reports visible label content: text, or an image rendered as a reference.
 func labeled(nodes []model.Node) bool {
 	for _, n := range nodes {
@@ -625,6 +790,30 @@ func (r *renderer) heading(n model.Node) string {
 }
 
 // Operator-controlled edit links are intentionally separate from metadata.source.
+// siteOrigin validates an explicit https site URL whose path is the base path and
+// returns its scheme and host.
+func siteOrigin(raw, base string) (string, error) {
+	if raw == "" {
+		return "", nil
+	}
+	u, err := url.Parse(raw)
+	if err == nil && u.Path == "" {
+		u.Path = "/"
+	}
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || u.Path != base {
+		return "", fmt.Errorf("site URL must be https://host%s without credentials, query or fragment", base)
+	}
+	return u.Scheme + "://" + u.Host, nil
+}
+
+func urls(pages []page) []string {
+	out := make([]string, 0, len(pages))
+	for _, p := range pages {
+		out = append(out, p.URL)
+	}
+	return out
+}
+
 // githubBase validates an explicit https://github.com/owner/repository/<kind>/ref/
 // URL with an optional directory, and returns it with one trailing slash.
 func githubBase(raw, kind string) (string, error) {

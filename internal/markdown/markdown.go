@@ -24,6 +24,12 @@ const MaxSourceBytes = 8 << 20
 
 var explicitID = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]*$`)
 
+// attributeGroup matches a whole {.class #id} group; trailingGroup one ending a heading.
+var (
+	attributeGroup = regexp.MustCompile(`^\{[.#][^{}]*\}$`)
+	trailingGroup  = regexp.MustCompile(`\{[.#][^{}]*\}$`)
+)
+
 func Parse(src []byte) (*model.Document, []diagnostic.Diagnostic) {
 	source := diagnostic.NewSource(src)
 	if len(src) > MaxSourceBytes {
@@ -33,6 +39,14 @@ func Parse(src []byte) (*model.Document, []diagnostic.Diagnostic) {
 	if len(ds) > 0 {
 		return nil, ds
 	}
+	return ParseDecoded(src, fm)
+}
+
+// ParseDecoded parses the body of src using already decoded frontmatter. The
+// caller is responsible for validating fm.Metadata; spans index src.
+func ParseDecoded(src []byte, fm frontmatter.Result) (*model.Document, []diagnostic.Diagnostic) {
+	source := diagnostic.NewSource(src)
+	var ds []diagnostic.Diagnostic
 	d := &model.Document{Schema: 1, Metadata: fm.Metadata, Source: string(fm.Body), Preamble: []model.Node{}, Sections: []model.Section{}}
 	root := goldmark.New(goldmark.WithExtensions(extension.GFM)).Parser().Parse(text.NewReader(fm.Body))
 	cv := converter{fm.Body, fm.BodyOffset, source}
@@ -80,15 +94,18 @@ func Parse(src []byte) (*model.Document, []diagnostic.Diagnostic) {
 			if h.Level == 2 {
 				closeSection(node.Span.Start)
 				if attrs.Layout.Columns != 0 || attrs.Layout.Rows != 0 || len(attrs.Classes) > 0 || len(attrs.Compatibility) > 0 {
-					ds = append(ds, diagnostic.Diagnostic{Code: "ATTR001", Message: "section headings support only an explicit #id", Span: node.Span})
+					ds = append(ds, diagnostic.Diagnostic{Code: "ATTR001", Message: "section headings support only an explicit #id and .cols-N", Span: node.Span})
 				}
-				d.Sections = append(d.Sections, model.Section{ID: contentID, Title: title, Span: node.Span, Heading: node, Content: []model.Node{}, Cards: []model.Card{}})
+				d.Sections = append(d.Sections, model.Section{ID: contentID, Title: title, Span: node.Span, Heading: node, Columns: attrs.SectionColumns, Content: []model.Node{}, Cards: []model.Card{}})
 				section = &d.Sections[len(d.Sections)-1]
 			} else {
 				closeCard(node.Span.Start)
 				if section == nil {
 					ds = append(ds, diagnostic.Diagnostic{Code: "MD001", Message: "a ### card requires a preceding ## section", Span: node.Span})
 					continue
+				}
+				if attrs.SectionColumns != 0 {
+					ds = append(ds, diagnostic.Diagnostic{Code: "ATTR001", Message: ".cols-N applies to ## sections; use .col-span-N on cards", Span: node.Span})
 				}
 				section.Cards = append(section.Cards, model.Card{ID: contentID, IDExplicit: attrs.ID != "", Title: title, Span: node.Span, Heading: node, Layout: attrs.Layout, Classes: attrs.Classes, Compatibility: attrs.Compatibility, Content: []model.Node{}})
 				card = &section.Cards[len(section.Cards)-1]
@@ -104,10 +121,82 @@ func Parse(src []byte) (*model.Document, []diagnostic.Diagnostic) {
 		}
 	}
 	closeSection(source.Position(len(src)))
+	ds = append(ds, strayAttributes(root, cv)...)
 	if len(ds) > 0 {
 		return nil, ds
 	}
 	return d, nil
+}
+
+// strayAttributes reports {.class #id} groups that would otherwise become visible
+// text: lines consisting only of a group, and groups ending headings other than
+// root-level ## and ### structure. Code, raw HTML and escaped braces are content.
+func strayAttributes(root ast.Node, cv converter) []diagnostic.Diagnostic {
+	var ds []diagnostic.Diagnostic
+	report := func(start, end int, message string) {
+		ds = append(ds, diagnostic.Diagnostic{Code: "ATTR003", Message: message, Span: cv.source.Span(cv.offset+start, cv.offset+end)})
+	}
+	var walk func(ast.Node)
+	walk = func(n ast.Node) {
+		switch x := n.(type) {
+		case *ast.CodeBlock, *ast.FencedCodeBlock, *ast.HTMLBlock:
+			return
+		case *ast.Heading:
+			if x.Parent() == root && (x.Level == 2 || x.Level == 3) {
+				return // structural headings are parsed by heading()
+			}
+			line, start, end, onlyText := inlineLine(x.FirstChild(), nil, cv.body)
+			trimmed := strings.TrimSpace(line)
+			if at := trailingGroup.FindStringIndex(trimmed); onlyText && at != nil && !escapedPunctuation(trimmed, at[0]) {
+				report(start, end, "attribute groups apply only to root-level ## and ### headings; escape the brace to keep it as text")
+			}
+			return
+		}
+		if n.Type() == ast.TypeBlock && n.FirstChild() != nil && n.FirstChild().Type() == ast.TypeInline {
+			for c := n.FirstChild(); c != nil; {
+				line, start, end, onlyText := inlineLine(c, &c, cv.body)
+				if trimmed := strings.TrimSpace(line); onlyText && attributeGroup.MatchString(trimmed) {
+					report(start, end, "attribute group "+trimmed+" is not applied here; attributes belong at the end of a ## or ### heading, or escape the brace")
+				}
+			}
+			return
+		}
+		for c := n.FirstChild(); c != nil; c = c.NextSibling() {
+			walk(c)
+		}
+	}
+	walk(root)
+	return ds
+}
+
+// inlineLine joins one source line of sibling inline nodes starting at n. It
+// reports whether the line holds only plain text, and advances *next past it.
+func inlineLine(n ast.Node, next *ast.Node, body []byte) (string, int, int, bool) {
+	var b strings.Builder
+	start, end, onlyText := -1, -1, true
+	for ; n != nil; n = n.NextSibling() {
+		t, ok := n.(*ast.Text)
+		if !ok {
+			onlyText = false
+			continue
+		}
+		if start < 0 {
+			start = t.Segment.Start
+		}
+		end = t.Segment.Stop
+		b.Write(t.Value(body))
+		if t.SoftLineBreak() || t.HardLineBreak() {
+			n = n.NextSibling()
+			break
+		}
+	}
+	if next != nil {
+		*next = n
+	}
+	if start < 0 {
+		return "", 0, 0, false
+	}
+	return b.String(), start, end, onlyText
 }
 
 func slug(s string) string {
@@ -132,6 +221,7 @@ func slug(s string) string {
 
 type attributes struct {
 	ID                     string
+	SectionColumns         int
 	Layout                 model.Layout
 	Classes, Compatibility []string
 }
@@ -191,6 +281,13 @@ func heading(h *ast.Heading, body []byte, cv converter, span diagnostic.Span) (s
 				return bad("ATTR001", "ID must start with an ASCII letter and contain letters, digits, _ or -")
 			}
 			a.ID = token[1:]
+		case strings.HasPrefix(token, ".cols-"):
+			key = "section-columns"
+			v, err := strconv.Atoi(strings.TrimPrefix(token, ".cols-"))
+			if err != nil || v < 1 || v > 6 || strconv.Itoa(v) != strings.TrimPrefix(token, ".cols-") {
+				return bad("ATTR001", "section columns must be a decimal integer from 1 to 6")
+			}
+			a.SectionColumns = v
 		case strings.HasPrefix(token, ".col-span-") || strings.HasPrefix(token, ".row-span-"):
 			prefix := ".col-span-"
 			key = "columns"
@@ -207,7 +304,7 @@ func heading(h *ast.Heading, body []byte, cv converter, span diagnostic.Span) (s
 			} else {
 				a.Layout.Rows = v
 			}
-		case token == ".navi" || token == ".note" || token == ".tip" || token == ".warning":
+		case token == ".navi" || token == ".note" || token == ".tip" || token == ".warning" || token == ".keys":
 			a.Classes = append(a.Classes, token[1:])
 		case token == ".wrap":
 			a.Compatibility = append(a.Compatibility, token[1:])
