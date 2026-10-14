@@ -9,6 +9,14 @@
     "category": {"type": "string"},
     "description": {"type": "string"},
     "tags": {"type": "array", "items": {"type": "string", "pattern": "\\S"}},
+    "navigation": {
+      "type": "object",
+      "properties": {
+        "group": {"type": "string", "pattern": "\\S"},
+        "order": {"type": "integer", "minimum": 0, "maximum": 1000000}
+      },
+      "additionalProperties": false
+    },
     "cheatsheet": {
       "type": "object",
       "properties": {

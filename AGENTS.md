@@ -17,6 +17,11 @@ Sibling repository policies do not govern this repository.
   T009 deterministic metadata sidecars are authorized on 2026-10-14; this increment
   permits implementation, local verification and a reviewable PR only. No PDF or
   deployment.
+- Feature 014 is authorized (user, 2026-10-14): per-sheet `navigation.group` and
+  `navigation.order` for Hugo library placement, with shared validation, inert
+  Reference-import archival and navi-companion preservation (`specs/014-library-navigation`).
+  A draft PR is authorized; merge, deployment and reordering the real libraries are not.
+  The manifest, group-order file, navigation title and stable IDs stay deferred.
 - Feature 007 MVP T001–T018 and applicable final checks are authorized on
   2026-10-13: one smill sheet, temporary verification executable, Hugo and local
   browser E2E.

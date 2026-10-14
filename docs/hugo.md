@@ -217,7 +217,9 @@ collisions fail with `REN003`. The top-level sheet route `tags` is reserved.
 Canonical URLs and the generated sitemap include the tag index/results when a
 site origin is configured; tag pages exist without an origin as well.
 
-Both layouts have a left library sidebar grouped by `category`; uncategorized
+Both layouts have a left library sidebar grouped by `navigation.group`, else
+`category` (see [library placement](format/gfm-plus.md#library-placement); sheets
+inside a group follow `navigation.order`); uncategorized
 sheets appear under Other references. Native disclosure controls expand or collapse
 groups using mouse, Enter or Space. The current sheet's group opens on navigation,
 and its link has a visible marker and `aria-current="page"`. With JavaScript,

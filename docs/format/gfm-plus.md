@@ -22,6 +22,7 @@ Known fields use strict types without implicit scalar/array coercion:
 | `title` | Required nonempty string |
 | `category`, `description` | Optional strings |
 | `tags` | Optional array of nonempty strings |
+| `navigation` | Optional closed mapping: [library placement](#library-placement) |
 | `cheatsheet` | Optional mapping |
 | `cheatsheet.schema` | Optional integer, exactly `1`; omitted means current schema |
 | `cheatsheet.tool` | Optional nonempty string |
@@ -32,6 +33,42 @@ preserved in `metadata`. `cheatsheet.navi` is generic metadata to the parser and
 [navi export contract](navi-profile.md).
 The [JSON Schema](../../schema/cheatsheet.schema.json) describes
 metadata after YAML decoding; parser limits and duplicate keys are additional rules.
+
+## Library placement {#library-placement}
+
+`navigation` places a sheet in the Hugo library sidebar and home page without
+changing its category, tags, URL or relevance:
+
+```yaml
+navigation:
+  group: SheetMill
+  order: 20
+```
+
+- `navigation` is optional; when present it must be a mapping, and `{}` is valid.
+  Only `group` and `order` are allowed. A misspelling, or a deferred field such as
+  `title`, fails with `VAL003`.
+- `group` is a string with non-whitespace content, kept exactly as written. When
+  omitted, the sheet's `category` names its group, then Other references. A
+  supplied but invalid group never falls back silently.
+- `order` is an integer from 0 to 1,000,000. Strings, Booleans, null and floats
+  (including `1.0`) are errors; leaving it out differs from an explicit `0`.
+- Within a group, ordered sheets come first, ascending. Remaining sheets and equal
+  orders compare by Unicode-lowercased title, then the original title bytes, then
+  route. Equal orders are allowed and never warn. Use steps of ten to leave room.
+- Groups still sort by name, with the ungrouped shelf last. A group named
+  `Other references` stays a named group, separate from the fallback.
+- Only library placement changes. Related sheets, search, tag pages, URLs and
+  cards keep their existing behavior.
+
+Navigation was previously ordinary preserved metadata. It is now a reserved,
+closed namespace, so an existing `navigation` object with other keys must be
+renamed to an author-owned key or brought into this contract, even though the IR
+schema stays at 1. The JSON Schema describes metadata after YAML decoding; the
+parser's strict scalar typing is what rejects `order: 1.0`, which JSON Schema
+alone cannot tell apart from `1`. Reference imports archive any upstream
+`navigation` as inert provenance (`IMP102`, see [imports](../imports.md)); the
+navi companion preserves it verbatim without changing `.cheat` output.
 
 ## Markdown and cards
 

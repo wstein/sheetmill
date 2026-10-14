@@ -508,6 +508,40 @@ func TestSidecarPreservesMetadata(t *testing.T) {
 	}
 }
 
+func TestCanonicalNavigationDoesNotChangeCheatOutput(t *testing.T) {
+	plain := sheet(t, card("bash", "echo <sheet>"))
+	nav := sheet(t, card("bash", "echo <sheet>"))
+	nav.Document.Metadata["navigation"] = map[string]any{"group": "Tools", "order": int64(2), "extra": []any{"x"}}
+	pp, perrs := Render([]Sheet{plain}, Options{})
+	np, nerrs := Render([]Sheet{nav}, Options{})
+	if len(perrs) > 0 || len(nerrs) > 0 || len(pp.Warnings) != len(np.Warnings) {
+		t.Fatalf("%v %v %v %v", perrs, nerrs, pp.Warnings, np.Warnings)
+	}
+	if !bytes.Equal(pp.Files["demo.cheat"], np.Files["demo.cheat"]) {
+		t.Fatalf("navigation changed .cheat bytes:\n%s\n%s", pp.Files["demo.cheat"], np.Files["demo.cheat"])
+	}
+	type sc struct {
+		Metadata map[string]json.RawMessage
+		Cards    []struct{ ID, Title, Context string }
+	}
+	var a, b sc
+	if err := json.Unmarshal(pp.Files["demo.navi.json"], &a); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(np.Files["demo.navi.json"], &b); err != nil {
+		t.Fatal(err)
+	}
+	if len(a.Cards) != 1 || len(b.Cards) != 1 || a.Cards[0] != b.Cards[0] {
+		t.Fatalf("card identities differ: %v %v", a.Cards, b.Cards)
+	}
+	want, _ := json.Marshal(nav.Document.Metadata["navigation"])
+	var compact bytes.Buffer
+	_ = json.Compact(&compact, b.Metadata["navigation"])
+	if _, ok := a.Metadata["navigation"]; ok || !bytes.Equal(compact.Bytes(), want) {
+		t.Fatalf("companion navigation: %s", b.Metadata["navigation"])
+	}
+}
+
 func TestSidecarFailureDiscardsBatch(t *testing.T) {
 	good := sheet(t, card("bash", "echo <sheet>"))
 	bad := sheet(t, card("bash", "echo <sheet>"))
