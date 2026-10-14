@@ -1,0 +1,55 @@
+---
+{
+  "cheatsheet": {
+    "custom": "retained",
+    "navi": {
+      "shell": "bash"
+    },
+    "tool": "sample"
+  },
+  "source": {
+    "attribution": "Example contributors",
+    "format": "fechin-reference",
+    "license": "GPL-3.0",
+    "original_metadata": {
+      "cheatsheet": {
+        "cards": {
+          "upstream": {
+            "params": {
+              "input": {
+                "description": "Original imported input",
+                "type": "path"
+              }
+            }
+          }
+        }
+      },
+      "removed_attributes": [
+        {
+          "line": 16,
+          "text": ".command"
+        }
+      ]
+    },
+    "path": "source/_posts/sample.md",
+    "repository": "https://github.com/example/reference",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sha256": "2620212a24f1a59a16cb6954b86d484027508abf0315a6f88e40bb1afb9568eb"
+  },
+  "title": "Imported command documentation"
+}
+---
+## Examples
+### Upstream shared card {#upstream .col-span-2}
+```bash
+printf '%s' '<input>'
+```
+### Existing compatibility card {#legacy .navi}
+```bash
+printf '%s' legacy
+```
+### Literal example
+```text
+### Literal {.command}
+{.command}
+```

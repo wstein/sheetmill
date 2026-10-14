@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "format": "fechin-reference",
+  "provenance": {
+    "repository": "https://github.com/example/reference",
+    "path": "source/_posts/sample.md",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "license": "GPL-3.0",
+    "attribution": "Example contributors"
+  },
+  "source_sha256": "2620212a24f1a59a16cb6954b86d484027508abf0315a6f88e40bb1afb9568eb",
+  "converted_sha256": "8c637f35436a540b70b8421049a1299d9a1bad3acc06ff4b3785996fa841a21e",
+  "findings": [
+    {
+      "severity": "warning",
+      "code": "IMP111",
+      "message": "upstream cheatsheet.cards archived as inert source data",
+      "span": {
+        "start": {
+          "offset": 71,
+          "line": 5,
+          "column": 3
+        },
+        "end": {
+          "offset": 76,
+          "line": 5,
+          "column": 8
+        }
+      }
+    },
+    {
+      "severity": "warning",
+      "code": "IMP111",
+      "message": "upstream .command marker removed and archived as inert source data",
+      "span": {
+        "start": {
+          "offset": 284,
+          "line": 16,
+          "column": 37
+        },
+        "end": {
+          "offset": 292,
+          "line": 16,
+          "column": 45
+        }
+      }
+    }
+  ]
+}
