@@ -1,0 +1,1 @@
+<div class="appearance-controls"><select id="app-palette" aria-label="Color palette" hidden>{{ range site.Data.palettes }}<option value="{{ .id }}"{{ if eq .id site.Params.palette }} selected{{ end }}>{{ .title }}</option>{{ end }}</select><button id="app-theme" type="button" hidden>Change theme</button></div>

@@ -62,3 +62,21 @@ func TestTagsRouteReserved(t *testing.T) {
 		t.Fatal("tags route must not overwrite tag index", ds)
 	}
 }
+
+func TestPaletteSelection(t *testing.T) {
+	for _, palette := range []string{"", "graphite-coral", "paper-ink", "midnight-periwinkle", "monochrome", "teal-copper", "dracula"} {
+		p, ds := Render([]Sheet{sheet(t, "a", "Text.")}, Options{Palette: palette})
+		if len(ds) > 0 {
+			t.Fatal(ds)
+		}
+		if palette == "" {
+			palette = "graphite-coral"
+		}
+		if !strings.Contains(string(p.Files["hugo.json"]), `"palette": "`+palette+`"`) {
+			t.Fatal("missing default palette", palette)
+		}
+	}
+	if p, ds := Render([]Sheet{sheet(t, "a", "Text.")}, Options{Palette: "unsafe"}); len(ds) != 1 || ds[0].Code != "REN003" || len(p.Files) > 0 {
+		t.Fatal("invalid palette accepted", ds)
+	}
+}
