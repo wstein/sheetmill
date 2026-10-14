@@ -17,6 +17,13 @@ Sibling repository policies do not govern this repository.
   T009 deterministic metadata sidecars are authorized on 2026-10-14; this increment
   permits implementation, local verification and a reviewable PR only. No PDF or
   deployment.
+- Feature 015 command cards is authorized for documentation only (user,
+  2026-10-14): define target-neutral `.command` cards and
+  `cheatsheet.cards.<id>.params`, migration from 006 syntax and unchanged navi
+  identity/output requirements. This permits spec/format/006 updates, local
+  documentation checks, independent Sol review and a docs PR. Core/parser,
+  renderer, schema and migration-tool implementation require a later handoff.
+  No navi execution, PDF, merge or deployment.
 - Feature 014 is authorized (user, 2026-10-14): per-sheet `navigation.group` and
   `navigation.order` for Hugo library placement, with shared validation, inert
   Reference-import archival and navi-companion preservation (`specs/014-library-navigation`).
