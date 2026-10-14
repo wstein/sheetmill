@@ -183,5 +183,9 @@ no-execution lint. The item hash model is pinned by fixed vectors
 (`itemHash("") = 0x1c9d3adb639f298e`, `itemHash("abc") = 0x64372d1c87d01e7c`) that an
 independent review calculated from the Rust hash input. Not done: running navi
 (never, by policy) and a metadata sidecar; unexported metadata is diagnosed with
-`NAV107` instead. Quote analysis is heuristic compared with a real shell parser. Re-check the
+`NAV107` instead. Parameter `type`/`description` hints are included in that
+diagnostic even though they are consumed during validation. Non-string or empty
+license/attribution values are also diagnosed rather than treated as preserved.
+Consequently, `--strict` rejects exports with those omitted hints until the
+sidecar is implemented. Quote analysis is heuristic compared with a real shell parser. Re-check the
 upstream source when moving to another navi version.
