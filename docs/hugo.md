@@ -205,7 +205,7 @@ the minimum column width (270px) and whether to ship IBM Plex Mono/600.
 `--theme reference-cards` keeps the classic top bar, search, in-page card filter and
 density toggle and restyles the cards as soft rounded tiles. The card title becomes
 a badge in the tile's top-right corner. Inside a card, a paragraph followed by a
-fenced block reads as a tinted description row over a command row, and `bash`,
+fenced block reads as a tinted description row over a command row (other paragraphs stay plain), and `bash`,
 `sh`, `zsh`, `shell` and `fish` fences show a `$` prompt drawn by CSS, so it is
 neither selectable nor copied. Section headings carry a `#` marker and the home page
 title is centered. The library is a collapsible **Browse library** panel above the
@@ -213,7 +213,7 @@ content instead of a sidebar; it keeps grouping, `navigation.order` ordering, th
 current-page marker and the tag link, and works without JavaScript. Badge, rows
 and surfaces use only palette tokens, so every `--palette` and light/dark mode
 applies unchanged. The theme adds one fingerprinted `cards.css`, no fonts or
-external requests; print drops shadows and the Browse panel. Editorial remains the
+external requests; its print rules drop shadows and the Browse panel but have not been checked in a real print preview. Editorial remains the
 default, and `classic-compact` is unchanged. It is a styling variant only: it
 does not change the source format and does not highlight command tokens.
 

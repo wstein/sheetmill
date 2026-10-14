@@ -16,15 +16,23 @@
 .reference-cards .sheet-section>h2::before{content:"# ";opacity:.6}
 .classic.reference-cards .cards{grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:20px;align-items:start}
 .classic.reference-cards.comfortable .cards{grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr))}
-.classic.reference-cards .card{position:relative;overflow:hidden;padding:34px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
-.classic.reference-cards .card h3{position:absolute;top:0;right:0;max-width:75%;margin:0;padding:4px 12px;border-radius:0 0 0 8px;background:var(--link);color:var(--bg);font-size:12px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.classic.reference-cards .card{position:relative;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.classic.reference-cards .card h3{display:block;width:max-content;max-width:75%;margin:0 0 0 auto;padding:4px 12px;border-radius:0 9px 0 8px;background:var(--link);color:var(--bg);font-size:12px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
 .classic.reference-cards .card h3 a{color:inherit}
-.classic.reference-cards .card>p{margin:0;padding:10px 16px;background:var(--wash)}
+.classic.reference-cards .card>p{margin:0;padding:10px 16px}
+.classic.reference-cards .card>p:has(+pre){background:var(--wash)}
+.classic.reference-cards .card>:last-child{border-radius:0 0 9px 9px}
 .classic.reference-cards .card>pre{margin:0;padding:12px 16px;overflow-x:auto;background:var(--surface);border:0;border-left:0;border-top:1px solid var(--line)}
 .classic.reference-cards .card>:is(ul,ol){margin:0;padding:10px 16px 10px 36px}
-.classic.reference-cards .card>table{width:calc(100% - 32px);margin:10px 16px}
+.classic.reference-cards .card>table{display:block;width:calc(100% - 32px);margin:10px 16px;overflow-x:auto}
+/* Spans follow this grid's 300/340px columns (classic.css assumes 270/320px). */
+.classic.reference-cards .card:is(.col-span-2,.col-span-3){grid-column:1/-1}
+@container(min-width:620px){.classic.reference-cards:not(.comfortable) .card.col-span-2{grid-column:span 2}}
+@container(min-width:700px){.classic.reference-cards.comfortable .card.col-span-2{grid-column:span 2}}
+@container(min-width:940px){.classic.reference-cards:not(.comfortable) .card.col-span-3{grid-column:span 3}}
+@container(min-width:1060px){.classic.reference-cards.comfortable .card.col-span-3{grid-column:span 3}}
 .reference-cards pre>code:is(.language-bash,.language-sh,.language-zsh,.language-shell,.language-fish)::before{content:"$ ";color:var(--link);-webkit-user-select:none;user-select:none}
 .reference-cards .index-group ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:12px}
 .reference-cards .index-group li{flex-direction:column;gap:4px;padding:12px 16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
 .reference-cards .index-group a{min-width:0}
-@media print{.reference-cards .browse-panel{display:none}.classic.reference-cards .card{border:1px solid #888;border-radius:0;box-shadow:none}.classic.reference-cards .card h3{position:static;max-width:none;border:0;background:none;color:#000;padding:2px 6px}.classic.reference-cards .card{padding-top:0}.classic.reference-cards .card>p{background:none}}
+@media print{.reference-cards .browse-panel{display:none}.classic.reference-cards .card{border:1px solid #888;border-radius:0;box-shadow:none}.classic.reference-cards .card h3{margin:0;width:auto;max-width:none;border:0;background:none;color:#000;padding:2px 6px}.classic.reference-cards .card>p{background:none}}
