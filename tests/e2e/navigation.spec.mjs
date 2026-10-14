@@ -36,10 +36,18 @@ const palettes=['graphite-coral','paper-ink','midnight-periwinkle','monochrome',
 function luminance(hex){const rgb=hex.trim().replace('#','').match(/../g).map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;}
 function contrast(a,b){const [lo,hi]=[luminance(a),luminance(b)].sort((x,y)=>x-y);return(hi+.05)/(lo+.05);}
 
+async function expectFits(page,message) {
+  await page.waitForLoadState('load');
+  await page.evaluate(()=>document.fonts.ready);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),message).toBe(true);
+}
+
 for(const layoutTheme of ['editorial','classic-compact'])for(const basePath of ['/','/sheetmill/'])test.describe(layoutTheme+' navigation at '+basePath,()=>{
   test.use({layoutTheme,basePath});
   test('tag discovery, disclosures and independent palettes',async({page,site},testInfo)=>{
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
+    // Exercise navigation readiness with actual stylesheet latency, not a retry.
+    if(layoutTheme==='classic-compact' && testInfo.project.name==='mobile')await page.route('**/assets/*.css',async route=>{await new Promise(resolve=>setTimeout(resolve,100));await route.continue();});
     await page.goto(site.origin+basePath+'alpha/');
     const nav=page.getByRole('navigation',{name:'Reference sheets'});
     const active=nav.locator('details[data-library-group="Networking"]');
@@ -58,17 +66,18 @@ for(const layoutTheme of ['editorial','classic-compact'])for(const basePath of [
     await expect(page.getByRole('heading',{name:'Tags',exact:true})).toBeVisible();
     await expect(page.locator('.tag-results a')).toHaveCount(7);
     await page.setViewportSize({width:320,height:844});
-    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'long tag index fits').toBe(true);
+    await expectFits(page,'long tag index fits');
     await page.locator('.tag-results').getByRole('link',{name:longTag,exact:true}).click();
     await expect(page.getByRole('heading',{name:'Tag: '+longTag,exact:true})).toBeVisible();
-    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'long tag heading fits').toBe(true);
+    await expectFits(page,'long tag heading fits');
     await page.getByRole('link',{name:'← All tags',exact:true}).click();
 
     const unsafe=page.locator('.tag-results').getByRole('link',{name:'<unsafe>/../x',exact:true});
     await unsafe.click();await expect(page.getByRole('heading',{name:'Tag: <unsafe>/../x',exact:true})).toBeVisible();
     await expect(page.locator('.tag-count')).toHaveText('1 reference');
     await page.locator('.tag-results').getByRole('link',{name:'Alpha',exact:true}).click();
-    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'long tag chip fits').toBe(true);
+    await expect(page.getByRole('heading',{name:'Alpha',exact:true})).toBeVisible();
+    await expectFits(page,'long tag chip fits');
     await page.setViewportSize(testInfo.project.use.viewport);
     if(testInfo.project.name==='no-js') {
       await expect(page.locator('#app-palette')).toBeHidden();
@@ -97,7 +106,7 @@ for(const layoutTheme of ['editorial','classic-compact'])for(const basePath of [
     }
     for(const width of [320,900]) {
       await page.setViewportSize({width,height:844});
-      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'fits '+width).toBe(true);
+      await expectFits(page,'fits '+width);
     }
     expect(errors).toEqual([]);
   });
