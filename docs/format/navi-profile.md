@@ -109,7 +109,10 @@ check. Stronger syntax checks remain planned.
 
 Names match `[a-z][a-z0-9_]{0,31}` and are local to one card, which has its own
 navi context, so one name may be declared differently in different cards. Unknown
-keys, a card ID that refers to no card, and unsupported types are `NAV006`.
+keys, references to missing/unmarked cards or automatically generated IDs, and
+unsupported types are `NAV006`. Invalid metadata references are errors; a marked
+card without metadata that lacks an explicit ID still follows the `NAV101`
+warning-and-skip rule.
 `type` and `description` are SheetMill metadata; **navi does not enforce them**.
 Defaults, choice lists, suggestion commands, previews, multi-selection and shared
 contexts are not generated yet, and `$` provider lines are never emitted.

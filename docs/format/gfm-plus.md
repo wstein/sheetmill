@@ -88,7 +88,9 @@ are joined by `-`; an empty slug becomes `content`. Duplicates get `-2`, `-3`, e
 Names are globally reserved in source order, including explicit IDs; a later
 explicit ID colliding with a generated ID fails. IDs survive changes to whitespace
 or body text but titles/order can change generated IDs. Use explicit IDs for links
-that must survive title edits.
+that must survive title edits. A card also carries `id_explicit: true` in schema-1
+JSON when its heading declares `{#id}`; the field is omitted for generated IDs.
+Renderers use this parser-recorded fact without guessing from heading text.
 
 JSON `schema: 1` is the IR version, independent of future source-format versions.
 Output has fixed struct field order, lexically sorted map keys, two-space indent,
