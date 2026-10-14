@@ -20,6 +20,7 @@ never grants execution, merge or publication permission.
 | [013](013-tldr-import/spec.md) | Specification only | Pin source evidence and settle conversion decisions before implementation authorization |
 | [014](014-library-navigation/spec.md) | Implemented and locally verified ([#33](https://github.com/wstein/sheetmill/pull/33)); Sol review clear; CI readiness tracked on PR | Per-sheet group/order first slice; manifest, titles, IDs and deployment deferred |
 | [015](015-command-cards/spec.md) | Docs-only shared command-card and migration proposal; not implemented | Core `.command` / `cheatsheet.cards` revision needs separate implementation handoff; 006 consumes it with unchanged navi bytes/hashes |
+| [016](016-reference-cards/spec.md) | Implemented in a draft PR; independent review pending | Opt-in `--theme reference-cards` layout; scroll dots, highlighting, footer and deployment excluded |
 
 The public source contract is [docs/format](../docs/format/gfm-plus.md). Each feature
 has spec, plan and tasks; use `SPECIFY_FEATURE_DIRECTORY=specs/NNN-name` with Spec

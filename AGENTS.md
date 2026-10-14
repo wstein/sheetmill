@@ -29,6 +29,9 @@ Sibling repository policies do not govern this repository.
   Reference-import archival and navi-companion preservation (`specs/014-library-navigation`).
   A draft PR is authorized; merge, deployment and reordering the real libraries are not.
   The manifest, group-order file, navigation title and stable IDs stay deferred.
+- Feature 016 is authorized (user, 2026-10-14): the opt-in `--theme reference-cards`
+  Hugo layout (`specs/016-reference-cards`); editorial stays the default. A reviewed
+  PR is authorized; merge and deployment are not.
 - Feature 007 MVP T001–T018 and applicable final checks are authorized on
   2026-10-13: one smill sheet, temporary verification executable, Hugo and local
   browser E2E.
