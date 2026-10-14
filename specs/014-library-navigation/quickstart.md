@@ -60,3 +60,8 @@ all match byte-for-byte. The following remains a reproducible acceptance guide.
 The first performance attempt stopped at the harness’s clean-tree guard after
 startup sampling because verification edits were not committed. No acceptance
 result is claimed for that attempt; the committed-input rerun is recorded below.
+
+Committed-input T049 rerun: **PASS** at code revision `e550fce`. All 20 startups,
+100 edits and 100 latest-save sequences passed. See [raw evidence](performance-evidence.json)
+for timings, machine, tools and method. The five-author usability study stays
+pending; this feature does not complete it.

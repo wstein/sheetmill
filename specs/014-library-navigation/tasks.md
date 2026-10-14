@@ -2,9 +2,8 @@
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md),
 [data-model.md](data-model.md), [contract](contracts/navigation.md).
-**State**: Implementation and reader checks complete under the 2026-10-14 handoff.
-T019/T020 await the performance rerun; T021 awaits final documentation review
-and PR/CI evidence.
+**State**: Implementation and local checks complete under the 2026-10-14 handoff.
+T021 awaits final documentation review and PR/CI evidence.
 Ordering fixtures are shared files; import fixtures preserve arbitrary upstream
 values. No real library content was reordered.
 
@@ -68,8 +67,8 @@ has gained navigation behavior beyond the specified preservation boundary.
 ## Phase 6: Browser verification and final checks
 
 - [x] T018 Extend the existing `tests/e2e/navigation.spec.mjs` suite using the GFM → Hugo → browser harness and the new fixture, preserving its tag/disclosure/palette regressions; verify sidebar/home agreement, current-group expansion, keyboard disclosure and sheet links in both layouts, root/subpath sites, desktop/mobile and JavaScript-disabled mode. Wait for loaded assets/fonts before geometry assertions; commands remain displayed content.
-- [ ] T019 Run the targeted source/import/Hugo/navi tests, full `go test ./...`, applicable race checks, `go vet ./...`, gofmt and `git diff --check`; confirm old golden bytes and generated route/card identities remain unchanged and run the existing browser/performance regression suites appropriate to this renderer change.
-- [ ] T020 Execute and record the actual local verification from `specs/014-library-navigation/quickstart.md`; reconcile this checklist and `specs/README.md` against evidence, leaving unrun checks pending and excluding content-library reordering.
+- [x] T019 Run the targeted source/import/Hugo/navi tests, full `go test ./...`, applicable race checks, `go vet ./...`, gofmt and `git diff --check`; confirm old golden bytes and generated route/card identities remain unchanged and run the existing browser/performance regression suites appropriate to this renderer change.
+- [x] T020 Execute and record the actual local verification from `specs/014-library-navigation/quickstart.md`; reconcile this checklist and `specs/README.md` against evidence, leaving unrun checks pending and excluding content-library reordering.
 - [ ] T021 Obtain independent Sol review of the exact implementation revision, fix actionable findings with focused Conventional Commits, re-review, and attach the final evidence to the authorized PR; check CI before marking it ready. Do not merge or deploy.
 
 ## Dependencies and execution order
