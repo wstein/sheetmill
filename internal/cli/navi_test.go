@@ -132,3 +132,49 @@ func TestNaviRootMustBeDirectory(t *testing.T) {
 		t.Fatalf("invalid root wrote output: %v", err)
 	}
 }
+
+// Migration is text generation only: this exercises the in-process CLI and reads
+// its artifacts; commands in the source are never passed to a subprocess.
+func TestNaviCommandMigrationCLI(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "a.md")
+	legacy := "---\ntitle: A\nlicense: EUPL-1.2\ncheatsheet:\n  navi:\n    cards:\n      c: {params: {sheet: {type: path}}}\n---\n## S\n### C {.navi #c}\n```bash\nsmill check \"<sheet>\"\n```\n"
+	shared := "---\ntitle: A\nlicense: EUPL-1.2\ncheatsheet:\n  cards:\n    c: {params: {sheet: {type: path}}}\n---\n## S\n### C {.command #c}\n```bash\nsmill check \"<sheet>\"\n```\n"
+	var baseline []byte
+	for _, tc := range []struct{ name, source string }{{"legacy", legacy}, {"shared", shared}, {"dual", strings.Replace(shared, ".command #c", ".command .navi #c", 1)}} {
+		if err := os.WriteFile(input, []byte(tc.source), 0600); err != nil {
+			t.Fatal(err)
+		}
+		var out, errout bytes.Buffer
+		destination := filepath.Join(dir, tc.name)
+		if code := Run([]string{"build", "navi", input, "--strict", "--out", destination}, &out, &errout); code != 0 || errout.Len() != 0 {
+			t.Fatalf("%s: code=%d stderr=%s", tc.name, code, &errout)
+		}
+		b, err := os.ReadFile(filepath.Join(destination, "a.cheat"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if baseline == nil {
+			baseline = b
+		} else if !bytes.Equal(baseline, b) {
+			t.Fatalf("%s migration changed .cheat", tc.name)
+		}
+	}
+	for _, tc := range []struct{ name, source, code string }{
+		{"conflict", strings.Replace(shared, "  cards:", "  navi:\n    cards:\n      c: {params: {sheet: {type: string}}}\n  cards:", 1), "NAV006"},
+		{"badlegacy", strings.Replace(shared, "  cards:", "  navi: null\n  cards:", 1), "NAV006"},
+		{"warning", strings.Replace(shared, "<sheet>", "<missing>", 1), "NAV000"},
+	} {
+		if err := os.WriteFile(input, []byte(tc.source), 0600); err != nil {
+			t.Fatal(err)
+		}
+		var out, errout bytes.Buffer
+		destination := filepath.Join(dir, tc.name)
+		if code := Run([]string{"build", "navi", input, "--strict", "--out", destination}, &out, &errout); code != 1 || !strings.Contains(errout.String(), tc.code) {
+			t.Fatalf("%s: code=%d stderr=%s", tc.name, code, &errout)
+		}
+		if _, err := os.Stat(destination); !os.IsNotExist(err) {
+			t.Fatalf("%s created output: %v", tc.name, err)
+		}
+	}
+}
