@@ -1,0 +1,4 @@
+{{ define "main" }}{{ $tag := index site.Data.tags .Params.tagid }}
+<div class="page-heading"><a href="{{ site.Params.base }}tags/">← All tags</a><h1>Tag: {{ $tag.title }}</h1><p class="tag-count">{{ len $tag.sheets }} {{ if eq (len $tag.sheets) 1 }}reference{{ else }}references{{ end }}</p></div>
+<ul class="tag-results">{{ range $tag.sheets }}<li><a href="{{ .url }}">{{ .title }}</a>{{ with .description }}<p>{{ . }}</p>{{ end }}</li>{{ end }}</ul>
+{{ end }}

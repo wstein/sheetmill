@@ -123,6 +123,7 @@ type page struct {
 	Description string   `json:"description,omitempty"`
 	Category    string   `json:"category,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
+	TagLinks    []link   `json:"tag_links,omitempty"`
 	License     string   `json:"license,omitempty"`
 	Body        string   `json:"body"`
 	EditURL     string   `json:"edit_url,omitempty"`
@@ -230,7 +231,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			d := []diagnostic.Diagnostic{{Code: "REN003", Message: "duplicate sheet route: " + s.ID}}
 			return Project{}, append(issues(first, d), issues(s.SourceName, d)...)
 		}
-		if !route.MatchString(s.ID) || s.ID == "assets" || s.ID == "brand" {
+		if !route.MatchString(s.ID) || s.ID == "assets" || s.ID == "brand" || s.ID == "tags" {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "invalid or reserved sheet route: " + s.ID}})
 		}
 		if s.Document == nil || s.Document.Schema != 1 {
@@ -354,6 +355,31 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		// Preamble-only sheets must also be discoverable by search.
 		index = append(index, entry{Title: title, Sheet: title, Text: plain(s.Document.Preamble), URL: page.URL, Tags: tags, Category: category, License: license})
 	}
+	tagPages, tagErr := tagCatalog(pages, base)
+	if tagErr != nil {
+		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: tagErr.Error()}})
+	}
+	tagURLs := map[string]string{}
+	for _, tag := range tagPages {
+		tagURLs[tag.Title] = tag.URL
+		if e := putJSON("data/tags/"+tag.ID+".json", tag); e != nil {
+			return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN001", Message: e.Error()}})
+		}
+		front, _ := json.Marshal(map[string]any{"title": tag.Title, "layout": "tag", "tagid": tag.ID, "url": "/tags/" + tag.ID + "/"})
+		p.Files["content/tags/"+tag.ID+"/index.md"] = []byte("---\n" + string(front) + "\n---\n")
+	}
+	if len(tagPages) > 0 {
+		p.Files["content/tags/_index.md"] = []byte("---\n{\"title\":\"Tags\",\"layout\":\"tags\",\"url\":\"/tags/\",\"tagindex\":true}\n---\n")
+	}
+	for i := range pages {
+		seen := map[string]bool{}
+		for _, tag := range pages[i].Tags {
+			if !seen[tag] {
+				pages[i].TagLinks = append(pages[i].TagLinks, link{tag, tagURLs[tag]})
+				seen[tag] = true
+			}
+		}
+	}
 	// Related sheets need every page, so per-sheet data is written afterwards.
 	for i := range pages {
 		pages[i].Related = related(pages, i)
@@ -381,7 +407,14 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		params["origin"] = origin
 		var sitemap strings.Builder
 		sitemap.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n")
-		for _, loc := range append([]string{base}, urls(pages)...) {
+		locations := append([]string{base}, urls(pages)...)
+		if len(tagPages) > 0 {
+			locations = append(locations, base+"tags/")
+		}
+		for _, tag := range tagPages {
+			locations = append(locations, tag.URL)
+		}
+		for _, loc := range locations {
 			fmt.Fprintf(&sitemap, "<url><loc>%s</loc></url>\n", esc(origin+loc))
 		}
 		sitemap.WriteString("</urlset>\n")
@@ -402,7 +435,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			return e
 		})
 	}
-	for _, e := range []error{putJSON("data/library.json", pages), putJSON("data/shelves.json", shelves(pages)), putJSON("static/search.json", index), copyTree(themeFiles, "theme", ""), copyTree(brandFiles, ".", "static/brand")} {
+	for _, e := range []error{putJSON("data/tagindex.json", tagPages), putJSON("data/library.json", pages), putJSON("data/shelves.json", shelves(pages)), putJSON("static/search.json", index), copyTree(themeFiles, "theme", ""), copyTree(brandFiles, ".", "static/brand")} {
 		if e != nil {
 			return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN001", Message: "project assembly failed: " + e.Error()}})
 		}

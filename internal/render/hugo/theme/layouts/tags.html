@@ -1,0 +1,3 @@
+{{ define "main" }}<div class="page-heading"><a href="{{ site.Params.base }}">← All references</a><h1>Tags</h1><p>{{ len site.Data.tagindex }} tags in this library</p></div>
+<ul class="tag-results">{{ range site.Data.tagindex }}<li><a href="{{ .url }}">{{ .title }}</a> <span>({{ len .sheets }})</span></li>{{ end }}</ul>
+{{ end }}
