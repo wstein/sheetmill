@@ -129,7 +129,7 @@ Prose never reaches navi.
 	if got := string(p.Files["demo.cheat"]); got != want {
 		t.Fatalf("got %q\nwant %q", got, want)
 	}
-	if len(structuralWarnings(p)) != 1 || structuralWarnings(p)[0].Code != "NAV101" || !strings.Contains(structuralWarnings(p)[0].Message, "two") {
+	if len(p.Warnings) != 1 || p.Warnings[0].Code != "NAV101" || !strings.Contains(p.Warnings[0].Message, "two") {
 		t.Fatalf("warnings: %v", p.Warnings)
 	}
 	got := parseCheat(p.Files["demo.cheat"])
@@ -167,7 +167,7 @@ func TestCardsSkippedWithWarning(t *testing.T) {
 			if len(errs) > 0 {
 				t.Fatalf("a card problem must be a warning, got errors %v", errs)
 			}
-			if len(structuralWarnings(p)) != 2 || structuralWarnings(p)[0].Code != tc.code || structuralWarnings(p)[1].Code != "NAV106" {
+			if len(p.Warnings) != 2 || p.Warnings[0].Code != tc.code || p.Warnings[1].Code != "NAV106" {
 				t.Fatalf("warnings %v, want %s then NAV106", p.Warnings, tc.code)
 			}
 			if got := parseCheat(p.Files["demo.cheat"]); len(got.cards) != 0 {
@@ -190,7 +190,7 @@ func TestLegitimateShellSyntaxIsKept(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			p, errs := Render([]Sheet{sheet(t, card("bash", body))}, Options{})
-			if len(errs) > 0 || len(structuralWarnings(p)) != 0 {
+			if len(errs) > 0 || len(p.Warnings) != 0 {
 				t.Fatalf("errors %v warnings %v", errs, p.Warnings)
 			}
 			got := parseCheat(p.Files["demo.cheat"])
@@ -204,7 +204,7 @@ func TestLegitimateShellSyntaxIsKept(t *testing.T) {
 func TestMissingExplicitIDWarns(t *testing.T) {
 	source := "---\ntitle: T\nlicense: x\n---\n## S\n\n### Generated id {.navi}\n\n```bash\necho\n```\n"
 	p, errs := Render([]Sheet{sheet(t, source)}, Options{})
-	if len(errs) > 0 || len(structuralWarnings(p)) != 2 || structuralWarnings(p)[0].Code != "NAV101" || !strings.Contains(structuralWarnings(p)[0].Message, "explicit") {
+	if len(errs) > 0 || len(p.Warnings) != 2 || p.Warnings[0].Code != "NAV101" || !strings.Contains(p.Warnings[0].Message, "explicit") {
 		t.Fatalf("errors %v warnings %v", errs, p.Warnings)
 	}
 }
@@ -246,7 +246,7 @@ func TestReviewFindings(t *testing.T) {
 	skipped := func(t *testing.T, source, code string) {
 		t.Helper()
 		p, errs := Render([]Sheet{sheet(t, source)}, Options{})
-		if len(errs) > 0 || len(structuralWarnings(p)) < 1 || structuralWarnings(p)[0].Code != code || len(p.Files) != 0 {
+		if len(errs) > 0 || len(p.Warnings) < 1 || p.Warnings[0].Code != code || len(p.Files) != 0 {
 			t.Fatalf("errors %v warnings %v files %d", errs, p.Warnings, len(p.Files))
 		}
 	}
@@ -260,7 +260,7 @@ func TestReviewFindings(t *testing.T) {
 	if len(ds) > 0 {
 		t.Fatalf("the source must parse: %v", ds)
 	}
-	if p, errs := Render([]Sheet{{ID: "demo", SourceName: "demo.md", Path: "demo.md", Document: d}}, Options{}); len(errs) > 0 || structuralWarnings(p)[0].Code != "NAV102" || !strings.Contains(structuralWarnings(p)[0].Message, "empty") {
+	if p, errs := Render([]Sheet{{ID: "demo", SourceName: "demo.md", Path: "demo.md", Document: d}}, Options{}); len(errs) > 0 || p.Warnings[0].Code != "NAV102" || !strings.Contains(p.Warnings[0].Message, "empty") {
 		t.Fatalf("errors %v warnings %v", errs, p.Warnings)
 	}
 	// 3. Valid shell with quotes nested in command substitutions is kept.
@@ -271,7 +271,7 @@ func TestReviewFindings(t *testing.T) {
 		`echo "a $(echo "b $(echo 'c)')") <sheet>"`,
 	} {
 		p, errs := Render([]Sheet{sheet(t, card("bash", body))}, Options{})
-		if len(errs) > 0 || len(structuralWarnings(p)) != 0 {
+		if len(errs) > 0 || len(p.Warnings) != 0 {
 			t.Fatalf("%s: errors %v warnings %v", body, errs, p.Warnings)
 		}
 	}
@@ -282,7 +282,6 @@ func TestReviewFindings(t *testing.T) {
 	if len(errs) > 0 || len(p.Warnings) > 0 || !bytes.Contains(p.Files["demo.navi.json"], []byte(`"category": "c"`)) {
 		t.Fatalf("errors %v warnings %v files %v", errs, p.Warnings, p.Files)
 	}
-
 }
 
 // TestItemHashVectors pins the FNV-1a model to values calculated independently
@@ -302,13 +301,13 @@ func TestUnknownShellAndOtherProfiles(t *testing.T) {
 	for shell, language := range map[string]string{"zsh": "zsh", "fish": "fish", "nu": "nushell"} {
 		source := strings.Replace(card(language, "echo <sheet>"), "---\n## S", "---\n## S", 1)
 		p, errs := Render([]Sheet{sheet(t, source)}, Options{Shell: shell})
-		if len(errs) > 0 || len(structuralWarnings(p)) != 0 || !strings.Contains(string(p.Files["demo.cheat"]), "; Shell: "+shell+"\n") {
+		if len(errs) > 0 || len(p.Warnings) != 0 || !strings.Contains(string(p.Files["demo.cheat"]), "; Shell: "+shell+"\n") {
 			t.Fatalf("%s: errors %v warnings %v", shell, errs, p.Warnings)
 		}
 	}
 	// fish escapes a quote inside single quotes; bash does not.
 	fish := card("fish", `echo 'it\'s' <sheet>`)
-	if p, _ := Render([]Sheet{sheet(t, fish)}, Options{Shell: "fish"}); len(structuralWarnings(p)) != 0 {
+	if p, _ := Render([]Sheet{sheet(t, fish)}, Options{Shell: "fish"}); len(p.Warnings) != 0 {
 		t.Fatalf("fish escape: %v", p.Warnings)
 	}
 }
@@ -328,7 +327,7 @@ func TestHeaderValuesCannotInjectLines(t *testing.T) {
 func TestMissingLicenseWarns(t *testing.T) {
 	source := "---\ntitle: T\n---\n## S\n\n### C {.navi #c}\n\n```bash\necho\n```\n"
 	p, errs := Render([]Sheet{sheet(t, source)}, Options{})
-	if len(errs) > 0 || len(structuralWarnings(p)) != 1 || structuralWarnings(p)[0].Code != "NAV105" || !strings.Contains(string(p.Files["demo.cheat"]), "; License: not stated\n") {
+	if len(errs) > 0 || len(p.Warnings) != 1 || p.Warnings[0].Code != "NAV105" || !strings.Contains(string(p.Files["demo.cheat"]), "; License: not stated\n") {
 		t.Fatalf("errors %v warnings %v", errs, p.Warnings)
 	}
 }
@@ -370,7 +369,7 @@ func FuzzCommand(f *testing.F) {
 			return
 		}
 		got := parseCheat(p.Files["f.cheat"])
-		if len(structuralWarnings(p)) > 2 {
+		if len(p.Warnings) > 2 {
 			t.Fatalf("unexpected warnings %v", p.Warnings)
 		}
 		if _, exported := p.Files["f.cheat"]; !exported {
@@ -407,7 +406,7 @@ func TestDuplicateTitlesStayDistinct(t *testing.T) {
 	a, b := sheet(t, source), sheet(t, source)
 	a.ID, a.Path, b.ID, b.Path = "a", "a.md", "b", "b.md"
 	p, errs := Render([]Sheet{a, b}, Options{})
-	if len(errs) > 0 || len(structuralWarnings(p)) != 0 {
+	if len(errs) > 0 || len(p.Warnings) != 0 {
 		t.Fatalf("errors %v warnings %v", errs, p.Warnings)
 	}
 	total := 0
@@ -442,12 +441,12 @@ func TestNaviSeparatorAndSelfRewrite(t *testing.T) {
 		"navi first word":    "navi --path <sheet>",
 	} {
 		p, errs := Render([]Sheet{sheet(t, card("bash", body))}, Options{})
-		if len(errs) > 0 || len(structuralWarnings(p)) != 2 || structuralWarnings(p)[0].Code != "NAV102" {
+		if len(errs) > 0 || len(p.Warnings) != 2 || p.Warnings[0].Code != "NAV102" {
 			t.Fatalf("%s: errors %v warnings %v", name, errs, p.Warnings)
 		}
 	}
 	title := strings.Replace(card("bash", "echo <sheet>"), "### Card", "### Card\u2800x", 1)
-	if p, _ := Render([]Sheet{sheet(t, title)}, Options{}); len(structuralWarnings(p)) != 2 || !strings.Contains(structuralWarnings(p)[0].Message, "U+2800") {
+	if p, _ := Render([]Sheet{sheet(t, title)}, Options{}); len(p.Warnings) != 2 || !strings.Contains(p.Warnings[0].Message, "U+2800") {
 		t.Fatalf("title: %v", p.Warnings)
 	}
 	tag := strings.Replace(card("bash", "echo <sheet>"), "title: Demo", "title: Demo\ntags: [\"a\\u2800b\"]", 1)
@@ -455,7 +454,7 @@ func TestNaviSeparatorAndSelfRewrite(t *testing.T) {
 		t.Fatalf("tag: %v", errs)
 	}
 	// A word that merely starts with navi is fine.
-	if p, _ := Render([]Sheet{sheet(t, card("bash", "navigate <sheet>"))}, Options{}); len(structuralWarnings(p)) != 0 {
+	if p, _ := Render([]Sheet{sheet(t, card("bash", "navigate <sheet>"))}, Options{}); len(p.Warnings) != 0 {
 		t.Fatalf("navigate: %v", p.Warnings)
 	}
 }
@@ -475,8 +474,6 @@ func TestContextEncodingAndHash(t *testing.T) {
 		t.Fatal("contexts must not concatenate to the same text")
 	}
 }
-
-func structuralWarnings(p Project) []Issue { return p.Warnings }
 
 func TestSidecarPreservesMetadata(t *testing.T) {
 	s := sheet(t, card("bash", "echo <sheet>"))
@@ -561,7 +558,7 @@ func TestQuotesInCaseSubstitutions(t *testing.T) {
 		`echo "$(case x in x|y) printf '"';; *) printf 'other';; esac)" <sheet>`,
 	} {
 		p, errs := Render([]Sheet{sheet(t, card("bash", body))}, Options{})
-		if len(errs) > 0 || len(structuralWarnings(p)) > 0 {
+		if len(errs) > 0 || len(p.Warnings) > 0 {
 			t.Fatalf("%s: errors=%v warnings=%v", body, errs, p.Warnings)
 		}
 		got := parseCheat(p.Files["demo.cheat"])
