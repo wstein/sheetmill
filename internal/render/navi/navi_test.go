@@ -2,8 +2,11 @@
 package navi
 
 import (
+	"bytes"
+	"encoding/json"
 	"go/parser"
 	"go/token"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -273,12 +276,13 @@ func TestReviewFindings(t *testing.T) {
 		}
 	}
 	skipped(t, card("bash", `echo "$(printf 'x)" <sheet>`), "NAV102")
-	// 4. Metadata the file does not carry is diagnosed, not dropped silently.
+	// 4. Metadata survives in the companion rather than causing an omission warning.
 	source := strings.Replace(card("bash", "echo <sheet>"), "title: Demo", "title: Demo\ndescription: d\ncategory: c", 1)
 	p, errs := Render([]Sheet{sheet(t, source)}, Options{})
-	if len(errs) > 0 || len(p.Warnings) != 1 || p.Warnings[0].Code != "NAV107" || !strings.Contains(p.Warnings[0].Message, "category") || !strings.Contains(p.Warnings[0].Message, "description") {
-		t.Fatalf("errors %v warnings %v", errs, p.Warnings)
+	if len(errs) > 0 || len(p.Warnings) > 0 || !bytes.Contains(p.Files["demo.navi.json"], []byte(`"category": "c"`)) {
+		t.Fatalf("errors %v warnings %v files %v", errs, p.Warnings, p.Files)
 	}
+
 }
 
 // TestItemHashVectors pins the FNV-1a model to values calculated independently
@@ -407,7 +411,10 @@ func TestDuplicateTitlesStayDistinct(t *testing.T) {
 		t.Fatalf("errors %v warnings %v", errs, p.Warnings)
 	}
 	total := 0
-	for _, f := range p.Files {
+	for name, f := range p.Files {
+		if !strings.HasSuffix(name, ".cheat") {
+			continue
+		}
 		got := parseCheat(f)
 		if got.dropped != 0 {
 			t.Fatalf("navi would drop %d entries", got.dropped)
@@ -469,40 +476,48 @@ func TestContextEncodingAndHash(t *testing.T) {
 	}
 }
 
-func TestOmittedTypedMetadataIsDiagnosed(t *testing.T) {
-	for _, tc := range []struct{ name, source, path string }{
-		{"array attribution", "---\ntitle: T\nlicense: x\nattribution: [Alice, Bob]\n---\n## S\n### C {.navi #c}\n```bash\necho ok\n```\n", "attribution"},
-		{"parameter hints", card("bash", "echo <sheet>"), "cheatsheet.navi.cards.c.params.sheet.type"},
-		{"parameter description", strings.Replace(card("bash", "echo <sheet>"), "{type: path}", "{type: path, description: Must survive}", 1), "cheatsheet.navi.cards.c.params.sheet.description"},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			p, errs := Render([]Sheet{sheet(t, tc.source)}, Options{})
-			if len(errs) > 0 {
-				t.Fatal(errs)
-			}
-			found := false
-			for _, w := range p.Warnings {
-				if w.Code == "NAV107" && strings.Contains(w.Message, tc.path) {
-					found = true
-				}
-			}
-			if !found {
-				t.Fatalf("omitted %s must be diagnosed: %v", tc.path, p.Warnings)
-			}
-		})
+func structuralWarnings(p Project) []Issue { return p.Warnings }
+
+func TestSidecarPreservesMetadata(t *testing.T) {
+	s := sheet(t, card("bash", "echo <sheet>"))
+	s.Document.Metadata["custom"] = map[string]any{"large": int64(9223372036854775807), "list": []any{nil, true, "<unsafe>"}, "nested": map[string]any{"z": "last", "a": "first"}}
+	s.Document.Metadata["attribution"] = []any{"Alice", "Bob"}
+	p, errs := Render([]Sheet{s}, Options{})
+	if len(errs) > 0 || len(p.Warnings) > 0 || len(p.Files) != 2 {
+		t.Fatalf("%v %v %v", errs, p.Warnings, p.Files)
+	}
+	var got struct {
+		Schema        int
+		Source, Shell string
+		Metadata      json.RawMessage
+		Cards         []struct{ ID, Title, Context string }
+	}
+	if err := json.Unmarshal(p.Files["demo.navi.json"], &got); err != nil {
+		t.Fatal(err)
+	}
+	want, _ := json.Marshal(s.Document.Metadata)
+	var compact bytes.Buffer
+	if err := json.Compact(&compact, got.Metadata); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(compact.Bytes(), want) || got.Schema != 1 || got.Shell != "bash" || got.Source != s.Path || len(got.Cards) != 1 || got.Cards[0].ID != "c" || got.Cards[0].Context != context(s, s.Document.Sections[0].Cards[0]) {
+		t.Fatalf("%s", p.Files["demo.navi.json"])
+	}
+	if !bytes.HasSuffix(p.Files["demo.navi.json"], []byte("\n")) {
+		t.Fatal("missing final newline")
 	}
 }
 
-// Structural assertions concern selection and payload diagnostics. Parameter
-// fixtures also report omitted authoring hints through separately tested NAV107.
-func structuralWarnings(p Project) []Issue {
-	var result []Issue
-	for _, w := range p.Warnings {
-		if w.Code != "NAV107" {
-			result = append(result, w)
-		}
+func TestSidecarFailureDiscardsBatch(t *testing.T) {
+	good := sheet(t, card("bash", "echo <sheet>"))
+	bad := sheet(t, card("bash", "echo <sheet>"))
+	bad.ID = "bad"
+	bad.Path = "bad.md"
+	bad.Document.Metadata["invalid"] = math.NaN()
+	p, errs := Render([]Sheet{good, bad}, Options{})
+	if len(errs) != 1 || errs[0].Code != "REN001" || len(p.Files) != 0 {
+		t.Fatalf("%v %v", errs, p.Files)
 	}
-	return result
 }
 
 func TestQuotesInCaseSubstitutions(t *testing.T) {
@@ -590,6 +605,56 @@ func TestGlobalDiagnosticLocations(t *testing.T) {
 	for _, w := range p.Warnings {
 		if w.Span.Start.Line < 1 || w.Span.Start.Column < 1 {
 			t.Fatalf("warning lacks one-based position: %+v", w)
+		}
+	}
+}
+
+func TestSidecarGolden(t *testing.T) {
+	s := sheet(t, "---\ntitle: T\nlicense: x\n---\n## S\n### C {.navi #c}\n```bash\necho ok\n```\n")
+	p, errs := Render([]Sheet{s}, Options{})
+	const want = `{
+  "schema": 1,
+  "source": "demo.md",
+  "shell": "bash",
+  "metadata": {
+    "license": "x",
+    "title": "T"
+  },
+  "cards": [
+    {
+      "id": "c",
+      "title": "C",
+      "context": "sheetmill:demo.md#c!"
+    }
+  ]
+}
+`
+	if len(errs) > 0 || string(p.Files["demo.navi.json"]) != want {
+		t.Fatalf("errors %v sidecar:\n%s", errs, p.Files["demo.navi.json"])
+	}
+}
+
+func TestSidecarListsOnlyExportedCards(t *testing.T) {
+	source := card("bash", "echo <sheet>") + "\n### Skipped {.navi #bad}\n```python\nprint('inert')\n```\n"
+	s := sheet(t, source)
+	p, errs := Render([]Sheet{s}, Options{})
+	if len(errs) > 0 || len(p.Files) != 2 || !bytes.Contains(p.Files["demo.navi.json"], []byte(`"id": "c"`)) || bytes.Contains(p.Files["demo.navi.json"], []byte(`"id": "bad"`)) {
+		t.Fatalf("%v %v", errs, p.Files)
+	}
+	empty := sheet(t, card("python", "echo <sheet>"))
+	p, errs = Render([]Sheet{empty}, Options{})
+	if len(errs) > 0 || len(p.Files) != 0 || p.SheetCount != 0 {
+		t.Fatalf("orphan sidecar: %v %v", errs, p.Files)
+	}
+}
+
+func TestSidecarRejectsHostPaths(t *testing.T) {
+	for _, path := range []string{"/tmp/sheet.md", "../sheet.md", "a/../sheet.md", `a\sheet.md`} {
+		s := sheet(t, card("bash", "echo <sheet>"))
+		s.Path = path
+		p, errs := Render([]Sheet{s}, Options{})
+		if len(errs) != 1 || errs[0].Code != "REN001" || len(p.Files) != 0 {
+			t.Fatalf("%s: %v %v", path, errs, p.Files)
 		}
 	}
 }

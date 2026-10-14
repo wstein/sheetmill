@@ -5,7 +5,9 @@
 package navi
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/fs"
 	"regexp"
 	"sort"
 	"strings"
@@ -17,6 +19,9 @@ import (
 
 // Version is the export format version recorded in every file header.
 const Version = 1
+
+// SidecarVersion versions the metadata companion independently of the cheat format.
+const SidecarVersion = 1
 
 // braille is U+2800, which navi's finder serialization uses as a field separator.
 const braille = '⠀'
@@ -60,8 +65,9 @@ type Issue struct {
 	diagnostic.Diagnostic
 }
 type Project struct {
-	Files    map[string][]byte
-	Warnings []Issue
+	SheetCount int
+	Files      map[string][]byte
+	Warnings   []Issue
 }
 
 type param struct{ Type, Description string }
@@ -115,7 +121,23 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			}
 		}
 		if len(es) == 0 && body != nil {
+			source := firstNonEmpty(s.Path, s.SourceName)
+			if !fs.ValidPath(source) || strings.Contains(source, "\\") {
+				errs = append(errs, issue(s, "REN001", "sidecar source must be a normalized relative path", diagnostic.Span{}))
+				continue
+			}
+			cards := make([]sidecarCard, 0, len(entries))
+			for _, e := range entries {
+				cards = append(cards, sidecarCard{e.card, e.title, e.context})
+			}
+			companion, err := json.MarshalIndent(sidecar{SidecarVersion, source, profile.Name, s.Document.Metadata, cards}, "", "  ")
+			if err != nil {
+				errs = append(errs, issue(s, "REN001", "cannot serialize metadata sidecar: "+err.Error(), diagnostic.Span{}))
+				continue
+			}
 			p.Files[name] = body
+			p.Files[s.ID+".navi.json"] = append(companion, '\n')
+			p.SheetCount++
 		}
 	}
 	if len(errs) > 0 {
@@ -136,7 +158,20 @@ func issue(s Sheet, code, message string, span diagnostic.Span) Issue {
 type cardMeta struct{ params map[string]param }
 
 // entry identifies one exported card for the batch-wide identity check.
-type entry struct{ card, prehash string }
+type entry struct{ card, prehash, title, context string }
+
+type sidecarCard struct {
+	ID      string `json:"id"`
+	Title   string `json:"title"`
+	Context string `json:"context"`
+}
+type sidecar struct {
+	Schema   int            `json:"schema"`
+	Source   string         `json:"source"`
+	Shell    string         `json:"shell"`
+	Metadata map[string]any `json:"metadata"`
+	Cards    []sidecarCard  `json:"cards"`
+}
 
 // itemHash models navi v2.24.0 common/hash.rs: FNV-1a (64 bit) over the Rust
 // string hash input, which is the UTF-8 bytes followed by 0xff.
@@ -186,9 +221,6 @@ func renderSheet(s Sheet, profile Profile) ([]byte, []entry, []Issue, []Issue) {
 		ids = append(ids, id)
 	}
 	sort.Strings(ids)
-	if dropped := unexportedMetadata(d.Metadata); len(dropped) > 0 {
-		warns = append(warns, issue(s, "NAV107", "metadata not written to the .cheat file (a sidecar is not implemented yet): "+strings.Join(dropped, ", "), diagnostic.Span{}))
-	}
 	existing := map[string]model.Card{}
 	for _, sec := range d.Sections {
 		for _, c := range sec.Cards {
@@ -233,7 +265,7 @@ func renderSheet(s Sheet, profile Profile) ([]byte, []entry, []Issue, []Issue) {
 			warns = append(warns, ws...)
 			if text != "" {
 				out.WriteString("\n" + text)
-				entries = append(entries, entry{card.ID, tagLine + oneLine(card.Title)})
+				entries = append(entries, entry{card: card.ID, prehash: tagLine + oneLine(card.Title), title: card.Title, context: context(s, card)})
 			}
 		}
 	}
@@ -531,47 +563,6 @@ func unterminatedQuote(s string, p Profile) rune {
 	}
 	_, open := scan(0, 0)
 	return open
-}
-
-// unexportedMetadata lists source metadata that is not represented in the
-// emitted text. Validation consumes parameter hints but does not preserve them.
-func unexportedMetadata(metadata map[string]any) []string {
-	var dropped []string
-	for _, key := range sortedKeys(metadata) {
-		switch key {
-		case "title", "tags": // Parsed, required types; emitted as title/tags.
-		case "license", "attribution":
-			if v, ok := metadata[key].(string); !ok || strings.TrimSpace(v) == "" {
-				dropped = append(dropped, key)
-			}
-		case "cheatsheet":
-			cheat, _ := metadata[key].(map[string]any)
-			for _, k := range sortedKeys(cheat) {
-				switch k {
-				case "tool", "schema":
-				case "navi":
-					settings, _ := cheat[k].(map[string]any)
-					cards, _ := settings["cards"].(map[string]any)
-					for _, id := range sortedKeys(cards) {
-						card, _ := cards[id].(map[string]any)
-						params, _ := card["params"].(map[string]any)
-						for _, name := range sortedKeys(params) {
-							fields, _ := params[name].(map[string]any)
-							for _, field := range sortedKeys(fields) {
-								dropped = append(dropped, "cheatsheet.navi.cards."+id+".params."+name+"."+field)
-							}
-						}
-					}
-				default:
-					dropped = append(dropped, "cheatsheet."+k)
-				}
-			}
-		default:
-			dropped = append(dropped, key)
-		}
-	}
-	sort.Strings(dropped)
-	return dropped
 }
 
 func tagList(metadata map[string]any, tool string, bad func(string)) []string {

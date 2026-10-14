@@ -16,7 +16,7 @@ func naviCommand(out, errout io.Writer, status *int) *cobra.Command {
 	command := &cobra.Command{Use: "navi <file-or-directory>...", Short: "Export marked cards as navi .cheat files to a new directory", Args: cobra.MinimumNArgs(1), Run: func(cmd *cobra.Command, args []string) {
 		*status = runNavi(args, destination, shell, root, strict, out, errout)
 	}}
-	command.Flags().StringVar(&destination, "out", "", "new directory for the .cheat files; never overwritten")
+	command.Flags().StringVar(&destination, "out", "", "new directory for .cheat files and .navi.json metadata companions; never overwritten")
 	command.Flags().StringVar(&shell, "shell", "bash", "shell profile navi is configured with: "+strings.Join(navi.ProfileNames(), ", ")+" (zsh, fish and nu are experimental: unverified against real shells)")
 	command.Flags().StringVar(&root, "root", "", "directory source paths are made relative to (default: the common directory of the inputs); relative paths name each card to navi")
 	command.Flags().BoolVar(&strict, "strict", false, "fail without writing when any card is skipped or any warning is reported")
@@ -67,7 +67,7 @@ func runNavi(args []string, destination, shell, root string, strict bool, out, e
 		fmt.Fprintf(errout, "%s:1:1: IO003: %v\n", destination, err)
 		return 2
 	}
-	if _, err := fmt.Fprintf(out, "Exported %d sheets to %s (navi format %d, %s profile; navi was not run).\n", len(project.Files), destination, navi.Version, shell); err != nil {
+	if _, err := fmt.Fprintf(out, "Exported %d sheets to %s (navi format %d, %s profile; navi was not run).\n", project.SheetCount, destination, navi.Version, shell); err != nil {
 		fmt.Fprintln(errout, "IO002: "+err.Error())
 		return 2
 	}
