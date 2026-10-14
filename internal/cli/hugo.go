@@ -29,7 +29,7 @@ func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	command.Flags().StringVar(&editBase, "edit-base-url", "", "GitHub edit URL base for the authored sheets (optional; never inferred from provenance)")
 	command.Flags().StringVar(&sourceBase, "source-base-url", "", "GitHub blob URL of the selection root; other relative links resolve to repository files")
 	command.Flags().StringVar(&siteURL, "site-url", "", "canonical https://host/<base-path>/ of the published site; enables canonical links and a sitemap")
-	command.Flags().StringVar(&theme, "theme", "editorial", "page layout: editorial or classic-compact")
+	command.Flags().StringVar(&theme, "theme", "editorial", "page layout: editorial, classic-compact or reference-cards")
 	command.Flags().StringVar(&palette, "palette", "graphite-coral", "color palette: "+strings.Join(hugo.PaletteNames(), ", "))
 	command.MarkFlagRequired("out")
 	build.AddCommand(command)
