@@ -526,26 +526,44 @@ func unterminatedQuote(s string, p Profile) rune {
 	return open
 }
 
-// unexportedMetadata lists the frontmatter paths the .cheat file does not carry.
-// The export uses title, license, attribution, tags, cheatsheet.tool and the
-// cheatsheet.navi namespace; cheatsheet.schema is a format marker.
+// unexportedMetadata lists source metadata that is not represented in the
+// emitted text. Validation consumes parameter hints but does not preserve them.
 func unexportedMetadata(metadata map[string]any) []string {
 	var dropped []string
 	for _, key := range sortedKeys(metadata) {
 		switch key {
-		case "title", "license", "attribution", "tags":
+		case "title", "tags": // Parsed, required types; emitted as title/tags.
+		case "license", "attribution":
+			if v, ok := metadata[key].(string); !ok || strings.TrimSpace(v) == "" {
+				dropped = append(dropped, key)
+			}
 		case "cheatsheet":
-			if cheat, ok := metadata[key].(map[string]any); ok {
-				for _, k := range sortedKeys(cheat) {
-					if k != "tool" && k != "navi" && k != "schema" {
-						dropped = append(dropped, "cheatsheet."+k)
+			cheat, _ := metadata[key].(map[string]any)
+			for _, k := range sortedKeys(cheat) {
+				switch k {
+				case "tool", "schema":
+				case "navi":
+					settings, _ := cheat[k].(map[string]any)
+					cards, _ := settings["cards"].(map[string]any)
+					for _, id := range sortedKeys(cards) {
+						card, _ := cards[id].(map[string]any)
+						params, _ := card["params"].(map[string]any)
+						for _, name := range sortedKeys(params) {
+							fields, _ := params[name].(map[string]any)
+							for _, field := range sortedKeys(fields) {
+								dropped = append(dropped, "cheatsheet.navi.cards."+id+".params."+name+"."+field)
+							}
+						}
 					}
+				default:
+					dropped = append(dropped, "cheatsheet."+k)
 				}
 			}
 		default:
 			dropped = append(dropped, key)
 		}
 	}
+	sort.Strings(dropped)
 	return dropped
 }
 
