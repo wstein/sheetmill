@@ -18,3 +18,11 @@ file selection and parsing with `smill build hugo` (`loadSelection`). The IR gai
    shared-context inheritance, nushell raw strings.
 
 No navi, finder, shell or source snippet runs in renderer tests or CI.
+
+## Pending 015 integration
+
+[015](../015-command-cards/plan.md) defines core command/parameter semantics and
+migration. 006 will consume that shared contract after separate implementation
+authorization, retaining its profile/payload/placeholder and NAV008 identity rules.
+No core/parser/schema changes are authorized by this documentation revision.
+Complete byte parity and fixed pinned-hash acceptance precede alias integration.

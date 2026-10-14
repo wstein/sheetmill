@@ -12,6 +12,17 @@ checked against navi **v2.24.0**
 (commit `5515367dc8a2a561d2d82b8352f729b1da4120d3`) by reading its source, never
 by running it; see the [source evidence](https://github.com/wstein/sheetmill/blob/main/specs/006-navi-renderer/research.md).
 
+## Planned target-neutral source revision
+
+The example and metadata schema below describe **current supported syntax**.
+Feature [015](../../specs/015-command-cards/spec.md) proposes `.command` and
+`cheatsheet.cards.<id>.params` as core source semantics. The
+[proposed contract and migration](command-cards.md) define compatibility aliases,
+conflict rules and byte-identical output with unchanged pinned identities.
+Neither parser nor navi exporter support for that revision is implemented here.
+006 remains the navi consumer; 015 owns shared source semantics. Existing valid
+legacy inputs will remain supported with no new default deprecation warning.
+
 ## One explicit command card
 
 Keep ordinary GFM prose, tables and layout. A card is exported only when it has

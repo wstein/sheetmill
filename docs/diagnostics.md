@@ -116,3 +116,12 @@ jobs:
 ```
 
 Pin third-party actions to full commit SHAs in production workflows.
+
+## Proposed command-card diagnostics
+
+Feature [015](../specs/015-command-cards/spec.md) reserves CMD001 for shared
+`cheatsheet.cards` metadata errors and CMD002 for shared command-card explicit-ID/
+reference errors. These codes are **not implemented**. Migration conflicts in the
+future navi consumer use NAV006; NAV008 collision behavior and hashes stay unchanged.
+See the [proposed migration](format/command-cards.md). Current NAV diagnostics
+remain the shipping contract until that separate implementation.
