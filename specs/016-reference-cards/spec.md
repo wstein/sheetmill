@@ -36,7 +36,8 @@ branding, wording, logo, colors, fonts, scripts or external requests are copied.
   current-page marker and tag link, and works without JavaScript.
 - **FR-8** Palettes (#31) and light/dark modes apply unchanged. Badge text and
   surfaces use palette tokens only; a Go test checks that the description-row
-  pairs (`--text` and `--link` on `--wash`, `--link` on `--bg`) meet 4.5:1 in every
+  pairs (`--text` and `--link` on `--wash`; `--text`, `--link`, `--muted` and
+  `--accent` on `--surface`; `--bg` on the `--link` badge) meet 4.5:1 in every
   palette and mode. No new colors, fonts or external requests.
 - **FR-9** Layout fits at 320px and stacks to one column on narrow screens. Print rules
   (never checked in a real print preview) use three columns, plain bordered tiles, no
