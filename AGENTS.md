@@ -33,6 +33,11 @@ Sibling repository policies do not govern this repository.
   https://wstein.github.io/sheetmill/, the independently authored `examples/sheets`
   demo at `/sheetmill/demo/`, and `llms.txt` plus the agent guide as plain files.
   The redistribution gate and other sheets or hosts remain separately gated.
+- Feature 014 library navigation has a settled documentation/planning scope (user,
+  2026-10-14): per-sheet `navigation.group` and `navigation.order` only. This
+  records the design; runtime implementation and publication need a subsequent
+  explicit handoff. Group configuration, manifests, navigation titles, stable
+  IDs and deployment are deferred.
 - Use `codex/` feature branches and Conventional Commits. Topic pushes and draft
   PRs belong to an authorized implementation handoff; otherwise ask before publishing.
 - Merge, tag, release, deploy, distribution builds, PDF generation, artifact
