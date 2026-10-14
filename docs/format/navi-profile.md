@@ -4,7 +4,7 @@ description: "Explicit cards and free-input parameters exported as navi .cheat f
 category: reference
 ---
 `smill build navi <file-or-directory>... --out <new-dir> [--shell bash|zsh|fish|nu] [--root <dir>] [--strict]`
-writes one `<sheet>.cheat` file per sheet to a new directory. It generates text
+writes one `<sheet>.cheat` and `<sheet>.navi.json` pair per exported sheet to a new directory. It generates text
 only: SheetMill never runs navi, a shell or any exported command, and a lint test
 keeps the renderer free of `os/exec`, `syscall`, `plugin` and network imports.
 Export is one way; importing `.cheat` files is not supported. Behavior was
@@ -118,6 +118,40 @@ warning-and-skip rule.
 Defaults, choice lists, suggestion commands, previews, multi-selection and shared
 contexts are not generated yet, and `$` provider lines are never emitted.
 
+## Metadata companion
+
+Every exported sheet has a `<sheet>.navi.json` companion with schema version 1:
+
+```json
+{
+  "schema": 1,
+  "source": "sheets/smill.md",
+  "shell": "bash",
+  "metadata": {"title": "SheetMill CLI", "license": "EUPL-1.2"},
+  "cards": [{"id": "check-sheet", "title": "Check a sheet", "context": "sheetmill:sheets/smill.md#check-sheet!"}]
+}
+```
+
+`metadata` contains the complete semantic frontmatter, including provenance,
+unknown nested fields and parameter type/description hints. This preserves values,
+not YAML spelling, comments or the Markdown body; it is not a round-trip format.
+`source` is the normalized path relative to the selected root. `shell` records the
+selected profile. `cards` lists only successfully exported cards, in source order,
+with their original titles and exact generated contexts; metadata for skipped
+cards remains in `metadata`.
+
+JSON uses two-space indentation, lexically sorted mapping keys, source-ordered
+arrays, HTML escaping and a final newline. It contains no generated timestamps or
+absolute host paths introduced by the exporter. Author-supplied metadata is kept
+unchanged, so review it before sharing. Companion schema and `.cheat` format
+versions are independent. navi consumes only `.cheat`; SheetMill does not load or
+execute companions. Both files use the existing new-directory/no-overwrite writer.
+
+A sheet with no exported cards gets neither file. Invalid metadata still fails
+before writing, as does companion serialization failure (`REN001`). Preserved
+metadata no longer causes `--strict` to fail; actual warnings still do. License
+warnings remain even if an unusual license value is preserved in the companion.
+
 ## Placeholders
 
 `<name>` with a lowercase name as above is a placeholder, and every placeholder
@@ -182,7 +216,7 @@ an exported template in navi is a separate user action.
 | `NAV104` | warning | Card skipped: placeholders and declarations disagree |
 | `NAV105` | warning | License not stated; the header says so |
 | `NAV106` | warning | Sheet exported nothing, so no file is written for it. If no sheet exports, the build fails and writes nothing |
-| `NAV107` | warning | Frontmatter the `.cheat` file does not carry (anything besides title, license, attribution, tags, `cheatsheet.tool`/`schema`/`navi`), listed by key; a sidecar is not implemented yet |
+| `NAV107` | retired | Metadata omission warning; complete frontmatter now survives in the companion |
 | `NAV000` | error | `--strict` and at least one warning; nothing is written |
 
 Card/code diagnostics use their source spans. Sheet-level metadata and global
@@ -199,11 +233,6 @@ and entry deduplication, a fuzz target over command text, CLI tests and the
 no-execution lint. The item hash model is pinned by fixed vectors
 (`itemHash("") = 0x1c9d3adb639f298e`, `itemHash("abc") = 0x64372d1c87d01e7c`) that an
 independent review calculated from the Rust hash input. Not done: running navi
-(never, by policy) and a metadata sidecar; unexported metadata is diagnosed with
-`NAV107` instead. Parameter `type`/`description` hints are included in that
-diagnostic even though they are consumed during validation. Non-string or empty
-license/attribution values are also diagnosed rather than treated as preserved.
-Consequently, `--strict` rejects exports with those omitted hints until the
-sidecar is implemented. Fish quote analysis remains heuristic; Bash/Zsh only surface selected parser
+(never, by policy). Fish quote analysis remains heuristic; Bash/Zsh only surface selected parser
 diagnostics. Re-check the
 upstream source when moving to another navi version.

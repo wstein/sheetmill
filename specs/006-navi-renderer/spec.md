@@ -1,6 +1,6 @@
 # 006 — navi renderer
 
-Created: 2026-10-13 · Refined: 2026-10-14 · Status: exporter/review fixes merged; T009 sidecars authorized, in progress
+Created: 2026-10-13 · Refined: 2026-10-14 · Status: exporter/review fixes merged; T009 sidecars implemented; independent review pending
 Depends on accepted 001–004 (schema-1 IR, diagnostics and provenance).
 
 Explicit cards, free-input parameters and per-shell profiles, targeting navi
@@ -55,9 +55,11 @@ navi has been run.
   grammar and entry deduplication; a lint test forbids `os/exec`, `syscall`,
   `plugin` and network imports in the package.
 - S7 Preservation: consume schema-1 IR without reparsing Markdown. Frontmatter the
-  `.cheat` file does not carry is **diagnosed, not dropped silently** (`NAV107`,
-  listing the keys); the versioned `<sheet>.navi.json` sidecar that would preserve
-  it is a remaining task.
+  `.cheat` file does not carry is preserved in a schema-1 `<sheet>.navi.json`
+  companion containing complete semantic metadata, relative source path, shell
+  profile and the source-ordered exported card IDs/titles/contexts. No exported
+  cards means neither file. Serialization errors fail the batch before writing;
+  `NAV107` is retired. See the format page for the serialization contract.
 - S9 Automation: `--strict` makes any warning fail the build (`NAV000`) before
   writing. zsh, fish and nu are experimental until verified against real shells.
 - S8 Identity and provenance: each card gets a unique first tag
@@ -90,7 +92,7 @@ types are not enforced. Generated headers and the format page state this.
 | `<1>`, `\<name>`, `<ünï>`, `<_x>` | `NAV103` warning |
 | Title empty after normalization (U+200B only) | `NAV102` warning |
 | `echo "$(printf '"')"`, backtick and nested substitutions | Exported; a real open quote is still `NAV102` |
-| Unexported frontmatter such as `description` | `NAV107` warning listing keys |
+| Frontmatter including unknown nested metadata and parameter hints | Preserved in the deterministic companion; no omission warning |
 | `itemHash("")`, `itemHash("abc")` | `0x1c9d3adb639f298e`, `0x64372d1c87d01e7c` |
 | Header value with newline or `%` | Collapsed to one line, no new entry |
 | Input order and host path | Same bytes; no absolute path in output |
@@ -99,12 +101,12 @@ types are not enforced. Generated headers and the format page state this.
 ## Diagnostics
 
 `NAV000` (`--strict`), `NAV001`, `NAV006`, `NAV008` errors; `NAV007` retired;
-`NAV101`–`NAV107` warnings; shared
+`NAV101`–`NAV106` warnings; `NAV107` retired; shared
 `REN001`, `IO001` and `IO003` apply. Meanings are in the format page.
 
 ## Remaining work
 
-T009 metadata sidecar (current increment); stronger shell syntax validation
+T009 independent exact-revision review (current increment); stronger shell syntax validation
 (Bash/Zsh quote diagnostics use pinned `mvdan.cc/sh/v3/syntax` v3.14.1; Fish remains
 heuristic); choice lists and shared contexts, which need their own design; nushell raw-string
 analysis. A non-executing parse check against real navi, publication of generated
