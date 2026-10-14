@@ -15,9 +15,11 @@
 - [x] T007 Exporter candidate independently reviewed at `caf1fc6` (see spec delivery
   evidence); integration followed through #27/#28. This does not approve new commits.
 - [ ] T008 Obtain separate publication approval if requested.
-- [ ] T009 Metadata sidecar (`<sheet>.navi.json`) preserving complete metadata.
-  Authorized 2026-10-14; schema, determinism, strict/export boundaries and new
-  exact-revision review required in this increment.
+- [x] T009 Metadata sidecar (`<sheet>.navi.json`) preserving complete metadata.
+  Implemented in [#30](https://github.com/wstein/sheetmill/pull/30): schema-1
+  complete semantic metadata, deterministic bytes, actual exported-card identities,
+  strict/export boundaries and batch failure tests. Final independent exact-revision
+  review is recorded on that PR; no navi execution or publication approval implied.
 - [ ] T010 Stronger shell syntax checks. Bash/Zsh quote diagnostics now use only
   pinned `mvdan.cc/sh/v3/syntax` v3.14.1; full syntax validation and a suitable
   Fish parser remain pending.

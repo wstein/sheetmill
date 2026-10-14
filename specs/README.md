@@ -12,7 +12,7 @@ never grants execution, merge or publication permission.
 | [003](003-reference-import/spec.md) | Controlled Reference conversion implemented ([#3](https://github.com/wstein/sheetmill/pull/3)) | Provenance does not grant redistribution rights |
 | [004](004-hugo-renderer/spec.md) | Hugo renderer and local generation implemented | Hosting authorization is scoped separately by 012 |
 | [005](005-typst-renderer/spec.md) | Specification only | Version/fonts/accessibility and layout decisions pending; no implementation/PDF generation |
-| [006](006-navi-renderer/spec.md) | Exporter and review fixes merged ([#27](https://github.com/wstein/sheetmill/pull/27), [#28](https://github.com/wstein/sheetmill/pull/28)) | T009 sidecars authorized in this increment; stronger syntax/provider work remains pending; never execute navi |
+| [006](006-navi-renderer/spec.md) | Exporter and review fixes merged ([#27](https://github.com/wstein/sheetmill/pull/27), [#28](https://github.com/wstein/sheetmill/pull/28)) | T009 sidecars implemented in [#30](https://github.com/wstein/sheetmill/pull/30), not yet merged; stronger syntax/provider work remains pending; never execute navi |
 | [007](007-live-preview/spec.md) | Read-only serve, reader corpus and automated performance checks implemented | T049 five-author usability study remains pending; no browser editing |
 | 008–010 | Reserved; no feature directories | Visual editing, disposable and online playgrounds remain proposals ([roadmap](../docs/studio-roadmap.md)) |
 | [011](011-heading-attribute-ir/spec.md) | Specification only | Resolve heading-boundary and IR schema decisions before separate implementation authorization |

@@ -1,6 +1,6 @@
 # 006 — navi renderer
 
-Created: 2026-10-13 · Refined: 2026-10-14 · Status: exporter/review fixes merged; T009 sidecars implemented; independent review pending
+Created: 2026-10-13 · Refined: 2026-10-14 · Status: exporter/review fixes merged; T009 sidecars implemented in #30 (not merged)
 Depends on accepted 001–004 (schema-1 IR, diagnostics and provenance).
 
 Explicit cards, free-input parameters and per-shell profiles, targeting navi
@@ -106,7 +106,7 @@ types are not enforced. Generated headers and the format page state this.
 
 ## Remaining work
 
-T009 independent exact-revision review (current increment); stronger shell syntax validation
+Stronger shell syntax validation
 (Bash/Zsh quote diagnostics use pinned `mvdan.cc/sh/v3/syntax` v3.14.1; Fish remains
 heuristic); choice lists and shared contexts, which need their own design; nushell raw-string
 analysis. A non-executing parse check against real navi, publication of generated
@@ -117,4 +117,6 @@ cheats and distribution builds are separately gated.
 Exporter/fixes reached main through [#27](https://github.com/wstein/sheetmill/pull/27)
 and [#28](https://github.com/wstein/sheetmill/pull/28). Full combined review evidence
 at candidate `caf1fc6` is linked from [#25](https://github.com/wstein/sheetmill/pull/25#issuecomment-6160173135).
-The current sidecar increment needs its own exact-revision review and checks.
+The sidecar increment is tracked in [#30](https://github.com/wstein/sheetmill/pull/30);
+its exact-revision independent review and checks are recorded there, separately
+from the merged exporter evidence above.
