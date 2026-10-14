@@ -41,13 +41,15 @@ Depends on: 004-hugo-renderer (implemented); content rights of the chosen sheets
 - FR-006: Pages must remain CSP-friendly: no inline scripts, inline event handlers
   or `style=` attributes. Add a test that fails on any such addition. (Current
   templates were found to use only external `/assets/app.js` and `site.css`.)
-- FR-007: Decide and document robots and sitemap. Both are disabled today
-  (`enableRobotsTXT: false`, `sitemap` kind disabled); enabling either requires the
-  absolute origin from FR-002 and a documented rationale.
+- FR-007: Canonical `--site-url` enables a deterministic generated sitemap and
+  canonical links; without an origin, no sitemap is emitted. Hugo's automatic
+  sitemap kind remains disabled because SheetMill supplies the file. Robots
+  generation remains disabled. Header/CSP guidance remains follow-up work.
 - FR-008: No analytics, tracking, cookies or remote fonts/CDNs (004 FR-008 stays).
 - FR-009: Publication and deployment remain separately human-approved per
-  AGENTS.md. `smill` never uploads. CI never publishes artifacts or merges
-  automatically. This feature only produces a reviewable local build.
+  AGENTS.md. `smill` never uploads and CI never merges. Only the specifically
+  approved Pages workflow may publish the manual/demo artifacts; that approval
+  does not cover a general publishing gate or deployment in the current increment.
 - FR-010: Document security-header guidance (CSP, `X-Content-Type-Options`,
   `Referrer-Policy`) for host operators as recommendations, not enforced behavior.
 
@@ -61,10 +63,13 @@ revision; no deployment or merge happens without human approval.
 
 ## Open decisions
 
-- Hosting target (static host, project pages, self-hosted) and who operates it.
-- Intended base path and whether a custom domain is used.
+Resolved: GitHub Pages manual at `/sheetmill/`, demo at `/sheetmill/demo/`, no
+custom domain. Canonical sitemap behavior follows `--site-url` as above.
+
+Remaining decisions:
+
 - Which sheets are licensed for redistribution, and the allow-list format.
-- Whether robots/sitemap are enabled once an origin is known.
+- Whether robots output should be added; keep it disabled until decided.
 - Whether the diagnostic is an error or warning by default.
 
 Relationship: a proposed future static online playground (roadmap item 010) would

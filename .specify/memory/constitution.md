@@ -1,6 +1,6 @@
 # SheetMill Constitution
 
-Version: 1.0.0 · Ratified: 2026-10-13 · Last amended: 2026-10-13
+Version: 1.1.0 · Ratified: 2026-10-13 · Last amended: 2026-10-14
 
 1. **Determinism.** Identical source bytes, configuration and tool versions MUST
    yield byte-identical canonical JSON/conversions. No implicit clocks or host paths.
@@ -17,14 +17,26 @@ Version: 1.0.0 · Ratified: 2026-10-13 · Last amended: 2026-10-13
    package boundaries, test-first development, golden fixtures and fuzzing.
 6. **Independent product.** No runtime dependency on BundleDock, WorkHarbor or
    CrewBook. Original implementation and independently authored bundled fixtures.
-7. **Human publication control.** Current authorization covers foundation, parser,
-   Reference importer, approved brand finalization, Hugo renderer implementation,
-   local site generation, checks and reviewable topic commits/PRs. Typst/navi
-   remain specification-only. Merges, tags, releases, deployments, binary builds,
-   PDF generation and artifact publication need separate approval. Hugo local
-   site generation is explicitly authorized on 2026-10-13; deployment is not.
+7. **Human publication control.** Scope extensions require human authorization,
+   recorded in `AGENTS.md` and the affected feature. The approved scope includes
+   core/Reference/Hugo, navi text export and read-only Studio. The named Pages
+   manual/demo workflow has its own recorded approval; broader publication stays
+   gated. Typst/PDF, browser editing and playgrounds remain unapproved. Merges,
+   tags, releases, distribution builds and publication require their separate
+   approvals; a spec or automated check grants none. No navi, source command or
+   dynamic suggestion executes. The current T009 increment permits implementation,
+   local checks and a PR, not deployment or merge.
 8. **Review evidence.** Report actual verification and gaps. Independent review is
    expected before merge; passing author tests do not satisfy that expectation.
 
 Amendments require a human-approved change to this file plus an impact check on
 format docs, feature specs, code and tests. No automation may bypass permissions.
+
+## Amendment impact (2026-10-14)
+
+The user requested spec-status reconciliation and 006 T009 implementation. This
+minor revision reconciles authorization wording with later recorded approvals;
+determinism, canonical source, inert inputs and human publication control remain.
+Impact checked against AGENTS.md, the feature index, 006/007/012 specs/tasks,
+Studio roadmap and format docs. This amendment changes no runtime behavior or
+verification result, and does not treat any unfinished study or gate as complete.

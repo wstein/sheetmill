@@ -1,7 +1,8 @@
 # 011 — Structural heading titles without attribute syntax in the IR
 
 Created: 2026-10-13 · Status: draft, specification only · Depends on: 002-gfm-parser, 004-hugo-renderer
-Authorization: AGENTS.md scope is 001–004; implementation needs separate approval.
+Authorization: 011 implementation is not approved; other implemented features
+do not authorize an IR heading-contract change.
 
 ## Problem
 

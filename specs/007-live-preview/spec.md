@@ -4,7 +4,9 @@
 
 **Created**: 2026-10-13
 
-**Status**: Draft — ready for planning; specification only
+**Status**: Read-only preview and corpus increments implemented; automated T049
+checks implemented; five-author SC-006 usability study pending. See
+[plan](plan.md), [tasks](tasks.md) and [verification](../../docs/studio-verification.md).
 
 **Input**: User description: "SheetMill Studio — WYSIWYG, Live Preview & Playground. Start with smill serve, introduce smill playground next, and add an optional public online playground afterward. Reuse the same compiler across entry points. First slice: one smill sheet and one complete automated browser journey; then add bdock and whr to the same harness. Keep this milestone focused on GFM → Hugo → browser. Example commands remain displayed content."
 

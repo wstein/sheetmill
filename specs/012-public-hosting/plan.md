@@ -1,6 +1,11 @@
 # Plan — 012
 
-Thread one normalized base path through `internal/render/hugo`: the generator,
+Delivered: the normalized base path and canonical origin/sitemap are already
+implemented. The remaining design below concerns the general redistribution gate
+and host-header guidance. Existing approved Pages publication is recorded in
+AGENTS.md; this increment performs no deployment.
+
+Original base-path approach: thread one normalized base path through `internal/render/hugo`: the generator,
 route/link rewriting, search index destinations, brand/asset references in the
 embedded templates, and `assets/app.js` (which currently fetches `/search.json`).
 Prefer emitting the prefix via Hugo config/data so the theme does not hardcode it.
@@ -15,4 +20,4 @@ Verification: failing tests first; build at `/` and a sub-path and scan the
 output for root-relative URLs; serve locally (explicit local Hugo only) and
 exercise navigation and search; CSP lint test over templates; repeated-hash
 determinism; gofmt, go test, go vet, git diff --check; independent review.
-Deployment stays out of scope and separately approved.
+New deployment stays out of scope and separately approved.

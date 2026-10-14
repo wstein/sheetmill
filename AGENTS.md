@@ -14,6 +14,9 @@ Sibling repository policies do not govern this repository.
 - Feature 006 is authorized (user, 2026-10-14): `smill build navi` text generation
   of `.cheat` files for bash, zsh, fish and nushell profiles. Never run navi, a shell
   or an exported command; publishing generated cheats and distribution stay gated.
+  T009 deterministic metadata sidecars are authorized on 2026-10-14; this increment
+  permits implementation, local verification and a reviewable PR only. No PDF or
+  deployment.
 - Feature 007 MVP T001–T018 and applicable final checks are authorized on
   2026-10-13: one smill sheet, temporary verification executable, Hugo and local
   browser E2E.
