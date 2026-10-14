@@ -1,10 +1,10 @@
 # Feature Specification: Library navigation
 
-**Feature Branch**: `codex/014-library-navigation`
+**Feature Branch**: `codex/014-navigation-complete`
 
 **Created**: 2026-10-14
 
-**Status**: Settled first-slice design; documentation only, not implemented
+**Status**: Implemented first slice; local verification complete, PR review pending
 
 **Input**: User-settled optional `navigation.group` and `navigation.order`, closed
 namespace, deterministic ordering, inert Reference import and navi preservation.
@@ -151,11 +151,9 @@ canonical shape, and compare navi exports with/without valid authored navigation
 
 ## Assumptions
 
-- The user settled the design on 2026-10-14. This branch prepares local design
-  artifacts; implementation authorization and exact-revision independent review
-  must be recorded before implementation/merge respectively.
+- The user settled the design and authorized implementation and a PR on
+  2026-10-14, recorded in AGENTS.md. Merge and deployment remain separately gated.
 - Only per-sheet group/order ships in the first slice. Group-order configuration,
   manifest overrides, navigation title, stable sheet IDs, library content reordering,
   PDF, navi execution, deployment and merge are excluded.
-- This specification describes future behavior, not current supported fields.
-  The public format/schema/diagnostic docs must be updated with implementation.
+- Public format/schema/diagnostic docs describe the implemented contract.

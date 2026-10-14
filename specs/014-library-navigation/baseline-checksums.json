@@ -1,0 +1,17 @@
+{
+  "base": "de3e08e55c5e42a1eedc4ea24e749219ae35f1f5",
+  "sha256": {
+    "testdata/import/reference/supported.md": "62c51891b767194b1b36585a526d7f4acb0abf75c5c96c6c739ac647858aafd5",
+    "testdata/import/reference/supported.md.canonical": "9cbae87a269e07c3c1dae98e6db91c2b441438351035c25a90f8e2f317115a58",
+    "testdata/import/reference/supported.md.report.json": "6f8708adb0f0b08bc43b5fbb6964cc1d4a0926f318cdc9cd8bad37dce900864b",
+    "testdata/reference-compatible/attrs.md": "e3fc0ddce55d1ed649f6f3d1d97e9315a73f0f156259fa64c78e55e166729dd1",
+    "testdata/reference-compatible/attrs.md.json": "8f8645cb3212fc7b1bd70fbe1bad3e03a2826eecececfa1a13d72506b7ca14da",
+    "testdata/reference-compatible/cards.md": "5d8c59c0e4404c817de66fcfeb8fdbeb41c58b52cc0515c7e5d4de3fa09deff0",
+    "testdata/reference-compatible/cards.md.json": "88af76e22629b021ae6c77eb497e6289ce977f1a3cb332a6de75cd24f1baf5a1",
+    "testdata/reference-compatible/invalid.md": "f8b62c76f1b38ffd5d3b0094cb21fe881580741edb01a5ce070546222cf401ba",
+    "testdata/reference-compatible/simple.md": "ba4a3785f2ed50922b1ddc8bf585b23abc7da5fbb050046760fd5c3d5f9ca33d",
+    "testdata/reference-compatible/simple.md.json": "65a74e87e6fdb8d84554551564703c29a14d0bb96b69d718fe981631210cd421",
+    "testdata/reference-compatible/tables.md": "4dc58bb9067ee91630e0b82df2414d3e7002453c56488647442176f305823705",
+    "testdata/reference-compatible/tables.md.json": "6a3591055a7f3ee865f87dc015e25198d259027bec562c93ad3c317172ce0b47"
+  }
+}
