@@ -8,6 +8,6 @@
 - [x] T006 Real-Hugo integration test: body class, Browse panel with 014 order and `aria-current`, no sidebar, both a home and a sheet page.
 - [x] T007 Docs: `docs/hugo.md`, `docs/cli.md`, `specs/README.md`.
 - [x] T008 Browser check (Chrome) at desktop, 390px and 320px, light/dark; print was not previewed; record limits honestly.
-- [ ] T009 (in progress: review round 1 NOT CLEAR at fff1223, fixes in the next commit) gofmt, vet, full tests with Hugo, race, diff check; independent review of the exact head; fix findings; draft PR, then mark ready only after CI and review. Do not merge or deploy.
+- [x] T009 Review round 1 NOT CLEAR at fff1223; fixed in fdee8ff and CLEAR; P3 follow-ups (print tint/grid, title-only corner, card-kind tint, contrast pairs, stronger contract test) applied after review. CI at fdee8ff passed. gofmt, vet, full tests with Hugo, race, diff check; independent review of the exact head; fix findings; draft PR, then mark ready only after CI and review. Do not merge or deploy.
 
 T008 evidence: Chrome check of the built `examples/sheets` demo (desktop screenshot, iframe measurements at 320px and 390px with the Browse panel open: no horizontal overflow, no badge overflow; dark badge uses `--link` on `--bg`). Real print and Firefox/WebKit were not tested; the pinned Playwright suite was not run locally (Node 26 installed, 24.21.0 required).

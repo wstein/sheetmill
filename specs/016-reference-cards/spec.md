@@ -1,6 +1,6 @@
 # Feature 016: reference-cards Hugo layout
 
-**Status**: Implemented in draft PR #35; independent re-review and CI pending.
+**Status**: Implemented in PR #35; independent review CLEAR at fdee8ff, P3 follow-ups applied afterwards.
 **Authorization**: user, 2026-10-14 ("write a spec and implement reference-cards as a
 reviewed PR"). Extends feature 004; no merge, deployment or source-format change.
 
@@ -38,8 +38,9 @@ branding, wording, logo, colors, fonts, scripts or external requests are copied.
   surfaces use palette tokens only; a Go test checks that the description-row
   pairs (`--text` and `--link` on `--wash`, `--link` on `--bg`) meet 4.5:1 in every
   palette and mode. No new colors, fonts or external requests.
-- **FR-9** Layout fits at 320px, stacks to one column on narrow screens, and prints as
-  plain bordered tiles without shadows or the Browse panel.
+- **FR-9** Layout fits at 320px and stacks to one column on narrow screens. Print rules
+  (never checked in a real print preview) use three columns, plain bordered tiles, no
+  tint, shadows or Browse panel.
 
 ## Out of scope
 
