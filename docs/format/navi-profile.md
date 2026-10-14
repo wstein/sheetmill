@@ -54,6 +54,7 @@ For the input `sheets/smill.md` (relative to the root) this produces:
 ; Source: sheets/smill.md
 ; Title: SheetMill CLI
 ; Shell: bash
+; Parameters: trusted raw shell text; type hints are not enforced
 ; License: not stated
 
 ; card: check-sheet
