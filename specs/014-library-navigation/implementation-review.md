@@ -16,7 +16,8 @@ identified missing regression evidence; each was fixed before re-review:
 
 Sol independently reran targeted validator/frontmatter/parser/importer/Hugo/navi
 Go suites and whitespace checks; all passed. The primary agent ran full Go/race/
-vet, actual Hugo integration, 45 browser journeys and 23 harness checks as recorded
+vet, actual Hugo integration, 45 browser journeys, 23 harness checks and the passing
+T049 performance rerun as recorded
 in quickstart. Sol did not independently repeat the full browser suites.
 
 Historical documentation-only review remains in `checklists/review.md`; it is not
