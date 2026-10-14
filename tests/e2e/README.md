@@ -15,6 +15,11 @@ npm test -- --project=desktop
 npm test
 ```
 
+From the repository root, the same checks are available as `make test-harness`,
+`make test-browser`, `make test-browser-corpus` and `make test-browser-studio`.
+CI uses these targets after provisioning tools. They do not install dependencies;
+`SHEETMILL_HUGO` must be an exported absolute path to the pinned executable.
+
 Use the pinned Node on PATH. Linux browser libraries must be provisioned explicitly
 before testing (CI uses Playwright's documented `install --with-deps chromium`).
 After setup, test execution downloads nothing; it fails on missing prerequisites.
