@@ -99,10 +99,16 @@ func loadSelection(args []string, root string, errout io.Writer) (selection, int
 	sort.Strings(files)
 	if root == "" {
 		root = commonDir(files)
-	} else if abs, err := filepath.Abs(root); err != nil {
-		fmt.Fprintf(errout, "%s:1:1: IO001: %v\n", root, err)
-		return selection{}, 2
 	} else {
+		abs, info, err := checkedPath(root)
+		if err != nil {
+			fmt.Fprintf(errout, "%s:1:1: IO001: %v\n", root, err)
+			return selection{}, 2
+		}
+		if !info.IsDir() {
+			fmt.Fprintf(errout, "%s:1:1: IO001: --root must be a directory\n", root)
+			return selection{}, 2
+		}
 		root = abs
 		for _, path := range files {
 			absPath, err := filepath.Abs(path)

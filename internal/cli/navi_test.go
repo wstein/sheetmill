@@ -108,3 +108,20 @@ func TestNaviStrictRejectsOmittedParameterMetadata(t *testing.T) {
 		t.Fatalf("failed strict export wrote output: %v", err)
 	}
 }
+
+func TestNaviRootMustBeDirectory(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "sheet.md")
+	if err := os.WriteFile(input, []byte("---\ntitle: T\nlicense: x\n---\n## S\n### C {.navi #c}\n```bash\necho ok\n```\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var out, errout bytes.Buffer
+	destination := filepath.Join(dir, "output")
+	code := Run([]string{"build", "navi", input, "--root", input, "--out", destination}, &out, &errout)
+	if code != 2 || !strings.Contains(errout.String(), "directory") {
+		t.Fatalf("code=%d stderr=%s", code, &errout)
+	}
+	if _, err := os.Stat(destination); !os.IsNotExist(err) {
+		t.Fatalf("invalid root wrote output: %v", err)
+	}
+}
