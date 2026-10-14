@@ -71,12 +71,27 @@ The selected direction is Editorial Stack with coral/periwinkle colors; see the
 ## Development
 
 ```sh
-gofmt -w cmd internal assets
-go test ./...
-go vet ./...
+make             # Show available targets
+make fmt         # Format Go sources
+make check       # Formatting check, Go tests, vet and whitespace
+make race        # Race tests
 ```
 
-Tests compile temporary test executables; no distribution binary is produced.
+CI uses the same Makefile targets. `make check` requires Go, Git and Make;
+Hugo and browser checks are separate. After installing the pinned development
+tools described in [the browser harness guide](tests/e2e/README.md):
+
+```sh
+export SHEETMILL_HUGO=/absolute/path/to/hugo
+make test-hugo
+make test-harness
+make test-browser-corpus
+make test-browser-studio
+```
+
+Targets do not install dependencies or regenerate goldens. Tests compile temporary
+test executables; no distribution binary is produced. There is no `make build`
+or deployment target in this increment.
 [Local Hugo generation](docs/hugo.md) describes the explicit export/build workflow.
 The CLI uses Cobra **v1.10.2**. Goldmark supplies GFM parsing and the YAML organization supplies YAML decoding;
 [dependency and license provenance](docs/provenance.md) explains these choices.
