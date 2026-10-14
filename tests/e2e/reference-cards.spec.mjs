@@ -104,6 +104,7 @@ for(const basePath of ['/','/sheetmill/'])test.describe('reference-cards at '+ba
   await page.screenshot({path:testInfo.outputPath('reference-cards-screen.png'),fullPage:true});
   await page.emulateMedia({media:'print'});await loaded(page);
   await expect(browse).toBeHidden();
+  expect(await page.locator('.cards').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),'print uses three columns in either density').toBe(3);
   expect(await page.locator('#ref-wide table').evaluate(el=>el.scrollWidth<=el.clientWidth),'print table wraps within tile').toBe(true);
   expect(await page.locator('#ref-copy').evaluate(el=>getComputedStyle(el).boxShadow)).toBe('none');
   expect(await page.locator('#ref-copy').evaluate(el=>getComputedStyle(el).borderTopStyle)).toBe('solid');
