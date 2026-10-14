@@ -25,8 +25,8 @@
   Fish parser remain pending.
 - [ ] T011 Later: choice lists, shared contexts, nushell raw strings.
 
-- [ ] T012 Consume the separately authorized 015 shared command-card contract;
+- [x] T012 Consume the separately authorized 015 shared command-card contract;
   implementation/verification is tracked by [015 tasks](../015-command-cards/tasks.md).
   Preserve legacy aliases and strict behavior, exact `.cheat` bytes, fixed per-entry
-  hashes and NAV008 collision rejection. This cross-feature dependency is pending;
-  the present PR changes documentation only.
+  hashes and NAV008 collision rejection. Implemented under the 2026-10-14 015 handoff;
+  exact-revision review evidence is recorded in 015.

@@ -19,7 +19,7 @@ never grants execution, merge or publication permission.
 | [012](012-public-hosting/spec.md) | Base path, approved manual/demo hosting and canonical sitemap implemented | General redistribution gate and header/CSP follow-up remain pending; no deployment in this increment |
 | [013](013-tldr-import/spec.md) | Specification only | Pin source evidence and settle conversion decisions before implementation authorization |
 | [014](014-library-navigation/spec.md) | Implemented and locally verified ([#33](https://github.com/wstein/sheetmill/pull/33)); Sol review clear; CI readiness tracked on PR | Per-sheet group/order first slice; manifest, titles, IDs and deployment deferred |
-| [015](015-command-cards/spec.md) | Docs-only shared command-card and migration proposal; not implemented | Core `.command` / `cheatsheet.cards` revision needs separate implementation handoff; 006 consumes it with unchanged navi bytes/hashes |
+| [015](015-command-cards/spec.md) | Shared command cards and migration implemented; local verification and Sol code re-review pass | Core `.command` / `cheatsheet.cards` implemented under the 015 handoff; 006 consumes it with unchanged navi bytes/hashes; no navi execution or deployment |
 | [016](016-reference-cards/spec.md) | Draft PR #35; review round 1 fixes pending re-review | Opt-in `--theme reference-cards` layout; scroll dots, highlighting, footer and deployment excluded |
 
 The public source contract is [docs/format](../docs/format/gfm-plus.md). Each feature

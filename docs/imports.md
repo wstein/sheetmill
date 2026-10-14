@@ -53,6 +53,7 @@ unknown data survive, with the following legacy behavior archived under
 | `IMP108` | Unsupported token removed from a heading group, e.g. `.secondary`; supported ones such as `.cols-2` stay (warning) |
 | `IMP109` | Standalone attribute line such as `{.shortcuts}` or `{.marker-none}` removed (warning) |
 | `IMP110` | Standalone `{.shortcuts}` inside a card removed; the card is marked `.keys` so its key table renders as keys (warning) |
+| `IMP111` | Upstream `cheatsheet.cards` or `.command` heading marker archived as inert source data before shared validation/selection (warning) |
 | Core diagnostic codes | Unsupported structural attrs/YAML/GFM+ contract errors |
 
 Code blocks/code spans are excluded from directive scanning. This is an explicit
@@ -87,3 +88,14 @@ exact supplied file with `SHEETMILL_REFERENCE_PYTHON=/absolute/path/python.md go
 ./internal/importer/reference -run TestPinnedPython -v`; its hash is checked first.
 Ordinary CI uses synthetic fixtures and golden conversion/report snapshots, without
 network fetches. TLDR/navi/Devhints and bulk recognition remain future proposals.
+
+## Shared command metadata
+
+Reference `cheatsheet.cards` is archived unchanged under
+`source.original_metadata.cheatsheet.cards` before core validation, with `IMP111`.
+Archival preserves semantic JSON values, not YAML token spelling, comments or
+numeric token types such as the distinction between `1` and `1.0`.
+Upstream `.command` markers are removed and archived as inert original attributes
+with positioned findings; they never activate canonical command selection.
+Other cheatsheet fields and existing legacy import behavior are retained. Commands
+inside code examples remain literal content and are never executed.
