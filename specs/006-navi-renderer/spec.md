@@ -19,8 +19,9 @@ navi has been run.
 - Profiles: `bash` first (default), then `zsh`, `fish` and optional `nu`. navi uses
   one configured shell and the fence label does not select it, so a build targets
   one profile and records it. `bash-free-input-v1` was the contract proposal's name
-  for the bash profile; its Bash 5.2 grammar parser requirement is replaced by a
-  heuristic quote check until a pure Go parser is pinned.
+  for the bash profile. Bash/Zsh quote diagnostics now use only the pinned
+  `mvdan.cc/sh/v3/syntax` v3.14.1 parser, without executing code. Full syntax
+  validation and a suitable Fish parser remain pending.
 - A marked card that cannot be exported is a **warning**: it is skipped and never
   rewritten. Metadata, profile and batch-identity problems are errors that write
   nothing.
@@ -103,8 +104,8 @@ types are not enforced. Generated headers and the format page state this.
 
 ## Remaining work
 
-Independent review before merge; metadata sidecar; a pure Go Bash/zsh/fish parser
-to replace the heuristic quote check (dependency to be justified and pinned);
-choice lists and shared contexts, which need their own design; nushell raw-string
+Independent review before merge; metadata sidecar; stronger shell syntax validation
+(Bash/Zsh quote diagnostics use pinned `mvdan.cc/sh/v3/syntax` v3.14.1; Fish remains
+heuristic); choice lists and shared contexts, which need their own design; nushell raw-string
 analysis. A non-executing parse check against real navi, publication of generated
 cheats and distribution builds are separately gated.

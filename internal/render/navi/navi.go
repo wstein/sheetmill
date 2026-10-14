@@ -418,10 +418,8 @@ func checkCommand(command string, profile Profile) (string, string) {
 	if strings.HasSuffix(lines[len(lines)-1], `\`) {
 		return "NAV102", "the command ends with a line continuation backslash"
 	}
-	if profile.quotes && !strings.Contains(command, "<<") {
-		if open := unterminatedQuote(command, profile); open != 0 {
-			return "NAV102", fmt.Sprintf("the command has an unterminated %c quote", open)
-		}
+	if problem := quoteProblem(command, profile); problem != "" {
+		return "NAV102", problem
 	}
 	return "", ""
 }
