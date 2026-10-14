@@ -18,7 +18,7 @@ never grants execution, merge or publication permission.
 | [011](011-heading-attribute-ir/spec.md) | Specification only | Resolve heading-boundary and IR schema decisions before separate implementation authorization |
 | [012](012-public-hosting/spec.md) | Base path, approved manual/demo hosting and canonical sitemap implemented | General redistribution gate and header/CSP follow-up remain pending; no deployment in this increment |
 | [013](013-tldr-import/spec.md) | Specification only | Pin source evidence and settle conversion decisions before implementation authorization |
-| [014](014-library-navigation/spec.md) | Settled spec, plan and tasks; documentation only | Per-sheet group/order first slice; implementation pending explicit handoff; manifest, titles, IDs and deployment deferred |
+| [014](014-library-navigation/spec.md) | Implemented (draft PR); browser journeys and independent review pending | Per-sheet group/order first slice; manifest, titles, IDs and deployment deferred |
 
 The public source contract is [docs/format](../docs/format/gfm-plus.md). Each feature
 has spec, plan and tasks; use `SPECIFY_FEATURE_DIRECTORY=specs/NNN-name` with Spec
