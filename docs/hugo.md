@@ -187,3 +187,15 @@ Browser verification covers root and `/sheetmill/` mounts on desktop, mobile and
 without JavaScript: URLs match the downloaded bytes, resources return successfully,
 fonts load, and home/sheet pages reference the same assets. Existing real-sheet
 journeys continue to verify search, appearance and code-copy behavior.
+
+## Classic compact theme
+
+`--theme classic-compact` selects a denser layout that reads like a reference card:
+a 48px top bar with search, a compact index home, ruled section bands, bottom-ruled
+cards in an auto-fill grid, a sticky jump row, an in-page card filter (`/` to focus,
+Esc to clear; non-matching cards are dimmed and the count is announced) and a
+Compact/Comfortable density toggle stored in the browser. Print uses A4 landscape
+in three columns. Editorial Stack remains the default (`--theme editorial`).
+The layout adds one fingerprinted stylesheet, uses system fonts (no new font files),
+needs no inline styles, and works without JavaScript. Open decisions: A4 vs Letter,
+the minimum column width (270px) and whether to ship IBM Plex Mono/600.

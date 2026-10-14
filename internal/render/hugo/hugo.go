@@ -59,7 +59,12 @@ type Options struct {
 	// for the selection root. Relative links that name no selected sheet resolve to
 	// the repository file instead of being reported as unresolved.
 	SourceBaseURL string
+	// Theme selects the page layout: "" or "editorial" (default) or "classic-compact".
+	Theme string
 }
+
+// Themes lists the accepted Options.Theme values.
+var Themes = []string{"editorial", "classic-compact"}
 
 // basePath accepts "/" or "/seg/.../" with unreserved URL characters only, so the
 // value is safe in HTML attributes, CSS, JSON and JavaScript without escaping.
@@ -360,11 +365,18 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if len(errors) > 0 {
 		return Project{}, errors
 	}
+	classic := options.Theme == "classic-compact"
+	if options.Theme != "" && !classic && options.Theme != "editorial" {
+		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "unknown theme: " + options.Theme}})
+	}
 	title := options.Title
 	if title == "" {
 		title = "SheetMill References"
 	}
 	params := map[string]any{"base": base, "description": options.Description}
+	if classic {
+		params["classic"] = true
+	}
 	if origin != "" {
 		params["origin"] = origin
 		var sitemap strings.Builder
@@ -395,11 +407,17 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN001", Message: "project assembly failed: " + e.Error()}})
 		}
 	}
+	if !classic {
+		delete(p.Files, "static/assets/classic.css")
+	}
 	// Hash the exact exported bytes; keep assets in the same directory so CSS's
 	// relative local-font URLs continue to resolve. No unversioned aliases remain.
-	for _, asset := range []struct{ key, stem, ext string }{{"stylesheet", "site", "css"}, {"script", "app", "js"}} {
+	for _, asset := range []struct{ key, stem, ext string }{{"stylesheet", "site", "css"}, {"script", "app", "js"}, {"classicstylesheet", "classic", "css"}} {
 		original := "static/assets/" + asset.stem + "." + asset.ext
 		data, ok := p.Files[original]
+		if !ok && asset.key == "classicstylesheet" {
+			continue
+		}
 		if !ok {
 			return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN001", Message: "project assembly failed: missing asset " + original}})
 		}
