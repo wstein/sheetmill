@@ -91,7 +91,7 @@ func TestNaviStrictFailsOnWarnings(t *testing.T) {
 	}
 }
 
-func TestNaviStrictRejectsOmittedParameterMetadata(t *testing.T) {
+func TestNaviStrictPreservesParameterMetadata(t *testing.T) {
 	dir := tempDir(t)
 	input := filepath.Join(dir, "a.md")
 	source := "---\ntitle: A\nlicense: x\ncheatsheet:\n  navi:\n    cards:\n      c: {params: {sheet: {type: path, description: Markdown input}}}\n---\n## S\n### C {.navi #c}\n```bash\necho <sheet>\n```\n"
@@ -101,12 +101,19 @@ func TestNaviStrictRejectsOmittedParameterMetadata(t *testing.T) {
 	var out, errout bytes.Buffer
 	destination := filepath.Join(dir, "output")
 	code := Run([]string{"build", "navi", input, "--strict", "--out", destination}, &out, &errout)
-	if code != 1 || !strings.Contains(errout.String(), "NAV107") || !strings.Contains(errout.String(), "NAV000") {
-		t.Fatalf("code=%d stderr=%s", code, &errout)
+	if code != 0 || errout.Len() != 0 || !strings.Contains(out.String(), "Exported 1 sheets") {
+		t.Fatalf("code=%d stdout=%s stderr=%s", code, &out, &errout)
 	}
-	if _, err := os.Stat(destination); !os.IsNotExist(err) {
-		t.Fatalf("failed strict export wrote output: %v", err)
+	for _, name := range []string{"a.cheat", "a.navi.json"} {
+		if _, err := os.Stat(filepath.Join(destination, name)); err != nil {
+			t.Fatal(err)
+		}
 	}
+	b, err := os.ReadFile(filepath.Join(destination, "a.navi.json"))
+	if err != nil || !strings.Contains(string(b), `"description": "Markdown input"`) {
+		t.Fatalf("%s %v", b, err)
+	}
+
 }
 
 func TestNaviRootMustBeDirectory(t *testing.T) {
