@@ -106,6 +106,16 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 		original["navigation"] = navigation
 		delete(fm.Metadata, "navigation")
 	}
+	// Upstream shared command declarations are not an opt-in to SheetMill's
+	// command semantics. Preserve their complete value, regardless of shape,
+	// before shared metadata or document-reference validation can see it.
+	if sheet, ok := fm.Metadata["cheatsheet"].(map[string]any); ok {
+		if cards, exists := sheet["cards"]; exists {
+			original["cheatsheet"] = map[string]any{"cards": cards}
+			delete(sheet, "cards")
+			warn("IMP111", "upstream cheatsheet.cards archived as inert source data", fm.Locations["cheatsheet.cards"])
+		}
+	}
 	if ds := validate.Metadata(fm.Metadata, fm.Locations); len(ds) > 0 {
 		return failed(ds)
 	}
@@ -116,7 +126,9 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 	for _, x := range removed {
 		span := s.Span(fm.BodyOffset+x.start, fm.BodyOffset+x.end)
 		archived = append(archived, map[string]any{"line": span.Start.Line, "text": x.text})
-		if x.heading {
+		if x.text == ".command" && x.heading {
+			warn("IMP111", "upstream .command marker removed and archived as inert source data", span)
+		} else if x.heading {
 			warn("IMP108", "unsupported heading attribute "+x.text+" removed and archived", span)
 		} else if x.keys {
 			warn("IMP110", "standalone {.shortcuts} removed; its card is marked .keys", span)
@@ -391,7 +403,10 @@ func escaped(s string, at int) bool {
 
 var spanToken = regexp.MustCompile(`^\.(col|row)-span-([1-9]|1[0-2])$`)
 
-// supported reports whether SheetMill accepts token on a heading of this level.
+// supported reports which upstream heading tokens may remain active after import.
+// .command is deliberately excluded even though canonical SheetMill accepts it:
+// import must not activate new shared command semantics. Legacy .navi behavior
+// remains unchanged.
 func supported(level int, token string) bool {
 	id := strings.HasPrefix(token, "#") && len(token) > 1
 	switch level {
