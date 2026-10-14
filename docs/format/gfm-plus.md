@@ -26,24 +26,24 @@ Known fields use strict types without implicit scalar/array coercion:
 | `cheatsheet` | Optional mapping |
 | `cheatsheet.schema` | Optional integer, exactly `1`; omitted means current schema |
 | `cheatsheet.tool` | Optional nonempty string |
+| `cheatsheet.cards` | Optional shared card/parameter mapping; see [command cards](command-cards.md) |
 
-All other JSON-compatible fields, including nested `cheatsheet` fields, are
+All other JSON-compatible fields, including unreserved nested `cheatsheet` fields, are
 preserved in `metadata`. `cheatsheet.navi` is generic metadata to the parser and
 `smill check`; only `smill build navi` validates it, under the
 [navi export contract](navi-profile.md).
 The [JSON Schema](../../schema/cheatsheet.schema.json) describes
 metadata after YAML decoding; parser limits and duplicate keys are additional rules.
 
-## Proposed shared command cards {#shared-command-cards}
+## Shared command cards {#shared-command-cards}
 
-Feature [015](../../specs/015-command-cards/spec.md) proposes target-neutral
-`{#id .command}` cards and `cheatsheet.cards.<id>.params`. See the
-[shared command-card contract and migration](command-cards.md). This is a
-**docs-only proposal, not supported syntax**: the current parser rejects `.command`
-and `smill check` does not validate `cheatsheet.cards` as shared declarations.
-The current `.navi` and `cheatsheet.navi` contract remains supported as documented
-below. A later implementation must preserve complete `.cheat` bytes and pinned
-navi identities while introducing shared validation and compatibility aliases.
+Use `{#id .command}` for target-neutral command semantics and
+`cheatsheet.cards.<id>.params` for card-local parameter declarations. The
+[shared command-card contract](command-cards.md) specifies core validation,
+migration and exact navi output/identity preservation. Ordinary shell code blocks
+are not automatically exported. Legacy `.navi` and `cheatsheet.navi.cards` remain
+supported aliases; conflicting same-card declarations are rejected, never merged
+partially or silently overridden. No commands or providers execute.
 
 ## Library placement {#library-placement}
 
@@ -120,7 +120,8 @@ any other heading. Escape the brace (`\{.x}`) or use a code span to show one.
 | `{.row-span-N}` | Card web-layout hint, decimal `N` from 1 through 12 |
 | `{.note}`, `{.tip}`, `{.warning}` | SheetMill semantic card classes |
 | `{.keys}` | Key table card: inline code in a table's first column renders as keys (`Ctrl+C` shows two keys) |
-| `{.navi}` | Marks a command card for `smill build navi`, which also needs an explicit `{#id}`; see [navi export](navi-profile.md) |
+| `{.command}` | Shared command-card semantics; requires explicit `{#id}`; see [command cards](command-cards.md) |
+| `{.navi}` | Legacy command selection alias; existing navi warning/skip behavior is retained; see [navi export](navi-profile.md) |
 | `{.wrap}` | Inert legacy compatibility hint; does not change semantic content |
 
 Combine tokens inside one group, for example `{.col-span-2 .note #example}`.

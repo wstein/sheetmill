@@ -1,12 +1,11 @@
 ---
-title: "Shared command cards (proposal)"
+title: "Shared command cards"
 description: "Target-neutral command cards, shared parameters and identity-preserving migration."
 category: reference
 ---
-**Proposed, not implemented.** Feature [015](../../specs/015-command-cards/spec.md)
-extends SheetMill's core source contract; this documentation PR does not add
-parser or exporter support. Use the [current navi syntax](navi-profile.md) today.
-The future contract below takes effect only with a separately authorized implementation.
+Feature [015](../../specs/015-command-cards/spec.md) makes command cards and their
+parameters part of SheetMill's shared source contract. Navi consumes this contract;
+[legacy navi syntax](navi-profile.md#legacy-syntax) remains supported.
 
 ## Author once
 
@@ -41,11 +40,11 @@ smill check "<sheet>"
 `cheatsheet.schema: 1` remains optional. `.command` declares semantics, not an
 execution action or a layout style. A shell example without a command marker is
 not automatically exported. No new visual controls or renderer behavior beyond
-navi consumption is promised by this proposal.
+navi consumption is introduced.
 
 ## Shared declarations
 
-| Location | Proposed rule |
+| Location | Rule |
 | --- | --- |
 | `cheatsheet.cards` | Optional mapping keyed by explicit card ID; empty mapping allowed |
 | `.cards.<id>` | Mapping with only optional `params` |
@@ -65,9 +64,9 @@ same name differently. A zero-parameter command needs no frontmatter card entry.
 
 Core checking validates shared declarations and their references to explicit
 command-card IDs. `.command` cards require explicit IDs. Direct-IR renderer callers
-apply the same shared rules. Proposed errors are CMD001 (shared metadata) and
+apply the same shared rules. Errors are CMD001 (shared metadata) and
 CMD002 (explicit ID/card reference), with source key/card positions or 1:1 for
-positionless IR. These codes are reserved here, not implemented diagnostics.
+positionless IR. The same rules apply to source checking and direct renderer input.
 
 Navi still applies its own one-fence shape, supported fence languages, raw payload,
 placeholder-use, quote and output-profile rules. Parameter hints neither enforce
@@ -76,7 +75,7 @@ Defaults, choices, providers, previews and shared contexts remain out of scope.
 
 ## Migration and compatibility
 
-After implementation:
+To migrate:
 
 1. Keep the filename, path/root selection, explicit card ID, title, command bytes,
    tool/tags, license, attribution and build options unchanged.
@@ -90,7 +89,7 @@ After implementation:
 5. Verify byte-identical `.cheat` output and unchanged per-entry pinned identities
    before adopting the migrated source. No automated migration tool is included.
 
-| Input after implementation | Behavior |
+| Input | Behavior |
 | --- | --- |
 | Legacy `.navi` plus `cheatsheet.navi.cards` | Supported with existing export behavior |
 | New `.command` plus `cheatsheet.cards` | Shared semantics consumed by navi |
@@ -116,7 +115,7 @@ a shared declaration may reference an explicitly identified `.navi` alias card.
 
 No default deprecation warning is added, preserving `--strict` behavior for valid
 legacy sheets. No alias-removal date is set. Removing compatibility requires a
-separate versioned decision; this proposal does not rewrite documents automatically.
+separate versioned decision; SheetMill does not rewrite documents automatically.
 
 ## Identity and byte guarantees
 
@@ -131,7 +130,7 @@ the metadata location enters identity. Preserve tool/tag ordering and context
 encoding; do not introduce a new hash scheme or reset saved identities.
 NAV008 continues rejecting batch collisions before anything is written.
 
-The future implementation must compare complete old/new `.cheat` bytes **and**
+Regression tests compare complete old/new `.cheat` bytes **and**
 fixed expected hashes for every entry. Merely comparing old and new hashes is
 insufficient: both could drift together. Existing committed hash vectors remain.
 Dual-marker/mixed fixtures must prove no extra entry appears.
@@ -145,13 +144,12 @@ the source metadata to aliases merely to make companions equal. IR schema remain
 `cheatsheet.cards` was previously generic metadata. Reserving it introduces a
 source compatibility restriction even with unchanged IR version: conflicting
 custom fields must be renamed or brought into the new contract. Other unknown
-metadata remains preserved. The new `.command` marker currently fails parser
-validation; it is not usable until implementation.
+metadata remains preserved. The `.command` marker is accepted on cards and requires an explicit ID.
 
 Import adapters must archive upstream `cheatsheet.cards` and `.command` markers
-as inert provenance before core validation/selection, never infer or activate
+as inert provenance (`IMP111`) before core validation/selection, never infer or activate
 command behavior. Preserve original values/marker text and unrelated metadata;
-legacy import behavior is not otherwise changed by this proposal.
+legacy import behavior is otherwise unchanged.
 
 See [015's plan](../../specs/015-command-cards/plan.md) and
-[pending tasks](../../specs/015-command-cards/tasks.md) for future verification.
+[tasks](../../specs/015-command-cards/tasks.md) for verification evidence.

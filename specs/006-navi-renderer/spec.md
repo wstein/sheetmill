@@ -14,7 +14,7 @@ navi has been run.
 ## Decisions (user, 2026-10-14)
 
 - Output is `.cheat`, one file per sheet.
-- A card is exported only with `{.navi}` and an explicit `{#id}`; the IR records
+- A card is exported only with `{.command}` (or legacy `{.navi}`) and an explicit `{#id}`; the IR records
   this as `id_explicit` (omitted when false).
 - Profiles: `bash` first (default), then `zsh`, `fish` and optional `nu`. navi uses
   one configured shell and the fence label does not select it, so a build targets
@@ -32,7 +32,7 @@ navi has been run.
 
 - S1 Shell: profiles above. Fence languages accepted per profile are listed in the
   format page; any other language skips the card (`NAV101`).
-- S2 Selection: `{.navi}` plus explicit `{#id}`, exactly one fenced code block.
+- S2 Selection: `{.command}` or legacy `{.navi}` plus explicit `{#id}`, exactly one fenced code block.
   Multi-line commands are allowed; blank lines are not (navi turns them into
   separators).
 - S3 Payload: exported unchanged. Skip the card for CR, NUL and other controls,
@@ -40,13 +40,15 @@ navi has been run.
   line, a trailing continuation backslash, an unterminated quote and a leading
   `navi` word (`NAV102`). Nothing is indented or hidden to evade navi's parser.
 - S4 Parameters: `<name>` with `[a-z][a-z0-9_]{0,31}`; declared per card under
-  `cheatsheet.navi.cards.<id>.params`; every declaration used. Placeholders are
+  `cheatsheet.cards.<id>.params` (legacy alias
+  `cheatsheet.navi.cards.<id>.params`); every declaration used. Placeholders are
   recognized with navi's own broader regex first (`\\?<(\w[\w\d\-_]*)>`, Unicode
   `\w`, so `<1>`, `<ünï>` and `\<name>` count), then rejected when outside the
   narrower grammar (`NAV103`, `NAV104`). Redirections are shell, not
   placeholders. There is no literal-placeholder escape in this version.
 - S5 Metadata: closed schema, `type` in `string|int|path`, optional single-line
-  `description`. Unknown keys, dangling card IDs and unsupported types are `NAV006`.
+  `description`. Shared shape/type errors are `CMD001`, shared reference errors are `CMD002`.
+  Legacy metadata errors and conflicting old/new declarations are `NAV006`.
   Parameters are card-local (`NAV007`, the sheet-wide conflict, is retired because
   each card has its own context). Defaults, choice
   lists, providers, previews, multi-selection and shared contexts are out of scope;
@@ -82,7 +84,8 @@ types are not enforced. Generated headers and the format page state this.
 | Explicit card, declared parameter | One entry with a unique context, exact payload |
 | Same title in one sheet; same tags and titles across sheets | Both kept; none dropped by the navi model |
 | Equal path and ID in two sheets | `NAV008`, nothing written |
-| Missing explicit ID, wrong block count, other language | `NAV101` warning, card skipped |
+| Legacy `.navi` missing explicit ID, wrong block count, other language | `NAV101` warning, card skipped |
+| `.command` missing explicit ID or invalid shared reference | `CMD002`, core checking fails |
 | Unterminated quote, markers, controls, U+2800, `navi` word, blank line, trailing `\` | `NAV102` warning |
 | `<Name>`, `<a-b>`, undeclared, unused | `NAV103` / `NAV104` warning |
 | Redirections, heredocs, comments with quotes, leading dash, Unicode | Exported unchanged |
@@ -121,25 +124,22 @@ The sidecar increment is tracked in [#30](https://github.com/wstein/sheetmill/pu
 its exact-revision independent review and checks are recorded there, separately
 from the merged exporter evidence above.
 
-## Planned consumption of shared command cards (015)
+## Shared command cards (015)
 
-The requirements and implemented acceptance table above describe current behavior.
-[015-command-cards](../015-command-cards/spec.md) owns the proposed core source
-revision: `.command` and `cheatsheet.cards.<id>.params`. It is docs-only and does
-not extend 006's existing implementation authorization to core source changes.
+[015-command-cards](../015-command-cards/spec.md) owns core `.command` and
+`cheatsheet.cards.<id>.params` semantics. The user authorized implementation of
+T001–T011 on 2026-10-14; 006 consumes the shared contract without changing the
+pinned navi identity algorithm or output format.
 
-After a separate implementation handoff, 006 consumes shared command semantics
-and retains `.navi`/`cheatsheet.navi.cards` compatibility. Either marker and either
-metadata location resolve once per explicit card. Equal complete normalized
-per-card declarations coalesce; conflicting declarations fail NAV006 atomically.
-Legacy shell guards remain active when present. See the
-[format migration](../../docs/format/command-cards.md) for current/proposed boundaries.
+Either marker and either metadata location resolve once per explicit card.
+Equal complete normalized per-card declarations coalesce; conflicting declarations
+fail NAV006 atomically. Legacy shell guards remain active when present. Legacy-only
+missing-ID warning/skip and strict behavior remain unchanged. Shared `.command`
+ID/reference checks use core CMD diagnostics. See the
+[format migration](../../docs/format/command-cards.md).
 
-Required future acceptance: paired legacy/new sources produce **byte-identical
-complete `.cheat` files** and the same fixed expected per-entry pinned navi hashes.
-Keep first contexts, source/root paths, IDs, title normalization, tool/tag order,
-payloads, source entry order, headers, format version and hash algorithm/input
-unchanged. NAV008 continues detecting collisions before writes. Test dual/mixed
-aliases, strict legacy compatibility and complete companion metadata separately;
-sidecar bytes may differ while exported-card identities agree. These are pending
-015 acceptance tests, not implementation evidence from this docs revision.
+Paired migration tests pin complete `.cheat` bytes and fixed per-entry hashes;
+first contexts, source/root paths, IDs, title normalization, tool/tag order,
+payloads, source entry order, headers, format version and hash input/algorithm are
+unchanged. NAV008 still detects collisions before writes. Sidecar bytes may differ
+while full authored metadata is preserved and exported-card identities agree.

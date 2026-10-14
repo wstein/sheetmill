@@ -1,8 +1,8 @@
 # Feature Specification: Target-neutral command cards
 
-**Feature Branch**: `codex/015-command-card-contract`
+**Feature Branch**: `codex/015-command-cards`
 **Created**: 2026-10-14
-**Status**: Proposed source revision; docs-only authorization, not implemented
+**Status**: Implemented under the 2026-10-14 handoff; code re-review clear; final-head evidence recorded on the PR
 **Input**: Shared `.command` semantics and `cheatsheet.cards.<id>.params`, with
 migration from 006 and byte-identical navi output and pinned entry identities.
 
@@ -85,7 +85,7 @@ Malformed legacy metadata is not made valid by an accompanying new declaration.
   or U+2028/U+2029); unknown keys fail.
   IDs retain the existing explicit ASCII ID grammar. No implicit type coercion.
 - **FR-003**: Core checking validates shared mapping shapes/types and explicit
-  command-card references. Shared rules also protect direct-IR consumers. Proposed
+  command-card references. Shared rules also protect direct-IR consumers.
   CMD001 covers shared metadata; CMD002 covers missing explicit IDs and dangling/
   unmarked references. Legacy-only errors retain their current NAV codes/behavior.
 - **FR-004**: Treat `.navi` as a compatibility selection alias; retain legacy
@@ -132,10 +132,10 @@ Malformed legacy metadata is not made valid by an accompanying new declaration.
 
 ## Assumptions
 
-This handoff authorizes design, documentation, Sol review and a docs PR only.
-Implementation, schema edits, automated migration tools, PDF, deployment and merge
-are excluded. Future 015 owns core source semantics; 006 consumes them for navi.
-Existing 006 behavior remains the shipping contract until 015 is implemented.
+The user authorized T001–T011 implementation, subagents, Sol review and a PR on
+2026-10-14, recorded in AGENTS.md. Automated migration tools, navi execution,
+PDF, deployment and merge remain excluded. 015 owns core source semantics; 006
+consumes them for navi. Existing valid legacy exports remain compatible.
 For parity, source path/root resolution, explicit IDs, titles, tags, tool, license,
 attribution, command bytes and build options remain identical. Legacy shell guards
 continue to apply when present; parity covers successful matched-profile exports,

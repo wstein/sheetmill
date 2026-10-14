@@ -66,7 +66,7 @@ warnings end with `(warning)` and do not change the exit status unless you use `
 | --- | --- |
 | `NAV000` | `smill build navi --strict` found warnings and wrote nothing. Fix them or drop `--strict`. |
 | `NAV001` | Unsupported `--shell` profile. Use `bash`, `zsh`, `fish` or `nu`. |
-| `NAV006` | Invalid or unknown `cheatsheet.navi` metadata, a reference to a missing/unmarked card or generated ID, a wrong `shell`, or an unusable tag. |
+| `NAV006` | Invalid or unknown `cheatsheet.navi` metadata, a reference to a missing/unmarked card or generated ID, a wrong `shell`, conflicting complete old/new parameter declarations, or an unusable tag. |
 | `NAV008` | Two exported entries share a pinned navi identity hash; navi would silently drop one. |
 | `NAV101`–`NAV107` | Warnings: a marked card was skipped (shape, command text, placeholder, declarations), the license is unstated, a sheet exported nothing, or frontmatter is not carried. `NAV007` is retired. See [navi export](format/navi-profile.md). |
 
@@ -79,7 +79,7 @@ warnings end with `(warning)` and do not change the exit status unless you use `
 | `IO003` | The output exists already or cannot be created. Choose a new path; outputs are never overwritten. |
 
 ### Import {#import-codes}
-Reference import adds `IMP001`–`IMP003` (errors) and `IMP101`–`IMP109`
+Reference import adds `IMP001`–`IMP003` (errors) and `IMP101`–`IMP111`
 (warnings about archived or mapped legacy syntax). See
 [Reference import](imports.md) for the full list.
 
@@ -117,11 +117,14 @@ jobs:
 
 Pin third-party actions to full commit SHAs in production workflows.
 
-## Proposed command-card diagnostics
+## Shared command-card diagnostics
 
-Feature [015](../specs/015-command-cards/spec.md) reserves CMD001 for shared
-`cheatsheet.cards` metadata errors and CMD002 for shared command-card explicit-ID/
-reference errors. These codes are **not implemented**. Migration conflicts in the
-future navi consumer use NAV006; NAV008 collision behavior and hashes stay unchanged.
-See the [proposed migration](format/command-cards.md). Current NAV diagnostics
-remain the shipping contract until that separate implementation.
+| Code | Meaning |
+| --- | --- |
+| `CMD001` | Invalid shared `cheatsheet.cards` mapping, card settings, parameter name/type/description or unknown key. |
+| `CMD002` | A `.command` card lacks an explicit ID, or shared metadata refers to a missing, unmarked or automatically identified card. |
+
+Source diagnostics point to the key/card; direct IR without key positions falls
+back to document start. Legacy-only selection/metadata keeps existing NAV behavior.
+Conflicting old/new complete declarations use NAV006; NAV008 collision behavior
+and pinned hashes are unchanged. See [command cards and migration](format/command-cards.md).

@@ -1,11 +1,12 @@
 # Plan — 015 command cards
 
-Status: docs-only design, not implementation authorization. Baseline main `f12a4b7`.
+Status: implemented under the user’s 2026-10-14 T001–T011 handoff.
+Implementation baseline main `9f132df`.
 
-## Architecture decisions for a later handoff
+## Architecture decisions
 
 - Keep generic schema-1 metadata and raw heading classes; derive command semantics
-  without mutating source IR. Add the parser's `.command` whitelist entry later.
+  without mutating source IR. The parser accepts `.command` on cards.
 - Core owns shared `cheatsheet.cards` shape/type rules and document-level explicit
   ID/reference rules. Metadata-only validation cannot check card references; run
   that stage after Markdown structure exists. Direct renderer consumers share it.
@@ -13,7 +14,7 @@ Status: docs-only design, not implementation authorization. Baseline main `f12a4
   and legacy missing-ID selection retains warning/skip behavior. Do not impose
   new core errors on legacy-only documents as an incidental migration change.
 - Source diagnostics use nested key/card spans; direct IR falls back to 1:1.
-  Reserve CMD001/CMD002 only in proposal docs now; add code/schema/tests later.
+  CMD001/CMD002 are implemented with schema and behavior tests.
 - Navi consumes derived command semantics and resolves compatibility aliases once.
   Compare complete normalized per-card declarations, never use map iteration order
   or silently overwrite one namespace. Invalid legacy settings still fail NAV006.
@@ -38,7 +39,7 @@ UTF-8 bytes and trailing 0xff behavior and the committed vectors.
 returns all metadata diagnostics as fatal. Import validation precedes Markdown
 structure, so both shared-field and marker archival timing need explicit tests.
 
-## Future verification
+## Verification
 
 Paired legacy/new/dual/mixed fixtures, per-entry expected hash baselines, complete
 `.cheat` byte comparison, real collision NAV008 cases, core/direct-IR negative
@@ -47,5 +48,5 @@ the existing CLI test harness, never execute navi or source commands.
 
 Constitution check: deterministic output, canonical source, inert input and
 publication boundaries retained. No runtime dependencies or rendering UI added.
-Implementation authorization, failing-first tests and exact-revision independent
-review are prerequisites to a future implementation PR.
+Implementation authorization is recorded in AGENTS.md. Failing-first tests and
+exact-revision independent review are required for the implementation PR.
