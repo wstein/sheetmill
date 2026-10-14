@@ -10,13 +10,15 @@ const longTag='longtag'.repeat(30);
 const inputs=[['alpha',source('Alpha','Networking',['shared','C++','C#','日本語','<unsafe>/../x',longTag])],['beta',source('Beta','Development',['shared'])],['other',source('Other','',['solo'])]];
 const test=base.extend({
   layoutTheme:['editorial',{option:true}],
-  site:async({tools,layoutTheme,basePath},use)=>{
+  placement:[false,{option:true}],
+  site:async({tools,layoutTheme,basePath,placement},use)=>{
+    const selected=placement?await Promise.all(['zero','essentials','cli','alpha','beta','tie-a','tie-b','net','plain'].map(async id=>[id,await readFile(new URL('../../testdata/hugo/navigation/'+id+'.md',import.meta.url),'utf8')])):inputs;
     const owner=await OwnedWorkspace.create();registerInterruptCleanup(owner);
     const env=toolEnvironment(join(owner.root,'go-cache'));
     const run=(tool,args,extra={})=>owner.run(tool,args,{cwd:owner.root,env,...extra});
     try {
       const input=join(owner.root,'sheets');await mkdir(input);
-      for(const [id,bytes] of inputs){await writeFile(join(input,id+'.md'),bytes);await run(tools.smill,['check',join(input,id+'.md')]);}
+      for(const [id,bytes] of selected){await writeFile(join(input,id+'.md'),bytes);await run(tools.smill,['check',join(input,id+'.md')]);}
       const sites=[];
       for(const suffix of ['first','second']) {
         const project=join(owner.root,suffix),out=join(project,'public');
@@ -28,7 +30,7 @@ const test=base.extend({
       const mounted=basePath==='/'?sites[0]:new Map([...sites[0]].map(([name,bytes])=>[basePath.slice(1)+name,bytes]));
       const server=await serveSite(mounted);owner.defer(server.close);
       await use(server);
-      for(const [id,bytes] of inputs)expect(await readFile(join(input,id+'.md'),'utf8')).toBe(bytes);
+      for(const [id,bytes] of selected)expect(await readFile(join(input,id+'.md'),'utf8')).toBe(bytes);
     } finally {await owner.close();}
   },
 });
@@ -109,5 +111,38 @@ for(const layoutTheme of ['editorial','classic-compact'])for(const basePath of [
       await expectFits(page,'fits '+width);
     }
     expect(errors).toEqual([]);
+  });
+});
+
+for(const layoutTheme of ['editorial','classic-compact'])for(const basePath of ['/','/sheetmill/'])test.describe(layoutTheme+' placement at '+basePath,()=>{
+  test.use({layoutTheme,basePath,placement:true});
+  test('authored placement agrees in home and sidebar',async({page,site})=>{
+    await page.goto(site.origin+basePath);
+    await expectFits(page,'placement home fits');
+    const nav=page.getByRole('navigation',{name:'Reference sheets'});
+    const labels=['Networking','SheetMill','reference','Other references'];
+    const titles=[['Net'],['Zero','Essentials','CLI','alpha','Beta'],['Tie','Tie'],['Plain']];
+    await expect(nav.locator('summary')).toHaveText(['Networking 1','SheetMill 5','reference 2','Other references 1']);
+    const shelves=page.locator('.shelf, .index-group');
+    await expect(shelves).toHaveCount(labels.length);
+    for(let i=0;i<labels.length;i++) {
+      const group=nav.locator('details').nth(i);
+      await expect(shelves.nth(i).getByRole('heading',{level:2})).toHaveText(labels[i]);
+      const links=group.locator('a');
+      await expect(links).toHaveText(titles[i]);
+      const homeLinks=shelves.nth(i).locator('a');
+      expect(await homeLinks.evaluateAll(els=>els.map(el=>el.getAttribute('href')))).toEqual(await links.evaluateAll(els=>els.map(el=>el.getAttribute('href'))));
+    }
+    const group=nav.locator('details[data-library-group="SheetMill"]');
+    if(!await group.evaluate(el=>el.open))await group.locator('summary').click();
+    await group.getByRole('link',{name:'CLI',exact:true}).click();
+    await expect(page.getByRole('heading',{level:1,name:'CLI',exact:true})).toBeVisible();
+    await expect(group).toHaveAttribute('open','');
+    await expect(group.getByRole('link',{name:'CLI',exact:true})).toHaveAttribute('aria-current','page');
+    await expect(group.locator('a')).toHaveText(titles[1]);
+    await group.locator('summary').focus();await page.keyboard.press('Enter');
+    await expect(group).not.toHaveAttribute('open','');
+    await page.keyboard.press('Space');await expect(group).toHaveAttribute('open','');
+    await expectFits(page,'placement sheet fits');
   });
 });
