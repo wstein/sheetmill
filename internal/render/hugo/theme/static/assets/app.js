@@ -60,6 +60,21 @@ if (typeof document !== 'undefined') (() => {
     try { localStorage.setItem('sheetmill-theme', root.dataset.theme); } catch {}
     label();
   });
+  const palette = document.querySelector('#app-palette');
+  if (palette) {
+    const allowed = [...palette.options].map(option => option.value);
+    try {
+      const stored = localStorage.getItem('sheetmill-palette');
+      if (allowed.includes(stored)) root.dataset.palette = stored;
+    } catch {}
+    palette.value = root.dataset.palette;
+    palette.hidden = false;
+    palette.addEventListener('change', () => {
+      if (!allowed.includes(palette.value)) return;
+      root.dataset.palette = palette.value;
+      try { localStorage.setItem('sheetmill-palette', palette.value); } catch {}
+    });
+  }
   for (const group of document.querySelectorAll('[data-library-group]')) {
     const key = 'sheetmill-library:' + root.dataset.base + ':' + group.dataset.libraryGroup;
     try {

@@ -61,6 +61,8 @@ type Options struct {
 	SourceBaseURL string
 	// Theme selects the page layout: "" or "editorial" (default) or "classic-compact".
 	Theme string
+	// Palette selects a color palette independently of the layout; empty uses graphite-coral.
+	Palette string
 }
 
 // Themes lists the accepted Options.Theme values.
@@ -395,11 +397,18 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	if options.Theme != "" && !classic && options.Theme != "editorial" {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "unknown theme: " + options.Theme}})
 	}
+	paletteName := options.Palette
+	if paletteName == "" {
+		paletteName = "graphite-coral"
+	}
+	if !slices.Contains(PaletteNames(), paletteName) {
+		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "unknown palette: " + paletteName}})
+	}
 	title := options.Title
 	if title == "" {
 		title = "SheetMill References"
 	}
-	params := map[string]any{"base": base, "description": options.Description}
+	params := map[string]any{"base": base, "description": options.Description, "palette": paletteName}
 	if classic {
 		params["classic"] = true
 	}
@@ -435,7 +444,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			return e
 		})
 	}
-	for _, e := range []error{putJSON("data/tagindex.json", tagPages), putJSON("data/library.json", pages), putJSON("data/shelves.json", shelves(pages)), putJSON("static/search.json", index), copyTree(themeFiles, "theme", ""), copyTree(brandFiles, ".", "static/brand")} {
+	for _, e := range []error{putJSON("data/palettes.json", palettes), putJSON("data/tagindex.json", tagPages), putJSON("data/library.json", pages), putJSON("data/shelves.json", shelves(pages)), putJSON("static/search.json", index), copyTree(themeFiles, "theme", ""), copyTree(brandFiles, ".", "static/brand")} {
 		if e != nil {
 			return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN001", Message: "project assembly failed: " + e.Error()}})
 		}

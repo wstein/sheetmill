@@ -54,3 +54,11 @@
 @media(max-width:640px){.topbar{gap:8px;padding:0 8px}.topbar-link,.topbar-search kbd{display:none}.topbar button{min-width:44px;min-height:44px;height:44px}.classic .sheet-toc{position:static}.index-group li{flex-wrap:wrap}}
 @page{size:A4 landscape;margin:10mm}
 @media print{.classic,.classic.comfortable{font-size:8.5pt;--text:#000;--muted:#333;--line:#888;--accent:#000;--link:#000;--bg:#fff;--surface:#fff}.topbar,.classic .sheet-toc,.classic .sheet-count,.classic .edit-link{display:none!important}.classic #app-main{padding:0}.classic .cards,.classic.comfortable .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:0 10pt}.classic .card{break-inside:avoid;border:0;border-bottom:1px solid #888}.classic .card.dim{opacity:1}}
+/* Span decisions follow available content width, including the library sidebar. */
+.classic #app-main{container-type:inline-size}
+.classic .card:is(.col-span-2,.col-span-3){grid-column:1/-1}
+@container(min-width:560px){.classic:not(.comfortable) .card.col-span-2{grid-column:span 2}}
+@container(min-width:660px){.classic.comfortable .card.col-span-2{grid-column:span 2}}
+@container(min-width:850px){.classic:not(.comfortable) .card.col-span-3{grid-column:span 3}}
+@container(min-width:1000px){.classic.comfortable .card.col-span-3{grid-column:span 3}}
+@media(max-width:640px){.classic{--topbar:104px}.topbar{height:auto;min-height:48px;flex-wrap:wrap;padding-block:4px}.topbar-search{min-width:0}.topbar .appearance-controls{flex-basis:100%;margin:0;justify-content:flex-end}}
