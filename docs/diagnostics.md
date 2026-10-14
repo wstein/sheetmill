@@ -51,7 +51,7 @@ warnings end with `(warning)` and do not change the exit status unless you use `
 | --- | --- |
 | `REN001` | The renderer met content it cannot represent, or the project could not be assembled. Report it with the input. |
 | `REN002` | A link uses an unsafe or unsupported URL. Use relative, `http`, `https` or `mailto` links. |
-| `REN003` | Two inputs produce the same page route or basename, a route is reserved (`assets`, `brand`), or a base path or GitHub base URL is invalid. |
+| `REN003` | Two inputs produce the same page route or basename, a route is reserved (`assets`, `brand`, `tags`), two tag labels map to the same tag route, `--theme` or `--palette` names an unknown value, or a base path or GitHub base URL is invalid. |
 
 ### Warnings {.col-span-2 #render-warnings}
 | Code | Meaning and fix |
