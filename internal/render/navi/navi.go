@@ -184,15 +184,18 @@ func renderSheet(s Sheet, profile Profile) ([]byte, []entry, []Issue, []Issue) {
 	if dropped := unexportedMetadata(d.Metadata); len(dropped) > 0 {
 		warns = append(warns, issue(s, "NAV107", "metadata not written to the .cheat file (a sidecar is not implemented yet): "+strings.Join(dropped, ", "), diagnostic.Span{}))
 	}
-	existing := map[string]bool{}
+	existing := map[string]model.Card{}
 	for _, sec := range d.Sections {
 		for _, c := range sec.Cards {
-			existing[c.ID] = true
+			existing[c.ID] = c
 		}
 	}
 	for _, id := range ids {
-		if !existing[id] {
+		card, present := existing[id]
+		if !present {
 			bad(fmt.Sprintf("cheatsheet.navi.cards.%s refers to no card", id))
+		} else if !card.IDExplicit || !contains(card.Classes, "navi") {
+			bad(fmt.Sprintf("cheatsheet.navi.cards.%s must refer to a card with an explicit ID and .navi", id))
 		}
 	}
 	title, _ := d.Metadata["title"].(string)
