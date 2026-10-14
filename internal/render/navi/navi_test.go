@@ -511,7 +511,7 @@ func TestSidecarPreservesMetadata(t *testing.T) {
 func TestCanonicalNavigationDoesNotChangeCheatOutput(t *testing.T) {
 	plain := sheet(t, card("bash", "echo <sheet>"))
 	nav := sheet(t, card("bash", "echo <sheet>"))
-	nav.Document.Metadata["navigation"] = map[string]any{"group": "Tools", "order": int64(2), "extra": []any{"x"}}
+	nav.Document.Metadata["navigation"] = map[string]any{"group": "Tools", "order": int64(2)}
 	pp, perrs := Render([]Sheet{plain}, Options{})
 	np, nerrs := Render([]Sheet{nav}, Options{})
 	if len(perrs) > 0 || len(nerrs) > 0 || len(pp.Warnings) != len(np.Warnings) {

@@ -53,17 +53,20 @@ func shelfLayout(t *testing.T, p Project) string {
 }
 
 func navigationFixture(t *testing.T) []Sheet {
-	return []Sheet{
-		navSheet(t, "cli", "CLI", "reference", "{group: SheetMill, order: 20}"),
-		navSheet(t, "essentials", "Essentials", "workflow", "{group: SheetMill, order: 10}"),
-		navSheet(t, "zero", "Zero", "", "{group: SheetMill, order: 0}"),
-		navSheet(t, "alpha", "alpha", "", "{group: SheetMill}"),
-		navSheet(t, "beta", "Beta", "", "{group: SheetMill}"),
-		navSheet(t, "tie-b", "Tie", "reference", "{order: 5}"),
-		navSheet(t, "tie-a", "Tie", "reference", "{order: 5}"),
-		navSheet(t, "net", "Net", "Networking", ""),
-		navSheet(t, "plain", "Plain", "", ""),
+	t.Helper()
+	var sheets []Sheet
+	for _, id := range []string{"cli", "essentials", "zero", "alpha", "beta", "tie-b", "tie-a", "net", "plain"} {
+		src, err := os.ReadFile(filepath.Join("../../../testdata/hugo/navigation", id+".md"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		doc, ds := markdown.Parse(src)
+		if len(ds) > 0 {
+			t.Fatal(ds)
+		}
+		sheets = append(sheets, Sheet{ID: id, SourceName: id + ".md", Document: doc})
 	}
+	return sheets
 }
 
 func TestNavigationPlacement(t *testing.T) {
@@ -149,5 +152,65 @@ func TestNavigationDirectIRValidation(t *testing.T) {
 		if len(ds) != 1 || ds[0].Code != "VAL003" || len(p.Files) != 0 {
 			t.Errorf("%s: %+v", name, ds)
 		}
+	}
+}
+
+func TestNavigationAllFourSheetPermutations(t *testing.T) {
+	sheets := navigationFixture(t)[:4]
+	baseline, ds := Render(sheets, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	count := 0
+	var permute func(int)
+	permute = func(i int) {
+		if i == len(sheets) {
+			count++
+			got, ds := Render(sheets, Options{})
+			if len(ds) > 0 || !reflect.DeepEqual(got.Files, baseline.Files) {
+				t.Fatal("permutation differs", ds)
+			}
+			return
+		}
+		for j := i; j < len(sheets); j++ {
+			sheets[i], sheets[j] = sheets[j], sheets[i]
+			permute(i + 1)
+			sheets[i], sheets[j] = sheets[j], sheets[i]
+		}
+	}
+	permute(0)
+	if count != 24 {
+		t.Fatal(count)
+	}
+}
+
+func TestNavigationTitleTiesAndNamedFallback(t *testing.T) {
+	sheets := []Sheet{
+		navSheet(t, "z", "éclair", "", "{group: G}"),
+		navSheet(t, "a", "Éclair", "", "{group: G}"),
+		navSheet(t, "b", "Éclair", "", "{group: G}"),
+		navSheet(t, "named", "Named", "", "{group: Other references}"),
+		navSheet(t, "fallback", "Fallback", "", ""),
+	}
+	p, ds := Render(sheets, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	if got := shelfLayout(t, p); got != "G:a,b,z|Other references:named|:fallback" {
+		t.Fatal(got)
+	}
+}
+
+func TestNavigationExactGroupIdentity(t *testing.T) {
+	p, ds := Render([]Sheet{
+		navSheet(t, "spaced", "Spaced", "", "{group: ' G '}"),
+		navSheet(t, "upper", "Upper", "", "{group: G}"),
+		navSheet(t, "lower", "Lower", "", "{group: g}"),
+	}, Options{})
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	if got := shelfLayout(t, p); got != " G :spaced|G:upper|g:lower" {
+		t.Fatal(got)
 	}
 }
