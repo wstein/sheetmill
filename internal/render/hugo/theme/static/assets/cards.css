@@ -31,6 +31,7 @@
 @container(min-width:700px){.classic.reference-cards.comfortable .card.col-span-2{grid-column:span 2}}
 @container(min-width:940px){.classic.reference-cards:not(.comfortable) .card.col-span-3{grid-column:span 3}}
 @container(min-width:1060px){.classic.reference-cards.comfortable .card.col-span-3{grid-column:span 3}}
+.reference-cards pre>code{background:none}
 .reference-cards pre>code:is(.language-bash,.language-sh,.language-zsh,.language-shell,.language-fish)::before{content:"$ ";color:var(--link);-webkit-user-select:none;user-select:none}
 .reference-cards .index-group ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:12px}
 .reference-cards .index-group li{flex-direction:column;gap:4px;padding:12px 16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
