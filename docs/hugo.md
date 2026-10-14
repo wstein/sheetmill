@@ -213,7 +213,7 @@ content instead of a sidebar; it keeps grouping, `navigation.order` ordering, th
 current-page marker and the tag link, and works without JavaScript. Badge, rows
 and surfaces use only palette tokens, so every `--palette` and light/dark mode
 applies unchanged. The theme adds one fingerprinted `cards.css`, no fonts or
-external requests; its print rules drop shadows and the Browse panel but have not been checked in a real print preview. Editorial remains the
+external requests; its print rules use three plain columns without tint, shadows or the Browse panel, but have not been checked in a real print preview. Editorial remains the
 default, and `classic-compact` is unchanged. It is a styling variant only: it
 does not change the source format and does not highlight command tokens.
 

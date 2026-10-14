@@ -52,7 +52,7 @@ func TestReferenceCardsPaletteContrast(t *testing.T) {
 		for _, kv := range token.FindAllStringSubmatch(m[3], -1) {
 			values[kv[1]] = kv[2]
 		}
-		for _, pair := range [][2]string{{"text", "wash"}, {"link", "wash"}, {"link", "bg"}, {"bg", "link"}, {"text", "surface"}} {
+		for _, pair := range [][2]string{{"text", "wash"}, {"link", "wash"}, {"bg", "link"}, {"text", "surface"}, {"link", "surface"}, {"muted", "surface"}, {"accent", "surface"}} {
 			if c := contrast(values[pair[0]], values[pair[1]]); c < 4.5 {
 				t.Errorf("%s %s: %s on %s is %.2f:1", m[1], m[2], pair[0], pair[1], c)
 			}
@@ -74,12 +74,25 @@ func TestReferenceCardsStylesheetContract(t *testing.T) {
 		}
 	}
 	for _, want := range []string{
-		`::before{content:"$ "`, "user-select:none", "overflow-x:auto",
-		"@container(min-width:620px)", "@container(min-width:940px)", ".card>p:has(+pre)",
-		"@media print{",
+		`::before{content:"$ "`, "user-select:none", ".card>table{display:block",
+		"@container(min-width:620px)", "@container(min-width:700px)", "@container(min-width:940px)", "@container(min-width:1060px)",
+		".card>p:has(+pre):not(.card-kind){background:var(--wash)}",
+		".card>:last-child:not(h3){border-radius:0 0 9px 9px}",
 	} {
 		if !strings.Contains(css, want) {
 			t.Errorf("cards.css lacks %q", want)
+		}
+	}
+	// Print: no tinted rows, a three-column grid and spans that fit it.
+	print := css[strings.Index(css, "@media print{"):]
+	for _, want := range []string{
+		".card>p:has(+pre):not(.card-kind){background:none}",
+		"grid-template-columns:repeat(3,1fr)",
+		".card.col-span-2{grid-column:span 2}", ".card.col-span-3{grid-column:span 3}",
+		".browse-panel{display:none}", "box-shadow:none",
+	} {
+		if !strings.Contains(print, want) {
+			t.Errorf("print rules lack %q", want)
 		}
 	}
 	if strings.Contains(css, "overflow:hidden") || strings.Contains(css, "position:absolute") {
