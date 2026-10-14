@@ -61,6 +61,16 @@ warnings end with `(warning)` and do not change the exit status unless you run
 | `REN102` | An image is kept as a link and never fetched. |
 | `REN103` | An internal link names no selected sheet, or its fragment matches no section or card ID. Fix the link, add an explicit `{#id}`, or pass `--source-base-url` for links to repository files. |
 
+## navi export {#navi}
+### Errors and warnings {.col-span-2 #navi-codes}
+| Code | Meaning and fix |
+| --- | --- |
+| `NAV000` | `smill build navi --strict` found warnings and wrote nothing. Fix them or drop `--strict`. |
+| `NAV001` | Unsupported `--shell` profile. Use `bash`, `zsh`, `fish` or `nu`. |
+| `NAV006` | Invalid or unknown `cheatsheet.navi` metadata, a card ID that matches no card, a wrong `shell`, or an unusable tag. |
+| `NAV008` | Two exported entries share a pinned navi identity hash; navi would silently drop one. |
+| `NAV101`–`NAV107` | Warnings: a marked card was skipped (shape, command text, placeholder, declarations), the license is unstated, a sheet exported nothing, or frontmatter is not carried. `NAV007` is retired. See [navi export](format/navi-profile.md). |
+
 ## Input and output {#io}
 ### Files and streams {#io-codes}
 | Code | Meaning and fix |
