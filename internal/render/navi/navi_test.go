@@ -556,3 +556,13 @@ func TestPlaceholderSentinelsAreDistinctAndFresh(t *testing.T) {
 		t.Fatalf("placeholder identity or literal collision: %q", got)
 	}
 }
+
+func TestMetadataReferencesOnlyExplicitMarkedCards(t *testing.T) {
+	for _, heading := range []string{"### Plain {#plain}", "### Plain {.navi}"} {
+		source := "---\ntitle: T\nlicense: x\ncheatsheet:\n  navi:\n    cards:\n      plain: {params: {}}\n---\n## S\n" + heading + "\n```bash\necho plain\n```\n### Selected {.navi #selected}\n```bash\necho selected\n```\n"
+		p, errs := Render([]Sheet{sheet(t, source)}, Options{})
+		if len(errs) != 1 || errs[0].Code != "NAV006" || len(p.Files) != 0 {
+			t.Fatalf("%s: errors=%v files=%d", heading, errs, len(p.Files))
+		}
+	}
+}
