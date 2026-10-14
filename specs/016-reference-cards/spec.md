@@ -1,6 +1,6 @@
 # Feature 016: reference-cards Hugo layout
 
-**Status**: Implemented in a draft PR; independent review pending.
+**Status**: Implemented in draft PR #35; independent re-review and CI pending.
 **Authorization**: user, 2026-10-14 ("write a spec and implement reference-cards as a
 reviewed PR"). Extends feature 004; no merge, deployment or source-format change.
 
@@ -15,15 +15,17 @@ branding, wording, logo, colors, fonts, scripts or external requests are copied.
 ## Requirements
 
 - **FR-1** `--theme reference-cards` is accepted by `smill build hugo` and
-  `hugo.Options.Theme`; unknown themes still fail with `REN003`. The default output
-  of `editorial` and `classic-compact` stays byte-identical.
+  `hugo.Options.Theme`; unknown themes still fail with `REN003`. The rendered HTML
+  of `editorial` and `classic-compact` stays byte-identical (the exported `baseof.html`
+  template source differs; verified by building both revisions).
 - **FR-2** The layout reuses the classic markup (top bar, search, in-page card filter,
   density toggle, section jump list) and adds a body class `reference-cards` and one
   fingerprinted `cards.css`, shipped only for this theme.
 - **FR-3** Cards render as rounded tiles with a soft shadow. The card title (`h3`)
-  is shown as a badge at the tile's top-right corner; long titles wrap.
-- **FR-4** Inside a card, a paragraph that precedes a fenced block is a tinted
-  description row and the fence is the white command row. Styling is CSS only; the
+  is a badge in the tile's top-right corner, in flow so long titles wrap without
+  covering content; wide tables scroll inside the tile.
+- **FR-4** Inside a card, a paragraph immediately followed by a fenced block is a tinted
+  description row and the fence is the white command row; other paragraphs stay plain. Styling is CSS only; the
   source Markdown and generated HTML are unchanged.
 - **FR-5** Fences labelled `bash`, `sh`, `zsh`, `shell` or `fish` show a `$` prompt
   drawn by CSS `::before`, so it is never selectable text and never copied.
@@ -33,8 +35,9 @@ branding, wording, logo, colors, fonts, scripts or external requests are copied.
   library" disclosure above the content. It keeps the 014 grouping, ordering,
   current-page marker and tag link, and works without JavaScript.
 - **FR-8** Palettes (#31) and light/dark modes apply unchanged. Badge text and
-  surfaces use palette tokens only, so the existing 4.5:1 token-contrast checks cover
-  them. No new colors, fonts or external requests.
+  surfaces use palette tokens only; a Go test checks that the description-row
+  pairs (`--text` and `--link` on `--wash`, `--link` on `--bg`) meet 4.5:1 in every
+  palette and mode. No new colors, fonts or external requests.
 - **FR-9** Layout fits at 320px, stacks to one column on narrow screens, and prints as
   plain bordered tiles without shadows or the Browse panel.
 
@@ -51,5 +54,5 @@ styling and deployment.
    selects the extra stylesheet and body class.
 2. The Browse disclosure replaces the sidebar in this layout (user left this open; the
    recommended option was taken).
-3. Badge colors reuse `--link` on `--bg`, a pair every palette already guarantees
-   at 4.5:1 or better.
+3. Badge colors reuse `--link` on `--bg`, which the Go contrast test covers.
+4. Column spans are re-thresholded for this grid's 300/340px columns.
