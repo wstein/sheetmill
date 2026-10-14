@@ -7,7 +7,7 @@ export async function readerJourney({ page, context, site, corpus, corpusCases }
   await page.goto(site.origin);
   await expect(page).toHaveTitle('SheetMill References');
   const library=page.getByRole('navigation',{name:'Reference sheets'});
-  await expect(library.getByRole('link')).toHaveCount(corpusCases.length);
+  await expect(library.locator('.library-links a')).toHaveCount(corpusCases.length);
   await expect(library.getByRole('link',{name:corpus.title,exact:true})).toBeVisible();
   if(testInfo.project.name==='no-js') {
     await library.getByRole('link',{name:corpus.title,exact:true}).click();
@@ -32,7 +32,7 @@ export async function readerJourney({ page, context, site, corpus, corpusCases }
     for(const mode of ['dark','light']) {
       await page.getByRole('button',{name:mode==='dark'?'Dark mode':'Light mode',exact:true}).click();
       await expect(page.locator('html')).toHaveAttribute('data-theme',mode);
-      await expect.poll(()=>page.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor)).toBe(mode==='dark'?'rgb(44, 49, 64)':'rgb(247, 248, 252)');
+      await expect.poll(()=>page.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor)).toBe(mode==='dark'?'rgb(37, 39, 46)':'rgb(247, 248, 252)');
       await page.reload();await expect(page.locator('html')).toHaveAttribute('data-theme',mode);
     }
   } else {

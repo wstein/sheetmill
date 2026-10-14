@@ -99,3 +99,10 @@ The five-author SC-006 usability study is separate and remains pending. See
 no code, including a long unbroken token on desktop/mobile. It checks keyboard
 activation, exact clipboard contents, fixed-size success/failure feedback and
 readable source without JavaScript. It runs in default and all-corpus selections.
+
+Tag/navigation journeys exercise both layouts at root and `/sheetmill/` mounts,
+with desktop, mobile and no-JavaScript projects. Independently authored fixtures
+verify native category disclosures, current-page state, persistence, exact tag
+membership/counts, Unicode/punctuation routes, canonical links and all six palette
+choices with light/dark contrast measurements. Two fresh Hugo outputs must match
+byte for byte. Commands in the fixtures remain displayed content.
