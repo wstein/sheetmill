@@ -12,6 +12,7 @@ import (
 	"github.com/wstein/sheetmill/internal/diagnostic"
 	"github.com/wstein/sheetmill/internal/frontmatter"
 	"github.com/wstein/sheetmill/internal/model"
+	"github.com/wstein/sheetmill/internal/validate"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -122,6 +123,7 @@ func ParseDecoded(src []byte, fm frontmatter.Result) (*model.Document, []diagnos
 	}
 	closeSection(source.Position(len(src)))
 	ds = append(ds, strayAttributes(root, cv)...)
+	ds = append(ds, validate.Commands(d, fm.Locations)...)
 	if len(ds) > 0 {
 		return nil, ds
 	}
@@ -304,7 +306,7 @@ func heading(h *ast.Heading, body []byte, cv converter, span diagnostic.Span) (s
 			} else {
 				a.Layout.Rows = v
 			}
-		case token == ".navi" || token == ".note" || token == ".tip" || token == ".warning" || token == ".keys":
+		case token == ".command" || token == ".navi" || token == ".note" || token == ".tip" || token == ".warning" || token == ".keys":
 			a.Classes = append(a.Classes, token[1:])
 		case token == ".wrap":
 			a.Compatibility = append(a.Compatibility, token[1:])

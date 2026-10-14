@@ -21,7 +21,47 @@
       "type": "object",
       "properties": {
         "schema": {"type": "integer", "const": 1},
-        "tool": {"type": "string", "pattern": "\\S"}
+        "tool": {"type": "string", "pattern": "\\S"},
+        "cards": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "params": {
+                "type": "object",
+                "propertyNames": {
+                  "pattern": "^[a-z][a-z0-9_]{0,31}$"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "string",
+                        "int",
+                        "path"
+                      ]
+                    },
+                    "description": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^\\S(?:[^\\x00-\\x1F\\x7F\\u2028\\u2029]*\\S)?$",
+                      "$comment": "Source validation additionally rejects every Unicode control and format character, and surrounding Unicode whitespace."
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
       },
       "additionalProperties": true
     }

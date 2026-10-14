@@ -266,6 +266,9 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		if s.Document == nil || s.Document.Schema != 1 {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN001", Message: "renderer requires schema-1 IR"}})
 		}
+		if commands := validate.Commands(s.Document, nil); len(commands) > 0 {
+			return Project{}, issues(s.SourceName, commands)
+		}
 		if _, nav := validate.Navigation(s.Document.Metadata, nil); len(nav) > 0 {
 			return Project{}, issues(s.SourceName, nav)
 		}
