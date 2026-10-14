@@ -185,6 +185,10 @@ an exported template in navi is a separate user action.
 | `NAV107` | warning | Frontmatter the `.cheat` file does not carry (anything besides title, license, attribution, tags, `cheatsheet.tool`/`schema`/`navi`), listed by key; a sidecar is not implemented yet |
 | `NAV000` | error | `--strict` and at least one warning; nothing is written |
 
+Card/code diagnostics use their source spans. Sheet-level metadata and global
+profile diagnostics use the one-based `1:1` document/command anchor because the
+IR does not retain individual frontmatter key spans.
+
 `REN001` and `IO003` apply as for the other renderers. The output directory must
 not exist.
 

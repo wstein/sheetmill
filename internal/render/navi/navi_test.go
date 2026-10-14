@@ -576,3 +576,20 @@ func TestHeaderStatesParameterTrustBoundary(t *testing.T) {
 		t.Fatal("generated header omits parameter trust boundary")
 	}
 }
+
+func TestGlobalDiagnosticLocations(t *testing.T) {
+	_, errs := Render(nil, Options{Shell: "unsupported"})
+	if len(errs) != 1 || errs[0].Span.Start.Line != 1 || errs[0].Span.Start.Column != 1 {
+		t.Fatalf("profile diagnostic location: %v", errs)
+	}
+	source := strings.Replace(card("bash", "echo <sheet>"), "title: Demo", "title: Demo\ncustom: omitted", 1)
+	p, errs := Render([]Sheet{sheet(t, source)}, Options{})
+	if len(errs) > 0 {
+		t.Fatal(errs)
+	}
+	for _, w := range p.Warnings {
+		if w.Span.Start.Line < 1 || w.Span.Start.Column < 1 {
+			t.Fatalf("warning lacks one-based position: %+v", w)
+		}
+	}
+}
