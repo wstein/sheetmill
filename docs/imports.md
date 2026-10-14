@@ -44,7 +44,7 @@ unknown data survive, with the following legacy behavior archived under
 | `IMP002` | Existing source provenance would be overwritten (error) |
 | `IMP003` | Canonical serialization/revalidation failed (error) |
 | `IMP101` | `plugins` archived; no plugin behavior is imported (warning) |
-| `IMP102` | `background`, `class`, `layout`, `theme` archived as inert data (warning) |
+| `IMP102` | `background`, `class`, `layout`, `theme` and upstream `navigation` (any shape) archived as inert data under `source.original_metadata`; navigation is never activated or derived into canonical placement (warning) |
 | `IMP103` | Raw HTML retained as inert data, future rendering needs sanitization (warning) |
 | `IMP104` | Hexo-style `{% ... %}` directive retained as inert text (warning) |
 | `IMP105` | `intro` mapped to `description` unless one is set; original archived (warning) |

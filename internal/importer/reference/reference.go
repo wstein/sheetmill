@@ -98,6 +98,14 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 		r.Report.Findings = append(r.Report.Findings, Finding{Severity: "warning", Code: code, Message: msg, Span: span})
 	}
 	mapLegacyMetadata(fm, original, warn)
+	// Upstream navigation is inert: archive it before validation so no shape can
+	// activate or fail canonical placement; the finding is emitted with the other
+	// IMP102 archival below.
+	navigation, hasNavigation := fm.Metadata["navigation"]
+	if hasNavigation {
+		original["navigation"] = navigation
+		delete(fm.Metadata, "navigation")
+	}
 	if ds := validate.Metadata(fm.Metadata, fm.Locations); len(ds) > 0 {
 		return failed(ds)
 	}
@@ -136,6 +144,9 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 			}
 			warn(code, msg, fm.Locations[key])
 		}
+	}
+	if hasNavigation {
+		warn("IMP102", "legacy visual metadata navigation archived as inert source data", fm.Locations["navigation"])
 	}
 
 	var loss func(model.Node)

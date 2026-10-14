@@ -22,6 +22,7 @@ import (
 	brand "github.com/wstein/sheetmill/assets"
 	"github.com/wstein/sheetmill/internal/diagnostic"
 	"github.com/wstein/sheetmill/internal/model"
+	"github.com/wstein/sheetmill/internal/validate"
 	goldhtml "github.com/yuin/goldmark/renderer/html"
 	"go.yaml.in/yaml/v3"
 )
@@ -130,6 +131,7 @@ type page struct {
 	Body        string   `json:"body"`
 	EditURL     string   `json:"edit_url,omitempty"`
 	Related     []link   `json:"related,omitempty"`
+	nav         validate.NavigationSettings
 }
 
 type link struct {
@@ -173,13 +175,19 @@ type shelf struct {
 	Sheets   []page `json:"sheets"`
 }
 
-// shelves sorts categories by name and puts uncategorized sheets last; pages
-// keep their deterministic route order. Bodies are omitted from the index.
+// shelves groups pages by their effective group (navigation.group, else
+// category) and sorts named groups by name with the ungrouped shelf last.
+// Members of a group order by navigation.order, then title and route; pages keep
+// their deterministic route order elsewhere. Bodies are omitted from the index.
 func shelves(pages []page) []shelf {
 	groups := map[string][]page{}
 	for _, p := range pages {
 		p.Body, p.Related = "", nil
-		groups[p.Category] = append(groups[p.Category], p)
+		name := p.Category
+		if p.nav.Group != "" {
+			name = p.nav.Group
+		}
+		groups[name] = append(groups[name], p)
 	}
 	names := make([]string, 0, len(groups))
 	for name := range groups {
@@ -188,9 +196,28 @@ func shelves(pages []page) []shelf {
 	sort.Slice(names, func(i, j int) bool { return names[i] != "" && (names[j] == "" || names[i] < names[j]) })
 	out := make([]shelf, 0, len(names))
 	for _, name := range names {
+		sort.SliceStable(groups[name], func(i, j int) bool { return placedBefore(groups[name][i], groups[name][j]) })
 		out = append(out, shelf{name, groups[name]})
 	}
 	return out
+}
+
+// placedBefore orders explicitly ordered pages first (numerically), then by
+// Unicode-lowercased title, original title bytes and finally the unique route.
+func placedBefore(a, b page) bool {
+	if (a.nav.Order != nil) != (b.nav.Order != nil) {
+		return a.nav.Order != nil
+	}
+	if a.nav.Order != nil && *a.nav.Order != *b.nav.Order {
+		return *a.nav.Order < *b.nav.Order
+	}
+	if x, y := strings.ToLower(a.Title), strings.ToLower(b.Title); x != y {
+		return x < y
+	}
+	if a.Title != b.Title {
+		return a.Title < b.Title
+	}
+	return a.URL < b.URL
 }
 
 var route = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
@@ -239,6 +266,9 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		if s.Document == nil || s.Document.Schema != 1 {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN001", Message: "renderer requires schema-1 IR"}})
 		}
+		if _, nav := validate.Navigation(s.Document.Metadata, nil); len(nav) > 0 {
+			return Project{}, issues(s.SourceName, nav)
+		}
 		if path.Base(s.SourceName) != s.SourceName || s.SourceName == "" || s.SourceName == "." || s.SourceName == ".." {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "source name must be a basename"}})
 		}
@@ -282,6 +312,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		r := renderer{self: s.ID, path: paths[s.ID], base: base, source: sourceBase, routes: routes, anchors: anchors}
 		title, _ := s.Document.Metadata["title"].(string)
 		description, category, license, tags := sheetMetadata(s.Document.Metadata)
+		navigation, _ := validate.Navigation(s.Document.Metadata, nil)
 		var b strings.Builder
 		r.nodes(&b, s.Document.Preamble, false)
 		// A jump list lets readers reach any section without JavaScript.
@@ -340,7 +371,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		}
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
 		errors = append(errors, issues(s.SourceName, r.errors)...)
-		page := page{Title: title, URL: base + s.ID + "/", Description: description, Category: category, Tags: tags, License: license, Body: b.String()}
+		page := page{Title: title, URL: base + s.ID + "/", Description: description, Category: category, Tags: tags, License: license, Body: b.String(), nav: navigation}
 		if editBase != "" {
 			page.EditURL = editBase + escapePath(paths[s.ID])
 		}

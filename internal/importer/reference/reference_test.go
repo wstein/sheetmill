@@ -313,6 +313,45 @@ func TestLegacyMappingKeepsExplicitFields(t *testing.T) {
 	}
 }
 
+func TestUpstreamNavigationIsArchivedInert(t *testing.T) {
+	cases := map[string]string{
+		"valid":     "navigation:\n  group: Tools\n  order: 3\n",
+		"malformed": "navigation: [1, {a: b}]\n",
+		"scalar":    "navigation: nope\n",
+	}
+	for name, block := range cases {
+		t.Run(name, func(t *testing.T) {
+			src := []byte("---\ntitle: T\n" + block + "theme: dark\n---\n## S\n### Card\nText.\n")
+			r, ds := Convert(src, provenance())
+			if len(ds) > 0 {
+				t.Fatal(ds)
+			}
+			d, pds := markdown.Parse(r.Markdown)
+			if len(pds) > 0 {
+				t.Fatal(pds)
+			}
+			if _, ok := d.Metadata["navigation"]; ok {
+				t.Fatal("navigation remains active metadata")
+			}
+			orig := d.Metadata["source"].(map[string]any)["original_metadata"].(map[string]any)
+			if _, ok := orig["navigation"]; !ok {
+				t.Fatal("navigation not archived", orig)
+			}
+			var codes []string
+			line := 0
+			for _, f := range r.Report.Findings {
+				codes = append(codes, f.Code)
+				if strings.Contains(f.Message, "navigation") {
+					line = f.Span.Start.Line
+				}
+			}
+			if strings.Join(codes, ",") != "IMP102,IMP102" || line != 3 {
+				t.Fatalf("findings %v line %d", r.Report.Findings, line)
+			}
+		})
+	}
+}
+
 func TestShortcutsOutsideCardIsArchived(t *testing.T) {
 	r, ds := Convert([]byte("---\ntitle: T\n---\n## S\n| K | A |\n| - | - |\n| `x` | y |\n{.shortcuts}\n### Card\nText.\n"), provenance())
 	if len(ds) > 0 {
