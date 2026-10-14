@@ -84,14 +84,18 @@ func TestReferenceCardsStylesheetContract(t *testing.T) {
 		}
 	}
 	// Print: no tinted rows, a three-column grid and spans that fit it.
-	print := css[strings.Index(css, "@media print{"):]
+	at := strings.Index(css, "@media print{")
+	if at < 0 {
+		t.Fatal("cards.css has no print rules")
+	}
+	printRules := css[at:]
 	for _, want := range []string{
 		".card>p:has(+pre):not(.card-kind){background:none}",
 		"grid-template-columns:repeat(3,1fr)",
 		".card.col-span-2{grid-column:span 2}", ".card.col-span-3{grid-column:span 3}",
 		".browse-panel{display:none}", "box-shadow:none",
 	} {
-		if !strings.Contains(print, want) {
+		if !strings.Contains(printRules, want) {
 			t.Errorf("print rules lack %q", want)
 		}
 	}
