@@ -90,3 +90,21 @@ func TestNaviStrictFailsOnWarnings(t *testing.T) {
 		t.Fatal(code, errout.String())
 	}
 }
+
+func TestNaviStrictRejectsOmittedParameterMetadata(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "a.md")
+	source := "---\ntitle: A\nlicense: x\ncheatsheet:\n  navi:\n    cards:\n      c: {params: {sheet: {type: path, description: Markdown input}}}\n---\n## S\n### C {.navi #c}\n```bash\necho <sheet>\n```\n"
+	if err := os.WriteFile(input, []byte(source), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var out, errout bytes.Buffer
+	destination := filepath.Join(dir, "output")
+	code := Run([]string{"build", "navi", input, "--strict", "--out", destination}, &out, &errout)
+	if code != 1 || !strings.Contains(errout.String(), "NAV107") || !strings.Contains(errout.String(), "NAV000") {
+		t.Fatalf("code=%d stderr=%s", code, &errout)
+	}
+	if _, err := os.Stat(destination); !os.IsNotExist(err) {
+		t.Fatalf("failed strict export wrote output: %v", err)
+	}
+}
