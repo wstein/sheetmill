@@ -10,8 +10,9 @@ file selection and parsing with `smill build hugo` (`loadSelection`). The IR gai
    checks, fuzz target, no-execution lint, CLI boundary tests.
 3. Independent review of the final revision, then human merge. Publishing generated
    cheats, releases and distribution builds remain separately gated.
-4. Later, each needing its own decision: metadata sidecar, a pinned pure Go shell
-   parser for bash, zsh and fish, choice lists without silent executable providers,
+4. Later, each needing its own decision: metadata sidecar, stronger syntax
+   validation and a suitable Fish parser (Bash/Zsh quote diagnostics use pinned
+   `mvdan.cc/sh/v3/syntax` v3.14.1), choice lists without silent executable providers,
    shared-context inheritance, nushell raw strings.
 
 No navi, finder, shell or source snippet runs in renderer tests or CI.

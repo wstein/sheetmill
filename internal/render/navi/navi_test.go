@@ -504,3 +504,55 @@ func structuralWarnings(p Project) []Issue {
 	}
 	return result
 }
+
+func TestQuotesInCaseSubstitutions(t *testing.T) {
+	for _, body := range []string{
+		`echo "$(case x in x) printf '"';; esac)" <sheet>`,
+		`echo "$(case x in (x) printf '"';; esac)" <sheet>`,
+		`echo "$(case x in x|y) printf '"';; *) printf 'other';; esac)" <sheet>`,
+	} {
+		p, errs := Render([]Sheet{sheet(t, card("bash", body))}, Options{})
+		if len(errs) > 0 || len(structuralWarnings(p)) > 0 {
+			t.Fatalf("%s: errors=%v warnings=%v", body, errs, p.Warnings)
+		}
+		got := parseCheat(p.Files["demo.cheat"])
+		if len(got.cards) != 1 || got.cards[0].command != body {
+			t.Fatalf("payload changed: %+v", got)
+		}
+	}
+}
+
+func TestParsedQuoteDiagnosticScope(t *testing.T) {
+	for _, shell := range []string{"bash", "zsh"} {
+		profile := profiles[shell]
+		for _, body := range []string{"echo 'open", `echo "$(printf 'x)"`} {
+			if problem := quoteProblem(body, profile); !strings.Contains(problem, "unterminated quote") {
+				t.Fatalf("%s %q: %q", shell, body, problem)
+			}
+		}
+		if problem := quoteProblem("echo (", profile); problem != "" {
+			t.Fatalf("non-quote error misreported for %s: %s", shell, problem)
+		}
+	}
+}
+
+func TestHeredocPlaceholderBoundaries(t *testing.T) {
+	for _, shell := range []string{"bash", "zsh"} {
+		for _, body := range []string{
+			"cat <<'<a>'\n<b>\nit's\n<a>",
+			"cat <<'<a>'\n__sheetmill_input_0_0__\nit's\n<a>",
+		} {
+			if problem := quoteProblem(body, profiles[shell]); problem != "" {
+				t.Fatalf("%s heredoc %q: %s", shell, body, problem)
+			}
+		}
+	}
+}
+
+func TestPlaceholderSentinelsAreDistinctAndFresh(t *testing.T) {
+	input := "<a> <b> <a> __sheetmill_input_0_0__"
+	got := strings.Fields(maskPlaceholders(input))
+	if got[0] != got[2] || got[0] == got[1] || got[0] == got[3] || got[1] == got[3] {
+		t.Fatalf("placeholder identity or literal collision: %q", got)
+	}
+}
