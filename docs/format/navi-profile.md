@@ -77,21 +77,27 @@ otherwise). Build each shell into its own directory.
 
 | Profile | Accepted fence languages | Quote check |
 | --- | --- | --- |
-| `bash` (default) | `bash`, `sh` | POSIX quotes, `$'…'`, comments |
-| `zsh` | `zsh` | as bash |
+| `bash` (default) | `bash`, `sh` | Pinned Bash 5.2 parser, quote diagnostics only |
+| `zsh` | `zsh` | Pinned experimental Zsh parser, quote diagnostics only |
 | `fish` | `fish` | backslash escapes inside single quotes |
 | `nu` | `nu`, `nushell` | none; nushell raw strings are not analysed |
 
 Cards in other languages are skipped with `NAV101`, never reinterpreted. Commands
-with a heredoc skip the quote check because the payload is free text.
+in the experimental Fish profile skip its heuristic quote check when they
+contain a heredoc marker. Bash/Zsh parsing understands heredoc payloads.
 
 `bash` is the primary profile. `zsh`, `fish` and `nu` apply the same structural
 checks with their own fence languages and quoting rules, and are **experimental**:
 their fixtures are synthetic and have not been verified against real shells.
 
-The quote check understands nested command substitutions (`$( )` and backticks,
-also inside double quotes) and only ever reports an unterminated quote; it does
-not validate shell syntax. A pinned pure Go shell parser is planned.
+Bash and Zsh quote diagnostics use only `mvdan.cc/sh/v3/syntax` v3.14.1,
+a non-executing Go parser; its Bash grammar follows 5.2, and Zsh support is
+experimental. A validation-only copy substitutes inert words for navi placeholders;
+the emitted command is unchanged. Case patterns, nested substitutions and heredocs
+are parsed structurally. Only the parser's unclosed-quote diagnostics are reported;
+other syntax errors are ignored and can prevent later quote checks. This is not
+full syntax validation. Fish retains a heuristic, and Nushell performs no quote
+check. Stronger syntax checks remain planned.
 
 ## Metadata schema
 
@@ -187,5 +193,6 @@ independent review calculated from the Rust hash input. Not done: running navi
 diagnostic even though they are consumed during validation. Non-string or empty
 license/attribution values are also diagnosed rather than treated as preserved.
 Consequently, `--strict` rejects exports with those omitted hints until the
-sidecar is implemented. Quote analysis is heuristic compared with a real shell parser. Re-check the
+sidecar is implemented. Fish quote analysis remains heuristic; Bash/Zsh only surface selected parser
+diagnostics. Re-check the
 upstream source when moving to another navi version.
