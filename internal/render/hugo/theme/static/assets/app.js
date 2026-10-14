@@ -60,6 +60,40 @@ if (typeof document !== 'undefined') (() => {
     try { localStorage.setItem('sheetmill-theme', root.dataset.theme); } catch {}
     label();
   });
+  if (document.body.classList.contains('classic')) {
+    const density = document.querySelector('#app-density');
+    const apply = comfortable => {
+      document.body.classList.toggle('comfortable', comfortable);
+      density.setAttribute('aria-pressed', String(comfortable));
+      density.textContent = comfortable ? 'Comfortable' : 'Compact';
+    };
+    let stored;
+    try { stored = localStorage.getItem('sheetmill-density'); } catch {}
+    apply(stored === 'comfortable');
+    density.hidden = false;
+    density.addEventListener('click', () => {
+      const comfortable = !document.body.classList.contains('comfortable');
+      apply(comfortable);
+      try { localStorage.setItem('sheetmill-density', comfortable ? 'comfortable' : 'compact'); } catch {}
+    });
+    // In-page filter: dim cards that do not match every term; without JS all show.
+    const field = document.querySelector('#app-search');
+    const count = document.querySelector('#app-count');
+    const cards = [...document.querySelectorAll('.card')];
+    const filter = () => {
+      const wanted = sheetmillSearch.terms(field.value);
+      let shown = 0;
+      for (const card of cards) {
+        const text = card.textContent.toLocaleLowerCase();
+        const hit = wanted.every(term => text.includes(term));
+        card.classList.toggle('dim', !hit);
+        if (hit) shown++;
+      }
+      if (count && cards.length) count.textContent = `${shown} of ${cards.length} cards`;
+    };
+    filter();
+    field.addEventListener('input', filter);
+  }
   const input = document.querySelector('#app-search');
   const results = document.querySelector('#app-results');
   const status = document.querySelector('#app-search-status');

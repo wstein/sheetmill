@@ -18,9 +18,9 @@ import (
 
 func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	build := &cobra.Command{Use: "build", Short: "Export a renderer project (no tool execution)"}
-	var destination, title, description, base, editBase, sourceBase, siteURL string
+	var destination, title, description, base, editBase, sourceBase, siteURL, theme string
 	command := &cobra.Command{Use: "hugo <file-or-directory>...", Short: "Export a self-contained Hugo project to a new directory", Args: cobra.MinimumNArgs(1), Run: func(cmd *cobra.Command, args []string) {
-		*status = runHugo(args, destination, hugo.Options{Title: title, Description: description, BasePath: base, EditBaseURL: editBase, SourceBaseURL: sourceBase, SiteURL: siteURL}, out, errout)
+		*status = runHugo(args, destination, hugo.Options{Title: title, Description: description, BasePath: base, EditBaseURL: editBase, SourceBaseURL: sourceBase, SiteURL: siteURL, Theme: theme}, out, errout)
 	}}
 	command.Flags().StringVar(&destination, "out", "", "new project directory; never overwritten")
 	command.Flags().StringVar(&title, "title", "SheetMill References", "reference library title")
@@ -29,6 +29,7 @@ func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	command.Flags().StringVar(&editBase, "edit-base-url", "", "GitHub edit URL base for the authored sheets (optional; never inferred from provenance)")
 	command.Flags().StringVar(&sourceBase, "source-base-url", "", "GitHub blob URL of the selection root; other relative links resolve to repository files")
 	command.Flags().StringVar(&siteURL, "site-url", "", "canonical https://host/<base-path>/ of the published site; enables canonical links and a sitemap")
+	command.Flags().StringVar(&theme, "theme", "editorial", "page layout: editorial or classic-compact")
 	command.MarkFlagRequired("out")
 	build.AddCommand(command)
 	build.AddCommand(naviCommand(out, errout, status))

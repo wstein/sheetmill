@@ -1,0 +1,54 @@
+/* SPDX-License-Identifier: EUPL-1.2 */
+/* Classic compact layout: a reference card, not a brochure. Loaded after site.css. */
+.classic{font-size:13px;line-height:1.45;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;--topbar:48px}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.topbar{position:sticky;top:0;z-index:5;height:var(--topbar);display:flex;align-items:center;gap:16px;padding:0 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar-logo img{display:block;height:28px;width:auto}
+.topbar-link{font-size:13px;text-decoration:none;font-weight:600}
+.topbar-search{position:relative;flex:1;max-width:420px;margin-left:auto}
+.topbar-search input{width:100%;min-width:0;height:32px;padding:0 28px 0 10px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px}
+.topbar-search kbd{position:absolute;right:8px;top:7px;font:11px ui-monospace,monospace;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;background:none}
+.topbar-search #app-search-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0}
+.topbar-search #app-results{position:absolute;left:0;right:0;top:36px;max-height:60vh;overflow:auto;margin:0;padding:6px 10px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:4px;font-size:13px}
+.topbar-search #app-results li{margin:4px 0}
+.topbar button{font-size:12px;height:32px;padding:0 10px}
+.classic #app-main{max-width:1500px;margin:0 auto;padding:12px 16px 40px}
+.sheet-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:6px 0 8px}
+.sheet-head h1,.index-title{font-size:20px;line-height:1.2;font-weight:700;margin:0}
+.sheet-category{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.sheet-tags{display:flex;flex-wrap:wrap;gap:4px 8px;list-style:none;margin:0;padding:0;font-size:12px;color:var(--muted)}
+.sheet-tags li::before{content:"#"}
+.sheet-count{margin-left:auto;font-size:12px;color:var(--muted)}
+.classic .edit-link{font-size:12px}
+.classic .sheet-description{margin:0 0 6px;color:var(--muted);font-size:13px}
+.classic .sheet-toc{position:sticky;top:var(--topbar);z-index:4;margin:0 0 10px;padding:6px 0;background:var(--bg);border-bottom:1px solid var(--line)}
+.classic .sheet-toc a{font-size:12px;font-weight:600;color:var(--muted);text-decoration:none}
+.classic .sheet-toc a:hover{color:var(--link);text-decoration:underline}
+.classic .sheet-section{margin:14px 0;scroll-margin-top:calc(var(--topbar) + 40px)}
+.classic .sheet-section>h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin:0 0 8px;padding:4px 0;border-top:2px solid var(--text);border-bottom:0;color:var(--text)}
+.classic .cards{grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:0 20px}
+.classic .card{background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:8px 0 10px;scroll-margin-top:calc(var(--topbar) + 40px)}
+.classic .card[class*="col-span-"]{grid-column:auto}
+.classic .card:is(.col-span-4,.col-span-5,.col-span-6,.col-span-7,.col-span-8,.col-span-9,.col-span-10,.col-span-11,.col-span-12){grid-column:1/-1}
+.classic .card h3{font-size:13px;font-weight:700;line-height:1.3;margin:0 0 4px}
+.classic .card p{font-size:13px;margin:4px 0}
+.classic .card :is(ul,ol){font-size:13px;margin:4px 0;padding-left:1.1rem}
+.classic .card pre{font-size:12px;padding:4px 8px;margin:4px 0;border-radius:0;background:none;border-left:2px solid var(--coral)}
+.classic .card table{font-size:12px;border-collapse:collapse;width:100%}
+.classic .card :is(td,th){padding:2px 6px 2px 0;border:0;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+.classic .card-kind{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.classic .copy{width:24px;height:24px;margin:0 0 0 6px;border:0;background:none;opacity:.55}
+.classic .copy:hover,.classic .copy:focus-visible{opacity:1}
+.classic .card.dim{opacity:.18}
+.index-group h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;border-top:2px solid var(--text);padding-top:4px;margin:16px 0 4px}
+.index-group ul{list-style:none;margin:0;padding:0}
+.index-group li{display:flex;gap:12px;padding:4px 0;border-bottom:1px solid var(--line)}
+.index-group a{font-weight:600;text-decoration:none;min-width:12em}
+.index-desc{color:var(--muted);flex:1}.index-license{color:var(--muted);font-size:11px}
+.classic.comfortable{font-size:15px;line-height:1.6}
+.classic.comfortable .card{padding:14px 0 16px}
+.classic.comfortable .cards{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.classic footer{padding:12px 16px;font-size:12px;color:var(--muted)}
+@media(max-width:640px){.topbar{gap:8px;padding:0 8px}.topbar-link,.topbar-search kbd{display:none}.topbar button{min-width:44px;min-height:44px;height:44px}.classic .sheet-toc{position:static}.index-group li{flex-wrap:wrap}}
+@page{size:A4 landscape;margin:10mm}
+@media print{.classic{font-size:8.5pt}.topbar,.classic .sheet-toc,.classic .sheet-count,.classic .edit-link{display:none!important}.classic #app-main{padding:0}.classic .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:0 10pt}.classic .card{break-inside:avoid;border:0;border-bottom:1px solid #888}.classic .card.dim{opacity:1}}

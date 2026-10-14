@@ -1,6 +1,11 @@
 {{ define "main" }}
+{{ if site.Params.classic }}<h1 class="index-title">{{ site.Title }}</h1>{{ with site.Params.description }}<p class="sheet-description">{{ . }}</p>{{ end }}
+{{ range .Site.Data.shelves }}<section class="index-group" aria-label="{{ or .category "Other references" }}"><h2>{{ or .category "Other references" }}</h2><ul>{{ range .sheets }}<li><a href="{{ .url }}">{{ .title }}</a>{{ with .description }}<span class="index-desc">{{ . }}</span>{{ end }}{{ with .license }}<span class="index-license">{{ . }}</span>{{ end }}</li>{{ end }}</ul></section>
+{{ end }}
+{{ else }}
 <div class="hero"><p class="eyebrow">A LITTLE KNOWLEDGE, WELL ARRANGED</p><h1>{{ site.Title }}</h1><p class="intro">{{ with site.Params.description }}{{ . }}{{ else }}Clear, practical references. Find the detail you need, then get back to making things.{{ end }}</p><div class="hero-rule"><span>{{ len .Site.Data.library }} REFERENCES</span><span>COMPILED WITH CARE ↗</span></div></div>
 {{ range .Site.Data.shelves }}<section class="shelf" aria-label="{{ or .category "Other references" }}"><h2 class="shelf-title">{{ or .category "Other references" }}</h2>
 <div class="library-grid">{{ range .sheets }}<a class="library-item" href="{{ .url }}"><h3>{{ .title }}</h3>{{ with .description }}<p class="library-description">{{ . }}</p>{{ end }}{{ with .license }}<p class="library-license">License: {{ . }}</p>{{ end }}<p class="library-open">Open reference <span aria-hidden="true">↗</span></p></a>{{ end }}</div></section>
+{{ end }}
 {{ end }}
 {{ end }}
