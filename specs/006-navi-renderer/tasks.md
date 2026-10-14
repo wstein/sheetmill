@@ -24,3 +24,9 @@
   pinned `mvdan.cc/sh/v3/syntax` v3.14.1; full syntax validation and a suitable
   Fish parser remain pending.
 - [ ] T011 Later: choice lists, shared contexts, nushell raw strings.
+
+- [ ] T012 Consume the separately authorized 015 shared command-card contract;
+  implementation/verification is tracked by [015 tasks](../015-command-cards/tasks.md).
+  Preserve legacy aliases and strict behavior, exact `.cheat` bytes, fixed per-entry
+  hashes and NAV008 collision rejection. This cross-feature dependency is pending;
+  the present PR changes documentation only.

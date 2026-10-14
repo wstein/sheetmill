@@ -1,6 +1,6 @@
 # 006 — navi renderer
 
-Created: 2026-10-13 · Refined: 2026-10-14 · Status: exporter/review fixes merged; T009 sidecars implemented in #30 (not merged)
+Created: 2026-10-13 · Refined: 2026-10-14 · Status: exporter/review fixes merged; T009 sidecars merged in #30
 Depends on accepted 001–004 (schema-1 IR, diagnostics and provenance).
 
 Explicit cards, free-input parameters and per-shell profiles, targeting navi
@@ -120,3 +120,26 @@ at candidate `caf1fc6` is linked from [#25](https://github.com/wstein/sheetmill/
 The sidecar increment is tracked in [#30](https://github.com/wstein/sheetmill/pull/30);
 its exact-revision independent review and checks are recorded there, separately
 from the merged exporter evidence above.
+
+## Planned consumption of shared command cards (015)
+
+The requirements and implemented acceptance table above describe current behavior.
+[015-command-cards](../015-command-cards/spec.md) owns the proposed core source
+revision: `.command` and `cheatsheet.cards.<id>.params`. It is docs-only and does
+not extend 006's existing implementation authorization to core source changes.
+
+After a separate implementation handoff, 006 consumes shared command semantics
+and retains `.navi`/`cheatsheet.navi.cards` compatibility. Either marker and either
+metadata location resolve once per explicit card. Equal complete normalized
+per-card declarations coalesce; conflicting declarations fail NAV006 atomically.
+Legacy shell guards remain active when present. See the
+[format migration](../../docs/format/command-cards.md) for current/proposed boundaries.
+
+Required future acceptance: paired legacy/new sources produce **byte-identical
+complete `.cheat` files** and the same fixed expected per-entry pinned navi hashes.
+Keep first contexts, source/root paths, IDs, title normalization, tool/tag order,
+payloads, source entry order, headers, format version and hash algorithm/input
+unchanged. NAV008 continues detecting collisions before writes. Test dual/mixed
+aliases, strict legacy compatibility and complete companion metadata separately;
+sidecar bytes may differ while exported-card identities agree. These are pending
+015 acceptance tests, not implementation evidence from this docs revision.

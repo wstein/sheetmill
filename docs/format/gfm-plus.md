@@ -34,6 +34,17 @@ preserved in `metadata`. `cheatsheet.navi` is generic metadata to the parser and
 The [JSON Schema](../../schema/cheatsheet.schema.json) describes
 metadata after YAML decoding; parser limits and duplicate keys are additional rules.
 
+## Proposed shared command cards {#shared-command-cards}
+
+Feature [015](../../specs/015-command-cards/spec.md) proposes target-neutral
+`{#id .command}` cards and `cheatsheet.cards.<id>.params`. See the
+[shared command-card contract and migration](command-cards.md). This is a
+**docs-only proposal, not supported syntax**: the current parser rejects `.command`
+and `smill check` does not validate `cheatsheet.cards` as shared declarations.
+The current `.navi` and `cheatsheet.navi` contract remains supported as documented
+below. A later implementation must preserve complete `.cheat` bytes and pinned
+navi identities while introducing shared validation and compatibility aliases.
+
 ## Library placement {#library-placement}
 
 `navigation` places a sheet in the Hugo library sidebar and home page without
