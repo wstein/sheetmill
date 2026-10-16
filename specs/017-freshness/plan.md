@@ -48,7 +48,7 @@ internal/validate/validate.go                  call Freshness
 internal/render/hugo/hugo.go                   direct-IR check, page fields
 internal/render/hugo/freshness_test.go         data + markup + clock tests
 internal/render/hugo/theme/layouts/{home,page}.html, partials/freshness.html
-internal/render/hugo/theme/static/assets/{site,classic}.css
+internal/render/hugo/theme/static/assets/{site,classic,cards}.css
 internal/importer/reference/reference.go       archive + IMP112
 internal/render/navi/navi_test.go              pair regression
 schema/cheatsheet.schema.json, docs/*, examples/sheets/*.md

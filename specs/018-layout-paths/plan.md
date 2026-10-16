@@ -3,7 +3,7 @@
 ## Constitution check
 
 - 1 Determinism: PASS. Same revision gives byte-identical trees (FR-8); the verifier
-  reads and writes nothing; the shared fixed Hugo clock is kept.
+  only reads the tree and writes nothing; the shared fixed Hugo clock is kept.
 - 2 Canonical source: PASS. No source format or schema change.
 - 3 Loss-aware imports / 4 Inert input: PASS. No import or execution; the verifier
   only reads generated files.
@@ -27,7 +27,9 @@
    replace the single demo export by three explicit exports, a three-way collision
    guard and mount, then the existing llms/agent-guide copy, then the verification script as the last step before upload.
 3. Add the Hugo-gated integration test.
-4. Update docs, llms.txt, agent guide, README, `specs/README.md`, AGENTS.md.
+4. Update `specs/README.md` and AGENTS.md (T001, not blocked). Docs, llms.txt, agent guide
+   and README (T007) are blocked on the user's confirmation, as is the workflow edit
+   (T005, with its test T004).
 5. Local verification: gofmt, vet, test, `make check`, `make test-hugo` with
    `SHEETMILL_HUGO=/opt/bundledock/toolbox/bin/hugo`. No workflow run, no deploy.
 

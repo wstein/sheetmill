@@ -205,7 +205,7 @@ exports keep their command bytes.
 
 ## Assumptions
 
-- Authorized by the user on 2026-10-16 (feature and a draft PR); the AGENTS.md
+- Authorized by the user on 2026-10-16 (feature and a draft PR; not yet recorded in the repo); the AGENTS.md
   line is written by T001 and implementation does not start before it exists.
   Merge, deployment and distribution remain separately gated.
 - Browser E2E needs Node, which is not installed in the authoring environment; it

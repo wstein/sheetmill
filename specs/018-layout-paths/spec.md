@@ -2,7 +2,7 @@
 
 **Status**: Specification revised after review round 2; implementation of the
 workflow change is blocked (see Authorization).
-**Authorization**: the user's 2026-10-16 request ("publish the three layouts as
+**Authorization** (the quote is not yet recorded in `AGENTS.md`; T001 adds it, until then it is unverified in the repo): the user's 2026-10-16 request ("publish the three layouts as
 separate static paths, not a JS switcher") authorizes this specification, tests and
 script on a topic branch, a topic push and a draft PR (the coordinator opens the PR).
 It extends feature 012 (Pages) and uses the `--header-link` option (#39) and the
@@ -93,11 +93,11 @@ others and would make the default's relative layout depend on its variants.
   pointing at the default would also need a new option (deferred, see Open decisions).
   Search engines may still cluster near-duplicates; that is accepted for a demo.
 - **FR-5 Sitemap and robots.** Each export keeps emitting its own `sitemap.xml` that
-  lists only URLs under its base path, as the demo does today. The manual's
+  lists only URLs under its base path, as the demo does today (the manual's own sitemap is checked in rule 4). The manual's
   `/sheetmill/sitemap.xml` continues to list only the manual: this is a deliberate
   choice to avoid a renderer change, since such a sitemap could technically list
   URLs below its path. No sitemap index and no `robots.txt` are added: a
-  project site cannot control the host-root `robots.txt`, and 012 FR-7 keeps robots
+  project site cannot control the host-root `robots.txt`, and 012 FR-007 keeps robots
   disabled. The variant sitemaps are therefore not advertised; discovery is by the
   header links; an owner may submit the variant sitemaps by hand. This is an explicit exclusion, not an omission.
 - **FR-6 Mount and collisions.** The variants are mounted below the manual output.
@@ -109,7 +109,7 @@ others and would make the default's relative layout depend on its variants.
   names above, the verifier enforces the whole prefix.
 - **FR-7 Post-build verification.** A separate workflow step named `Verify the Pages
   tree` (not the tail of the build run block) is the last step before
-  `upload-pages-artifact`, after the step that copies `llms.txt` and the agent guide.
+  `upload-pages-artifact`, after the build step (which ends with the `llms.txt` and agent-guide copies).
   It runs `sh .github/scripts/verify-pages.sh "$RUNNER_TEMP/public"`, which fails the
   job on any violation. The script reads the generator's double-quoted attributes. A
   test in `internal/render/hugo` (always run, no Hugo needed) scans the theme
@@ -137,7 +137,7 @@ others and would make the default's relative layout depend on its variants.
      For the manual (`/sheetmill/`), any value beginning `/sheetmill/demo` must equal
      a layout home exactly or lie under one of the three homes;
   4. every absolute `canonical`, `og:url`, `og:image` and sitemap `<loc>` of a demo
-     begins with that demo's own site URL including the trailing slash, and the
+     begins with that demo's own site URL including the trailing slash, every manual sitemap `<loc>` begins with `https://wstein.github.io/sheetmill/` and none with `https://wstein.github.io/sheetmill/demo`, and the
      string `example.invalid` (the Hugo `baseURL` placeholder in `hugo.go`) appears
      nowhere in the output tree (a leak would mean a canonical was not rewritten);
   5. layout markers on every HTML page: the cards demo has the body class tokens
