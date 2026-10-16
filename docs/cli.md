@@ -15,7 +15,7 @@ category: reference
 
 `--header-link` is repeatable (at most four) and adds a text link to the top bar and
 the home page introduction, for example `--header-link 'Example library=/sheetmill/demo/'`.
-The label is 1 to 40 printable characters without surrounding whitespace; the value after
+The label is 1 to 40 printable characters (the only space allowed is U+0020) without surrounding whitespace, and labels must be unique (exact, case-sensitive); the value after
 the first `=` must be an `https://` URL without credentials or a root-relative path
 starting with a single `/`. Other schemes (`javascript:`, `data:`, `http:`), `//host`
 URLs, spaces, quotes, angle brackets, backslashes, control and non-ASCII characters

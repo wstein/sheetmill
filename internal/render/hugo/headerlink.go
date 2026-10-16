@@ -23,10 +23,15 @@ func validateHeaderLinks(links []HeaderLink) error {
 	if len(links) > maxHeaderLinks {
 		return fmt.Errorf("invalid header link: at most %d links are allowed", maxHeaderLinks)
 	}
+	seen := map[string]bool{}
 	for _, l := range links {
 		if err := validateHeaderLink(l); err != nil {
 			return fmt.Errorf("invalid header link %q: %w", l.Label, err)
 		}
+		if seen[l.Label] {
+			return fmt.Errorf("invalid header link %q: duplicate label", l.Label)
+		}
+		seen[l.Label] = true
 	}
 	return nil
 }
@@ -39,8 +44,8 @@ func validateHeaderLink(l HeaderLink) error {
 		return fmt.Errorf("the label is longer than %d characters", maxHeaderLabelRunes)
 	}
 	for _, r := range l.Label {
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) || r == utf8.RuneError {
-			return fmt.Errorf("the label contains a control or invisible character")
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) || r == utf8.RuneError || (unicode.IsSpace(r) && r != ' ') || unicode.In(r, unicode.Zl, unicode.Zp, unicode.Zs) && r != ' ' {
+			return fmt.Errorf("the label contains a control, invisible or non-ASCII-space character")
 		}
 	}
 	if l.URL == "" || len(l.URL) > maxHeaderURLBytes {
