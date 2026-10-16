@@ -30,7 +30,7 @@ builds with different Hugo `--clock` values are byte-identical.
    `cheatsheet.updated: 2026-10-14`, **When** the editorial home page is built,
    **Then** its shelf card shows `Version 2.56.0` and
    `Updated <time datetime="2026-10-14">2026-10-14</time>` in one compact line,
-   separated by a real `aria-hidden` ` · ` text separator.
+   separated by visible spaces and an `aria-hidden` `·` span.
 2. **Given** the same sheet, **When** the sheet page is built in `editorial`,
    `classic-compact` and `reference-cards`, **Then** the header shows both facts in
    the same wording and the compact layouts' index rows show the same two facts in a `index-fresh` span
@@ -128,7 +128,8 @@ exports keep their command bytes.
   sheet-header facts as static escaped text with the date inside
   `<time datetime="YYYY-MM-DD">`; the visible date text is the same ISO string.
   Labels are visible text (`Version`, `Updated`); between two present facts a
-  literal `<span aria-hidden="true"> · </span>` separates them, so plain-text and
+  `·` in an `aria-hidden` span, with the surrounding spaces as visible text outside
+  it, separates them, so plain-text and
   reader views never run the facts together. No extra ARIA name is needed and
   nothing relies on colour alone. No JavaScript, request or new font. Tag pages,
   the tag index, the sidebar and the search results do not show freshness.

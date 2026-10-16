@@ -10,8 +10,9 @@ cheatsheet:
 ```
 
 - `cheatsheet.updated`: string `YYYY-MM-DD`, real calendar date, year 1970–9999.
-- `cheatsheet.tool_version`: string, 1–64 code points, single-line, trimmed, no
-  `Cc`, `Cf`, `Zl`, `Zp` characters.
+- `cheatsheet.tool_version`: string, 1–64 code points, single-line, no surrounding
+  Unicode whitespace, no `Cc`, `Cf`, `Zl`, `Zp` characters, and not made only of
+  the fillers U+115F, U+1160, U+3164, U+FFA0, U+2800.
 - Both optional and independent of each other and of `cheatsheet.tool`. Omitted
   fields stay omitted. Other `cheatsheet.*` keys remain open, preserved metadata.
 - IR schema 1; no new typed field on `model.Document`. Values live in
