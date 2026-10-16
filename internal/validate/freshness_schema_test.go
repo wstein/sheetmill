@@ -89,7 +89,7 @@ func freshnessSchema(t *testing.T, key string) schemaNode {
 func TestSchemaMatchesFreshnessTables(t *testing.T) {
 	// The schema is looser only where its $comment says so: calendar validity of a
 	// well-formed date needs arithmetic a regular expression cannot express.
-	calendarOnly := map[string]bool{"impossible february 30": true, "non-leap february 29": true, "century non-leap": true, "april 31": true}
+	calendarOnly := map[string]bool{"impossible february 30": true, "non-leap february 29": true, "century non-leap": true, "century non-leap in range": true, "april 31": true}
 	for _, field := range []struct {
 		key   string
 		cases []freshcases.Case
