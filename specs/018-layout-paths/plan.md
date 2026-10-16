@@ -21,8 +21,8 @@
 - 8 Review evidence: PASS. Rounds in [analysis.md](analysis.md); commands and gaps
   reported.
 
-1. Add `.github/scripts/verify-pages.sh` (POSIX shell with `grep -E`, `sed`, `find`,
-   `sort`, `comm`; no network) and its table tests first, in `internal/pagesworkflow`
+1. Add `.github/scripts/verify-pages.sh` (POSIX shell with `grep -E`, `find`,
+   `sort`, `tr`; no network, no writes) and its table tests first, in `internal/pagesworkflow`
    (run through `os/exec`; skipped if `sh` is missing, a skip is not a pass).
 2. Add the workflow test (fails on today's workflow), then edit `pages.yml`:
    replace the single demo export by three explicit exports, a three-way collision

@@ -121,8 +121,9 @@ others and would make the default's relative layout depend on its variants.
   which the template scan cannot see; escaped prose uses `&lt;`, so it has no false
   positives, and it matches nothing in the current sources. The real-manual run (T006)
   exercises the generated HTML. The script
-  uses `sh` with `grep -E`, `sed`, `find`, `sort` and `comm` only, reads the local
-  tree and makes no network request. Why a shell script and not Go: it must run on the
+  uses `sh` with `grep -E`, `find`, `sort` and `tr` only, reads the local
+  tree, writes nothing (no temporary files) and makes no network request; tool errors
+  fail the run and the root may contain only `[A-Za-z0-9/._-]` (else exit 2). Why a shell script and not Go: it must run on the
   built output tree in CI with no extra build step, its checks are plain text
   matching that reviewers can read in one screen, and it adds no public CLI surface or
   package. The Go side is limited to the test-only package `internal/pagesworkflow`
@@ -153,12 +154,14 @@ others and would make the default's relative layout depend on its variants.
      the editorial demo and the manual have no `classic` token and neither stylesheet;
   6. the three demos have the same set of `*.html` paths (assets legitimately
      differ by theme);
-  7. the header-link elements of each demo home (`nav.header-links a`,
+  7. the manual home still links `/sheetmill/demo/`; the header-link elements of each demo home (`nav.header-links a`,
      `a.topbar-link` other than `Library`, `p.hero-links a`) point exactly at the
-     other two layout homes, never at the demo's own home (the logo and `Library`
+     other two layout homes exactly once each (a repeat fails), never at the demo's own home (the logo and `Library`
      link to the own home legitimately and are not header links);
-  8. no `href`, `src` or `action` value is protocol-relative (starts with `//`), and
-     no demo or manual `src`, `<link href>` or `action` is `http:`. Plain `<a href>`
+  8. no `href`, `src`, `srcset` or `action` value is protocol-relative (starts with `//`);
+     every absolute `src`, `srcset`, `action` or `<link href>` value (any scheme,
+     case-insensitive) begins with `https://wstein.github.io/sheetmill/`; no `<base>`
+     element exists. Plain `<a href>`
      links inside prose are exempt because documents may show loopback examples such
      as `http://127.0.0.1:1313/` (the autolink in `docs/hugo.md`); T006 runs the script on
      the real manual built from `docs/manual-pages.txt`, so this case is a regression

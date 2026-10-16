@@ -107,3 +107,23 @@ Run locally on the topic branch: `gofmt -l`, `go vet ./...`, `go test ./...`,
 rebuild). Not run: the browser E2E suite (Node is not installed), `go test -race`, any
 workflow, deployment or merge. FR-10 sizes were not re-measured. The verifier takes about
 1.5 s on the real 218-page tree.
+
+## Deviations from the written plan (implementation)
+
+| Deviation | Reason |
+| --- | --- |
+| A draft of the script was written before the tests, then moved aside so the tests ran red first | Process slip, disclosed; the tests failed until the script was restored |
+| T002 and T003 landed together in one commit (99ab063 before the restack) | A tests-only commit would leave `go test ./...` red |
+| The quoting check is labelled "rule 0" | The spec numbers rules 1-8; the check sits before them |
+| No `comm`, `sed` or temp files; tools are `grep -E`, `find`, `sort`, `tr` | Rule 6 and 7 compare lists in shell, so the script writes nothing (FR-8) and runs on BSD sed-less setups |
+| Spec FR-7 rule 8 widened to any foreign absolute subresource, `srcset` and `<base>` | Implementation review finding 2 |
+
+## Round: implementation review at 8c85250 (CLEAR, 3 medium, 10 low; 46 mutants)
+
+All 13 findings were fixed on the topic branch: workflow step options and exact triggers
+pinned (1, 9); rule 8 rejects foreign https, `srcset` and `<base>` (2, 7); `sed` removed
+(3); one canonical per page required (4); odd roots exit 2 and tool errors fail (5); no
+here-documents (6); case-insensitive `[[:space:]]` matching (7); header links compared by
+count (8); manual home link checked (10); spec, plan and tasks tool list updated (11);
+specs index and public wording corrected (12, 13). Each fix has a table test that failed
+first, except the workflow-step pins, which were checked with mutants.
