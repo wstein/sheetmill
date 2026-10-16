@@ -260,7 +260,7 @@ func TestReviewFindings(t *testing.T) {
 	if len(ds) > 0 {
 		t.Fatalf("the source must parse: %v", ds)
 	}
-	if p, errs := Render([]Sheet{{ID: "demo", SourceName: "demo.md", Path: "demo.md", Document: d}}, Options{}); len(errs) > 0 || p.Warnings[0].Code != "NAV102" || !strings.Contains(p.Warnings[0].Message, "empty") {
+	if p, errs := Render([]Sheet{{ID: "demo", SourceName: "demo.md", Path: "demo.md", Document: d}}, Options{}); len(errs) > 0 || len(p.Warnings) == 0 || p.Warnings[0].Code != "NAV102" || !strings.Contains(p.Warnings[0].Message, "empty") {
 		t.Fatalf("errors %v warnings %v", errs, p.Warnings)
 	}
 	// 3. Valid shell with quotes nested in command substitutions is kept.

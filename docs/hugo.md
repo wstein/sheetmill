@@ -28,7 +28,7 @@ Validation completes before creating output. Existing destinations (including
 symlinks) are refused; no overwrite flag exists. IO failure after creation can
 leave a partial new project, reported as `IO003`. No existing project is removed.
 Routes use lowercase ASCII filename slugs; all-non-ASCII names use a deterministic
-SHA-256 prefix. Collisions, duplicate basenames and reserved `assets`/`brand`
+SHA-256 prefix. Collisions, duplicate basenames and reserved `assets`/`brand`/`tags`
 routes fail with `REN003` rather than overwriting pages. Duplicate selected paths
 are deduplicated. The output parent must already exist and have no symlink components.
 
