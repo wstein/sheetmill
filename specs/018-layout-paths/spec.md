@@ -1,11 +1,45 @@
 # Feature 018: layout paths on GitHub Pages
 
-**Status**: Specification; implementation follows independent review.
-**Authorization**: user, 2026-10-16 ("publish the three layouts as separate static
-paths, not a JS switcher"; topic push and draft PR; the coordinator opens the PR). Extends feature 012 (Pages) and
-uses the `--header-link` option (#39) and the layouts of 004, 016. No merge, tag,
-release, deployment or workflow run is authorized by this feature. Merging to `main`
-is what would activate the changed workflow; that merge needs separate human approval.
+**Status**: Specification revised after review round 2; implementation of the
+workflow change is blocked (see Authorization).
+**Authorization**: the user's 2026-10-16 request ("publish the three layouts as
+separate static paths, not a JS switcher") authorizes this specification, tests and
+script on a topic branch, a topic push and a draft PR (the coordinator opens the PR).
+It extends feature 012 (Pages) and uses the `--header-link` option (#39) and the
+layouts of 004, 016. Two new public paths, `/sheetmill/demo-compact/` and
+`/sheetmill/demo-cards/`, are a **new scope extension** of the 012 Pages approval
+(constitution 7: broader publication stays gated). **That extension is not yet
+confirmed by the user.** Until the user confirms it, T005 (editing `pages.yml`) and
+T007 (docs that name the new URLs) stay blocked; T001 records the proposed extension
+as pending, never as granted. No merge, tag, release, deployment or workflow run is
+authorized by this feature; merging to `main` is what would activate the changed
+workflow and needs separate human approval.
+
+## User scenarios
+
+1. **Reader compares layouts.** A reader on the demo home opens another layout by an
+   ordinary link. *Given* the editorial demo home, *when* the page is read, *then* it
+   links to the compact and cards homes and not to itself; each variant home links to
+   the other two (FR-2, rule 7).
+2. **Existing links keep working.** *Given* a bookmark to `/sheetmill/demo/` or the
+   manual's `Example library` link, *when* the new site is deployed, *then* both still
+   reach the editorial demo (FR-1, rules 3 and 5).
+3. **Maintainer is protected from a bad deploy.** *Given* a wrong base path, a layout
+   marker mix-up or a page-set difference, *when* the workflow builds, *then* the job
+   fails before upload and the previous deployment stays live (FR-6, FR-7, FR-9).
+
+## Success criteria
+
+- **SC-001** Three layouts exist at the three paths, each canonical to itself (FR-1, FR-4).
+- **SC-002** Each build links exactly to the other two layouts (FR-2, rule 7).
+- **SC-003** The verifier accepts the valid tree and the real manual-plus-demos tree
+  and rejects a negative tree for each rule 1-8 (FR-7).
+- **SC-004** Rebuilds are byte-identical (FR-8).
+- **SC-005** No new external request, script, cookie or storage key (FR-11).
+- **SC-006** The workflow structure is pinned by a parsing test (FR-1..3, FR-6, FR-7).
+- **SC-007** Failure of any step leaves the previous deployment untouched (FR-9).
+
+The FR-to-task table is in [analysis.md](analysis.md).
 
 ## Goal
 
@@ -69,20 +103,32 @@ others and would make the default's relative layout depend on its variants.
 - **FR-6 Mount and collisions.** The variants are mounted below the manual output.
   The workflow refuses to build if `public/demo`, `public/demo-compact` or
   `public/demo-cards` already exists after the manual build (a manual page of that
-  slug), and the mount order is manual first, then the three demos.
-- **FR-7 Post-build verification.** As the last step before `upload-pages-artifact`
-  (after the `llms.txt` and agent-guide copies), the workflow runs
-  `sh .github/scripts/verify-pages.sh "$RUNNER_TEMP/public"`, which fails the job on
-  any violation. The script reads the generator's double-quoted attributes (a test
-  fails if the renderer starts emitting single-quoted or unquoted `href`/`src`), uses
-  `grep -E`, `sed`, `find` and `sort` only, reads the local tree and makes no
-  network request. A page belongs to the demo whose directory (`demo`,
+  slug), and the mount order is manual first, then the three demos. The prefix `demo`
+  is reserved at the top level: no manual slug may start with `demo` (for example
+  `demonstration`), because rules 1 and 3 test the prefix; the guard is the exact
+  names above, the verifier enforces the whole prefix.
+- **FR-7 Post-build verification.** A separate workflow step named `Verify the Pages
+  tree` (not the tail of the build run block) is the last step before
+  `upload-pages-artifact`, after the step that copies `llms.txt` and the agent guide.
+  It runs `sh .github/scripts/verify-pages.sh "$RUNNER_TEMP/public"`, which fails the
+  job on any violation. The script reads the generator's double-quoted attributes. A
+  test in `internal/render/hugo` (always run, no Hugo needed) scans the theme
+  templates and fails on a single-quoted or unquoted `href`, `src` or `action`
+  attribute, and the real-manual run (T006) exercises the generated HTML. The script
+  uses `sh` with `grep -E`, `sed`, `find`, `sort` and `comm` only, reads the local
+  tree and makes no network request. Why a shell script and not Go: it must run on the
+  built output tree in CI with no extra build step, its checks are plain text
+  matching that reviewers can read in one screen, and it adds no public CLI surface or
+  package. The Go side is limited to the test-only package `internal/pagesworkflow`
+  (constitution 5: standard tools first, a small justified exception, no new
+  dependency; `mvdan.cc/sh/v3` is already in `go.mod`). A page belongs to the demo whose directory (`demo`,
   `demo-compact`, `demo-cards`) contains it, else to the manual. Rules:
-  1. top-level entries of `public/` are exactly the manual output plus `demo`,
-     `demo-compact`, `demo-cards`, `llms.txt` and `agent-guide.md` (checked as: the
-     three demo directories, `llms.txt`, `agent-guide.md`, `index.html`,
-     `sitemap.xml`, `search.json`, `assets`, `brand` exist, and no other entry
-     starts with `demo`);
+  1. the top level of `public/` holds the manual output plus `demo`, `demo-compact`,
+     `demo-cards`, `llms.txt` and `agent-guide.md`. The real check is a subset check:
+     the three demo directories, `llms.txt`, `agent-guide.md`, `index.html`,
+     `sitemap.xml`, `search.json`, `assets` and `brand` exist, and no other entry
+     starts with the reserved prefix `demo` (FR-6); other manual entries are not
+     enumerated;
   2. each of the manual and three demos has `index.html`, `sitemap.xml`,
      `search.json` and `assets/`;
   3. every root-relative `href`/`src`/`action` value in HTML begins with its own base
@@ -91,7 +137,9 @@ others and would make the default's relative layout depend on its variants.
      For the manual (`/sheetmill/`), any value beginning `/sheetmill/demo` must equal
      a layout home exactly or lie under one of the three homes;
   4. every absolute `canonical`, `og:url`, `og:image` and sitemap `<loc>` of a demo
-     begins with that demo's own site URL including the trailing slash;
+     begins with that demo's own site URL including the trailing slash, and the
+     string `example.invalid` (the Hugo `baseURL` placeholder in `hugo.go`) appears
+     nowhere in the output tree (a leak would mean a canonical was not rewritten);
   5. layout markers on every HTML page: the cards demo has the body class tokens
      `classic` and `reference-cards` and stylesheets matching
      `assets/classic\.[0-9a-f]{64}\.css` and `assets/cards\.[0-9a-f]{64}\.css`;
@@ -106,7 +154,9 @@ others and would make the default's relative layout depend on its variants.
   8. no `href`, `src` or `action` value is protocol-relative (starts with `//`), and
      no demo or manual `src`, `<link href>` or `action` is `http:`. Plain `<a href>`
      links inside prose are exempt because documents may show loopback examples such
-     as `http://127.0.0.1:1313/` (a regression test uses the real manual).
+     as `http://127.0.0.1:1313/` (the autolink in `docs/hugo.md`); T006 runs the script on
+     the real manual built from `docs/manual-pages.txt`, so this case is a regression
+     test, not a stand-in.
 - **FR-8 Determinism.** The same repository revision produces byte-identical output
   for each of the three demo trees (existing 012 / 004 FR-005 guarantee, now shown
   for three builds). The verification script is deterministic and writes nothing.
@@ -124,14 +174,27 @@ others and would make the default's relative layout depend on its variants.
   values are validated by the existing option; the Pages artifact still contains only
   the generated sites plus `llms.txt` and `agent-guide.md`. Workflow permissions,
   action pins, triggers and the `github-pages` environment are unchanged.
-- **FR-12 Authorization records.** Constitution 7: `AGENTS.md` and specs/012 (status
-  line, FR-009, Resolved decisions) name `/sheetmill/demo-compact/` and
-  `/sheetmill/demo-cards/` as part of the already authorized Pages demo, dated
-  2026-10-16, and state that they go live only through a separately approved merge
-  to `main`.
+- **FR-12 Authorization records.** Constitution 7: two new public paths are a scope
+  extension, not part of the already authorized demo. `AGENTS.md` (the 012 bullet) and
+  specs/012 (status line, FR-009, Resolved decisions) record
+  `/sheetmill/demo-compact/` and `/sheetmill/demo-cards/` as a **proposed extension
+  of the 012 approval, pending the user's confirmation**, dated 2026-10-16. No line
+  may claim the user approved it until they do; the confirmation is then added with
+  its date. The paths go live only through a separately approved merge to `main`.
+  Workflow edits (T005) and docs naming the URLs (T007) wait for the confirmation.
 - **FR-13 Documentation.** `docs/hugo.md` (Pages section and Search engines
   paragraph), `llms.txt`, `docs/agent-guide.md` and the README list the layout URLs.
   `docs/cli.md` needs no change because no flag changes.
+
+## Known limitations (accepted)
+
+- Editorial pages carry the cross-layout links in `nav aria-label="Related sites"`.
+  In the classic layouts they are `.topbar-link` anchors, which `classic.css` hides
+  below 640px; on mobile the switch exists only through `p.hero-links` on the home
+  page, not on sheet pages. Accepted for the demo.
+- No page names its own layout; the title suffix (`compact layout`, `cards layout`)
+  and the layout look are the only cue. Naming the current layout on each home page
+  needs a renderer change and is deferred.
 
 ## Out of scope
 
@@ -146,10 +209,16 @@ release. No change to `internal/` renderer code is planned.
   three export commands, base-path/site-url agreement, theme flags, header-link
   rules, shared clock, collision guards, the verification step order (after builds,
   before upload) and that triggers/permissions are unchanged.
-- Table tests run `verify-pages.sh` against synthetic trees: one valid, and one
-  failing tree per rule above.
-- With `SHEETMILL_HUGO` set, an integration test builds the three real demos, mounts
-  them under a manual stand-in and runs the script, and compares two builds.
+- Table tests in `internal/pagesworkflow` run `sh .github/scripts/verify-pages.sh`
+  through `os/exec` against synthetic trees: one valid, and one failing tree per rule
+  1-8 (including the `127.0.0.1:1313` prose link that must pass and a `//` src, an
+  `http:` src, `example.invalid` and a `demonstration` entry that must fail). If `sh`
+  is not available the tests are skipped with a message, and a skip is not a pass.
+- With `SHEETMILL_HUGO` set, an integration test builds the real manual from
+  `docs/manual-pages.txt` and the three real demos through `internal/cli.Run`, mounts
+  them as the workflow does, runs the script, and compares two builds.
+- An always-run test in `internal/render/hugo` checks that the theme templates quote
+  every `href`, `src` and `action` attribute (FR-7).
 - Browser checks are not part of this feature; Node is not required.
 
 ## Open decisions (recommendations)
