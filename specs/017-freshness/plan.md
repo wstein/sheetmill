@@ -69,15 +69,23 @@ testdata/reference-compatible/freshness.md(.json), testdata/import/reference/fre
   is set; callers wrap using the same `with` guard so no wrapper leaks. Uses
   `{{ with .tool_version }}` and `{{ with .updated }}`; `datetime` uses the same value.
 - CSS: scoped selectors `.library-item .library-fresh`, `.page-heading .sheet-fresh`,
-  `.classic .sheet-fresh`, `.classic .index-fresh` (above `.library-item p`),
+  `.classic .sheet-fresh`, `.classic .index-fresh` (above `.library-item p`; the
+  `index-fresh` span is the last child of the row, after `.index-license`, which
+  `home.html` emits as `a, .index-desc, .index-count, .index-license`),
   colour `var(--muted)`, 13px; `.classic .index-group li{flex-wrap:wrap}` with
   `.classic .index-fresh{flex-basis:100%}`; `cards.css` resets the basis to auto and
   centres `.reference-cards .sheet-fresh`. Separator is a text span, not CSS content. No print rule.
   `TestPerformanceBudget` (site.css+app.js ~30.9 of 32 KiB) guards size.
+- Data path guard: the page fields reach templates only via `data/*.json`; the
+  generated `content/<id>/index.md` front matter (`title`, `url`, `sheetid`) must not
+  gain `updated`/`date`/`lastmod`, or Hugo would use it as page date (a future value
+  with `--clock 2000-01-01` could hide the page). T008 asserts the front matter keys.
+- Sitemap: the renderer writes `<loc>` only; no `<lastmod>` from `updated` (FR-009).
+- Studio renders through the same templates; `make test-studio` joins the final checks.
 - Importer: build a single `cheatsheet` archival map before `validate.Metadata`.
 - Template tests that need built pages use real Hugo and are SKIPPED without
   `SHEETMILL_HUGO`; a skip does not count as passing. A template-text test (the
   `TestShelfCardMarkupInTemplate` pattern) runs always. The existing `hugoBuild`
   helpers hard-code the clock, so T012 adds a clock-parameterised variant.
 - Risk: the CSS fingerprint changes every theme's asset names; tests that hard-code
-  asset names must derive them. Checked at T010.
+  asset names must derive them. Checked at T011.

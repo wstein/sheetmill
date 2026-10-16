@@ -36,7 +36,9 @@ owns that case on the source path; on the Hugo direct-IR path a non-mapping
 `data/shelves.json` members, `data/sheets/<id>.json` and, because `tagCatalog`
 embeds `page`, `data/tags/<id>.json` and `data/tagindex.json` gain the keys only
 when present (accepted; tag templates ignore them). `data/ir/<id>.json` carries the
-metadata as authored. Ordering, related scoring and `ShelfTags` do not read them. Search index
+metadata as authored. Freshness is never written into the generated `content/*/index.md` front matter
+(Hugo would read `updated` as the page date; a future date with `--clock
+2000-01-01` could hide the page), and `sitemap.xml` gets no `<lastmod>`. Ordering, related scoring and `ShelfTags` do not read them. Search index
 text is unchanged.
 
 ## Import provenance
