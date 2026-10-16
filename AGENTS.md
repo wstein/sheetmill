@@ -31,6 +31,11 @@ Sibling repository policies do not govern this repository.
 - Feature 016 is authorized (user, 2026-10-14): the opt-in `--theme reference-cards`
   Hugo layout (`specs/016-reference-cards`); editorial stays the default. A reviewed
   PR is authorized; merge and deployment are not.
+- Feature 017 is authorized (user, 2026-10-16): optional `cheatsheet.updated` and
+  `cheatsheet.tool_version` sheet freshness for Hugo shelf cards and sheet headers
+  (`specs/017-freshness`), prompted by "show an `updated` date and the documented tool
+  version on library shelf cards and on the sheet header, deterministically". A draft PR
+  is authorized; merge and deployment are not.
 - Feature 007 MVP T001–T018 and applicable final checks are authorized on
   2026-10-13: one smill sheet, temporary verification executable, Hugo and local
   browser E2E.
