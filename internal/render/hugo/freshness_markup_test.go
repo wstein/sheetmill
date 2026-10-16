@@ -32,9 +32,9 @@ func themeFile(t *testing.T, name string) string {
 func TestFreshnessMarkupInTemplates(t *testing.T) {
 	partial := themeFile(t, "layouts/partials/freshness.html")
 	for _, want := range []string{
-		`{{ with .tool_version }}<span>Version {{ . }}</span>{{ end }}`,
+		`with .tool_version }}<span>Version {{ . }}</span>{{ end }}`,
 		`{{ if and .tool_version .updated }} <span aria-hidden="true">·</span> {{ end }}`,
-		`{{ with .updated }}<span>Updated <time datetime="{{ . }}">{{ . }}</time></span>{{ end }}`,
+		`with .updated }}<span>Updated <time datetime="{{ . }}">{{ . }}</time></span>{{ end -}}`,
 	} {
 		if !strings.Contains(partial, want) {
 			t.Errorf("freshness partial lacks %s", want)
@@ -191,8 +191,9 @@ func TestHugoIntegrationFreshnessMarkup(t *testing.T) {
 					t.Errorf("no freshness on the both card")
 				}
 			} else {
+				index := home[strings.Index(home, `<section class="index-group"`):]
 				for _, id := range []string{"both", "version", "date"} {
-					row := between(t, home, `<li><a href="/`+id+`/">`, `</li>`)
+					row := between(t, index, `<li><a href="/`+id+`/">`, `</li>`)
 					want := `<span class="index-fresh">` + facts[id] + `</span>`
 					if !strings.HasSuffix(row, want) {
 						t.Errorf("%s: index-fresh must be the last child: %s", id, row)
@@ -201,7 +202,7 @@ func TestHugoIntegrationFreshnessMarkup(t *testing.T) {
 						t.Errorf("%s: license must precede the freshness span: %s", id, row)
 					}
 				}
-				row := between(t, home, `<li><a href="/none/">`, `</li>`)
+				row := between(t, index, `<li><a href="/none/">`, `</li>`)
 				if strings.Contains(row, "fresh") || strings.Contains(row, "<time") {
 					t.Errorf("none: %s", row)
 				}

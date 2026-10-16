@@ -1,0 +1,1 @@
+{{- with .tool_version }}<span>Version {{ . }}</span>{{ end }}{{ if and .tool_version .updated }} <span aria-hidden="true">·</span> {{ end }}{{ with .updated }}<span>Updated <time datetime="{{ . }}">{{ . }}</time></span>{{ end -}}
