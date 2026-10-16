@@ -80,7 +80,7 @@ warnings end with `(warning)` and do not change the exit status unless you use `
 | `IO003` | The output exists already or cannot be created. Choose a new path; outputs are never overwritten. |
 
 ### Import {#import-codes}
-Reference import adds `IMP001`–`IMP003` (errors) and `IMP101`–`IMP111`
+Reference import adds `IMP001`–`IMP003` (errors) and `IMP101`–`IMP112`
 (warnings about archived or mapped legacy syntax). See
 [Reference import](imports.md) for the full list.
 
