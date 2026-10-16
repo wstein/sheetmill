@@ -52,6 +52,14 @@ Sibling repository policies do not govern this repository.
   https://wstein.github.io/sheetmill/, the independently authored `examples/sheets`
   demo at `/sheetmill/demo/`, and `llms.txt` plus the agent guide as plain files.
   The redistribution gate and other sheets or hosts remain separately gated.
+  Extension confirmed by the user on 2026-10-16: the same demo is also published at
+  `/sheetmill/demo-compact/` and `/sheetmill/demo-cards/` (paths only; see feature 018).
+- Feature 018 is authorized (user, 2026-10-16: "publish the three layouts as separate
+  static paths, not a JS switcher"): spec, tests, the Pages verification script, the
+  `pages.yml` edit, docs, a topic push and a draft PR (`specs/018-layout-paths`). The
+  user confirmed the two new paths on 2026-10-16 (answer "1j"); that covers the paths,
+  not their activation. No merge, deployment or workflow run is authorized; merging to
+  `main` would activate the workflow and needs separate human approval.
 - Use `codex/` feature branches and Conventional Commits. Topic pushes and draft
   PRs belong to an authorized implementation handoff; otherwise ask before publishing.
 - Merge, tag, release, deploy, distribution builds, PDF generation, artifact

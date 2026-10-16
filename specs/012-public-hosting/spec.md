@@ -3,7 +3,9 @@
 Created: 2026-10-13 · Status: partly authorized (2026-10-13): FR-001/FR-002 base path
 and GitHub Pages deployment of `examples/sheets`; extended 2026-10-14 to the manual
 built from `docs/` (demo moves to `/sheetmill/demo/`); the redistribution gate
-(FR-004/FR-005) remains specification only
+(FR-004/FR-005) remains specification only. Extended 2026-10-16 (confirmed by the user,
+paths only, not their activation): the demo is also published at `/sheetmill/demo-compact/`
+and `/sheetmill/demo-cards/` ([018](../018-layout-paths/spec.md))
 Depends on: 004-hugo-renderer (implemented); content rights of the chosen sheets
 
 ## User scenarios and acceptance
@@ -50,6 +52,9 @@ Depends on: 004-hugo-renderer (implemented); content rights of the chosen sheets
   AGENTS.md. `smill` never uploads and CI never merges. Only the specifically
   approved Pages workflow may publish the manual/demo artifacts; that approval
   does not cover a general publishing gate or deployment in the current increment.
+  The 2026-10-16 extension (`/sheetmill/demo-compact/`, `/sheetmill/demo-cards/`) is
+  confirmed by the user for the paths only; it goes live only through a separately
+  approved merge to `main`.
 - FR-010: Document security-header guidance (CSP, `X-Content-Type-Options`,
   `Referrer-Policy`) for host operators as recommendations, not enforced behavior.
 
@@ -64,7 +69,9 @@ revision; no deployment or merge happens without human approval.
 ## Open decisions
 
 Resolved: GitHub Pages manual at `/sheetmill/`, demo at `/sheetmill/demo/`, no
-custom domain. Canonical sitemap behavior follows `--site-url` as above.
+custom domain. Extended and confirmed by the user on 2026-10-16: the same demo in
+the compact and cards layouts at `/sheetmill/demo-compact/` and `/sheetmill/demo-cards/`
+(018; paths only, activation still gated). Canonical sitemap behavior follows `--site-url` as above.
 
 Remaining decisions:
 
