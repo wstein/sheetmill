@@ -1,0 +1,39 @@
+{
+  "hugo": "v0.167.0-3fff6fb5c267dacb26280c78dbe8c344054249c8",
+  "options": {
+    "description": "Pinned base.",
+    "title": "Freshness base"
+  },
+  "themes": {
+    "classic-compact": {
+      "git/index.html": "3aed460a5d38ef28d0e3afaf7928f18f50d1eb5d5081e5b8686d4be9d30ec03b",
+      "index.html": "3e72c8ce6b3b6e989a52b939fb6ee58be17f7c2f150fe1197d83b3cac84ddbe7",
+      "plain/index.html": "f306910725a8893a8a4b2f1f654e9b178c002f3a8cf1f68487e37896cedeb2a0",
+      "tags/cli-99bb88401742/index.html": "e00b2a61e794b533ef76e09f661a0b13e828b3f8a4ebb3dcea91c158c89a10da",
+      "tags/index.html": "f2c4314e3fcb888cdf2b7bb147b14172fce2da23c8ed155a720f0bcde484345f",
+      "tags/misc-9c32429c2926/index.html": "89c6aa9ac0bad48193e01d6352d2677188d25103e9bcd48257c093336bf26e4a",
+      "tags/vcs-a8d1cfa1fc63/index.html": "0898d5138761d673d6a643f93d8d186d896ffd9efef8dba9e6a519c5efff0b75",
+      "tool-only/index.html": "7dcaa1d9e49bf2429d07c4b07977462cdade4ef94a6dd127b1476787d9512dd1"
+    },
+    "editorial": {
+      "git/index.html": "6543c7c57bf1b6e75a82650cf1aef1b7099770a6dc2763e6b745d8b2c0771e33",
+      "index.html": "87eec1741b79a716e1d14b255522e8e9be5ea047836a488f7b35b90691303cdc",
+      "plain/index.html": "7fb43d8d5ace1291726faf1d3b9e03e49dc8db6c9bf0ae3a7a14ee11e3ba381e",
+      "tags/cli-99bb88401742/index.html": "5a80f4668fcca8a83bbc7192fad7d33c9507b6990af656f63c9e0007b08ed4de",
+      "tags/index.html": "691235191008663c251d57e0048ddbab5d29f832f5dba99742b123a7d0317da7",
+      "tags/misc-9c32429c2926/index.html": "5c7cdd464ae5b7ae8aeb312b59577348ec730b46e755b13f85ce0ee7c974306a",
+      "tags/vcs-a8d1cfa1fc63/index.html": "1630efe9880c1c931e8fc5c44d65c2bcbbe23ca61186f3c33b532ef9af398c36",
+      "tool-only/index.html": "73d77171f000868f2a1ba0a2d71d9caa1ea2b24a24866a8b3515a4a90663e3d4"
+    },
+    "reference-cards": {
+      "git/index.html": "49a77ccb57daa264b620a78a853991d54b62c04fbbc5601cbd8a2ae8d9490a82",
+      "index.html": "00cc6b8c78b785ddb50d5c621e748517ec9d3cd139c4ec29709673310f8d8959",
+      "plain/index.html": "cc3c6f4c82c54931b2464f67feb994a502b839031f030754a7b991d2dd676615",
+      "tags/cli-99bb88401742/index.html": "9b1353fb9e448293cde073f8c581182153142ae344b8acd5f64499b379ed263b",
+      "tags/index.html": "c1d60f294b1f09947cefbb1e4cfd04e3136e5f48fc37fd1dedcee06b1b91d62a",
+      "tags/misc-9c32429c2926/index.html": "40141498e772806041ff5219afb4e6daf7555ec8c8d20e789fab059b74d8cd38",
+      "tags/vcs-a8d1cfa1fc63/index.html": "6e48fb6d4647269a75a62b368d7780d03fa07ad26f7d08f23d8dff67b839bbf7",
+      "tool-only/index.html": "d740a0163135e23ce3419437ddb701eb4825122c89b651306a6b3107ccedc28b"
+    }
+  }
+}
