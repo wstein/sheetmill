@@ -38,9 +38,11 @@
 9. **Rendering shape.** One helper partial `freshness.html` renders unclassed
    `<span>Version …</span>` and `<span>Updated <time>…</time></span>` with a
    `·` in `<span aria-hidden="true">` between them and the spaces outside the hidden
-   span (otherwise the accessible name concatenates the facts) (the renderer's existing
-   pattern; generated CSS content is announced by assistive technology and vanishes
-   in reader views). The wrapper class is chosen by the caller (`library-fresh`,
+   span, so the accessible name does not concatenate the facts. This is a deliberate
+   choice, not the renderer's existing pattern: the provenance markup puts its spaces
+   inside the hidden span (`<span aria-hidden="true"> · </span>`), where a screen
+   reader's text could run the words together. Generated CSS content is announced by
+   assistive technology and vanishes in reader views, hence a real span. The wrapper class is chosen by the caller (`library-fresh`,
    `index-fresh`, `sheet-fresh`). Sheets without fields render as before, apart
    from the fingerprinted stylesheet names.
 10. **Print and a11y.** The facts are text in normal flow, so they print by default
@@ -60,7 +62,14 @@ No sibling repository or network source was consulted (policy: no fetching).
   does not alter the stated dates), not when the tool was released.
 - `tool_version`: taken from each sheet's own `source.note` (the sheet records the
   documentation it was authored from): curl 8.7.1, git 2.56.0, jq 1.8.2, make 3.81
-  (GNU Make), grep 2.6.0-FreeBSD, ssh 10.3p1 (OpenSSH), tar 3.5.3 (bsdtar). Omitted:
+  (GNU Make), grep 2.6.0-FreeBSD, ssh 10.3p1 (OpenSSH). Omitted: tar (decision below),
   find (macOS BSD, no version), regex (POSIX documentation), markdown (SheetMill
   source format, not a tool), bdock, sheetmill, smill, whr (no pinned release).
   These are verified only against the sheets' own text; no upstream was fetched.
+
+**Decision, tar.** The `tar` sheet documents bsdtar 3.5.3. FR-013 forbids adding
+`cheatsheet.tool`, and the contract says to write the version only, so a bare
+`Version 3.5.3` card would read as GNU tar's number (GNU tar is 1.x). Choice: omit
+`tool_version` for `tar` (the version stays in its `source.note`). A qualified value
+(`bsdtar 3.5.3`) would contradict the version-only rule and set a precedent for tool
+names in the field; `grep 2.6.0-FreeBSD` is self-qualifying and stays. `updated` is still set.

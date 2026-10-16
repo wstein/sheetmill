@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-16
 
-**Status**: Specification revised after review round 1; no implementation yet
+**Status**: Specification revised after review round 3 (READY, see [analysis](analysis.md)); no implementation yet
 
 **Input**: User request (2026-10-16), prompted by a comparison with a public
 cheatsheet site: show an `updated` date and the documented tool version on library
@@ -33,7 +33,8 @@ builds with different Hugo `--clock` values are byte-identical.
    separated by visible spaces and an `aria-hidden` `·` span.
 2. **Given** the same sheet, **When** the sheet page is built in `editorial`,
    `classic-compact` and `reference-cards`, **Then** the header shows both facts in
-   the same wording and the compact layouts' index rows show the same two facts in a `index-fresh` span
+   the same wording and the compact layouts' index rows show the same two facts in an `index-fresh` span
+   that is the last child of the row, after the description, count and license
    (same wording, own full-width line in `classic-compact`).
 3. **Given** a sheet with neither field, **When** building, **Then** no freshness
    element, label, separator or empty wrapper is emitted and nothing is reported.
@@ -92,7 +93,9 @@ exports keep their command bytes.
   week/ordinal ISO forms are errors.
 - `cheatsheet` present but not a mapping keeps its existing `VAL003`; freshness is
   not additionally reported.
-- Unknown `cheatsheet.*` keys remain preserved generic metadata (no closed namespace).
+- Unknown `cheatsheet.*` keys remain preserved generic metadata (no closed namespace);
+  a test pins that an unknown key next to valid freshness is neither rejected nor
+  dropped (T003, T005).
 - Hostile text (`<script>`, quotes, `&`) in `tool_version` is HTML-escaped in text;
   `datetime` is only ever a validated digits-and-hyphens value.
 - The version is shown as authored; no normalization, `v` prefix or semver parsing.
@@ -115,7 +118,12 @@ exports keep their command bytes.
   control, format (`Cf`), line- or paragraph-separator characters, and MUST contain
   at least one character other than the blank-looking fillers U+115F, U+1160,
   U+3164, U+FFA0 and U+2800. Content is otherwise free (`10.3p1`, `2.6.0-FreeBSD`).
-  Variation selectors and other combining marks are not otherwise policed.
+  Variation selectors and other combining marks are not otherwise policed. Private-use
+  (`Co`) and unassigned (`Cn`) code points are accepted on purpose, unlike the
+  stricter `unicode.IsPrint` rule of `--header-link` labels (`validateHeaderLink`):
+  `Cn` depends on the Unicode tables of the Go toolchain, so rejecting it would make
+  validity change with a toolchain bump (constitution 1), and both are only
+  HTML-escaped text that cannot execute or hide a date.
 - **FR-004**: Invalid freshness fails with new code `VAL004`, positioned at the
   offending key where known, otherwise at the document start. The check is shared by
   source validation and the Hugo direct-IR boundary (`validate.Freshness`).
@@ -134,9 +142,15 @@ exports keep their command bytes.
   nothing relies on colour alone. No JavaScript, request or new font. Tag pages,
   the tag index, the sidebar and the search results do not show freshness.
 - **FR-008**: Freshness MUST appear in print output (no print-hiding rule), use
-  existing palette tokens only, and wrap at 320px.
+  existing palette tokens only, and be allowed to wrap on narrow screens (no
+  `white-space:nowrap`, no fixed width, wrapping rows). The CSS-level assertions are
+  tested (T010); the rendered wrap at 320px is **unverified** because no browser is
+  available (see Unverified).
 - **FR-009**: Shelf order, route, related scoring, tag pages and search content
-  MUST NOT depend on the freshness fields.
+  MUST NOT depend on the freshness fields. The generated `sitemap.xml` stays
+  `<loc>`-only: `updated` is not emitted as `<lastmod>` (decision: the date is an
+  author statement about the sheet, not verified page modification time; the
+  renderer writes `<loc>` only today, `internal/render/hugo/hugo.go`).
 - **FR-010**: Reference import MUST archive any upstream `cheatsheet.updated` and
   `cheatsheet.tool_version` inertly before validation with `IMP112`, merged with
   the existing `cheatsheet.cards` archive; it MUST NOT infer either field.
@@ -146,13 +160,16 @@ exports keep their command bytes.
   them, but source files reach it through the shared parser, so invalid freshness
   fails `smill check`, `smill build navi` and Studio with `VAL004` like any other
   invalid known field; direct-IR navi input is not validated.
-- **FR-012**: The JSON Schema, `docs/agent-guide.md`, `llms.txt` (one line: set
+- **FR-012**: Docs call the feature "sheet freshness (`updated`/`tool_version`)", never
+  bare "freshness", because Studio docs and `client.js` already use "freshness" for
+  preview staleness. The JSON Schema, `docs/agent-guide.md`, `llms.txt` (one line: set
   these only from verified evidence, never guess), `docs/format/gfm-plus.md`, `docs/diagnostics.md`,
   `docs/hugo.md`, `docs/imports.md`, `docs/format/navi-profile.md` and `docs/cli.md`
   describe the implemented contract.
 - **FR-013**: The 15 sheets in `examples/sheets` gain real `updated` values and,
   where the sheet names a documented version, `tool_version`, derived and recorded
-  as in [research.md](research.md); no `cheatsheet.tool` is added to them (it would
+  as in [research.md](research.md) (`tar` is omitted: its bsdtar number is ambiguous
+  without a tool name); no `cheatsheet.tool` is added to them (it would
   add a navi tag).
 - **FR-014**: Verification MUST keep every pre-existing file under `testdata/` and
   every navi expectation byte-identical, add one small freshness parser golden, and list every changed file
@@ -173,7 +190,9 @@ exports keep their command bytes.
 - **SC-002**: Two real-Hugo builds with different `--clock` values and shuffled
   input order are byte-identical across all three themes (US1.5, FR-006).
 - **SC-003**: Without the fields, the rendered HTML of all three themes equals the
-  base revision `05eba4d` HTML after normalising the fingerprinted stylesheet
+  base revision `05eba4d` HTML (the PR base `189e872` is template-equivalent: `git diff
+  05eba4d 189e872 -- internal/render/hugo/theme` is empty; both are named so the
+  hashes can be re-captured on either) after normalising the fingerprinted stylesheet
   hrefs, and no freshness class, `<time>` or empty wrapper appears (FR-007, US1.3).
   Normalised base hashes are captured in T002 before any template change.
 - **SC-004**: All existing goldens and navi `.cheat` bytes are unchanged; the navi
@@ -191,6 +210,12 @@ exports keep their command bytes.
   Merge, deployment and distribution remain separately gated.
 - Browser E2E needs Node, which is not installed in the authoring environment; it
   is not claimed. Markup, determinism and CSS are covered by Go and Hugo tests.
-- Out of scope: automatic dates, "stale" badges, relative dates ("3 days ago"),
+- Unverified (not claimed): rendering and wrapping at 320px and the desktop layout of
+  the `index-fresh` row (FR-008, no browser); upstream correctness of the demo
+  versions (derived from the sheets' own notes only).
+- Freshness data travels only through `data/*.json`; it is never written into
+  `content/*/index.md` front matter (Hugo would read `updated` as date/lastmod, and a
+  future date with `--clock 2000-01-01` could hide the page).
+- Out of scope: automatic dates, sitemap `<lastmod>`, "stale" badges, relative dates ("3 days ago"),
   sorting or filtering by date, search over freshness, a future-date lint,
   localized date formats, sheet revision history, changelog and any manifest.
