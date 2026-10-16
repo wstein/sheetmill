@@ -58,8 +58,14 @@ func TestFreshnessStylesheetContract(t *testing.T) {
 			}
 		}
 	}
-	if !strings.Contains(classic, ".classic .index-group li{flex-wrap:wrap}") && !strings.Contains(ruleBody(t, classic, ".classic .index-group li"), "flex-wrap:wrap") {
-		t.Error("classic index rows must be able to wrap")
+	// Only rows that carry the facts may wrap: the SC-003 hash pin covers HTML, not CSS,
+	// so an unscoped rule would change wrapping of every row without freshness.
+	const wrapRule = ".classic .index-group li:has(.index-fresh)"
+	if !strings.Contains(ruleBody(t, classic, wrapRule), "flex-wrap:wrap") {
+		t.Errorf("classic index rows with facts must be able to wrap via %s", wrapRule)
+	}
+	if strings.Contains(classic, ".classic .index-group li{") {
+		t.Error("an unscoped .classic .index-group li rule changes rows without freshness")
 	}
 	if !strings.Contains(ruleBody(t, classic, ".classic .index-fresh"), "flex-basis:100%") {
 		t.Error("classic index-fresh takes its own full-width line")

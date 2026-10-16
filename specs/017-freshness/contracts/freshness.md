@@ -48,7 +48,10 @@ wrapper). The separator is a real aria-hidden `·` span with the spaces outside 
 JavaScript, no title attribute, no icons. Facts print. Colors are existing palette
 tokens. CSS selectors are scoped (`.library-item .library-fresh`,
 `.page-heading .sheet-fresh`, `.classic .sheet-fresh`) so they out-rank
-`.library-item p`. In the classic layouts `.classic .index-group li{flex-wrap:wrap}` is added and
+`.library-item p`. In the classic layouts `.classic .index-group li:has(.index-fresh){flex-wrap:wrap}` is added (scoped with `:has()` so
+rows without facts keep their wrapping; the theme already relies on `:has()` in `site.css` and
+`cards.css`, supported by current Chrome, Safari and Firefox, and where it is unsupported the
+rule is dropped and the facts stay on the row's single line) and
 `.classic .index-fresh{flex-basis:100%}` gives the facts their own last line; `cards.css`
 resets it (`.reference-cards .index-fresh{flex-basis:auto}`, its rows are columns)
 and centres `.reference-cards .sheet-fresh` like the description. The desktop
