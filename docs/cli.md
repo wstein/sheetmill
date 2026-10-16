@@ -58,6 +58,7 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `VAL001` | Missing/invalid title |
 | `VAL002` | Invalid general known metadata field |
 | `VAL003` | Invalid cheatsheet metadata/schema |
+| `VAL004` | Invalid `cheatsheet.updated` or `cheatsheet.tool_version` (sheet freshness) |
 | `MD001`, `MD002` | Card without section; empty structural heading |
 | `ATTR001`, `ATTR002`, `ATTR003` | Unsupported/malformed attribute; duplicate/conflict; attribute group outside a root `##`/`###` heading |
 | `ID001` | Duplicate explicit/reserved ID |
@@ -66,7 +67,7 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `REN101`, `REN102`, `REN103` | Inert raw HTML; images retained as unfetched links; unresolved internal link (warnings) |
 | `NAV000`, `NAV001`, `NAV006`, `NAV008` | navi export errors: `--strict` with warnings; profile; metadata; navi identity collision (`NAV007` is retired) |
 | `NAV101`–`NAV106` | navi export warnings: card skipped (shape, command text, placeholder, declarations); license; empty sheet (`NAV107` retired: companions preserve frontmatter). See [navi export](format/navi-profile.md) |
-| `IMP001`–`IMP104` | See [import diagnostic codes](imports.md) |
+| `IMP001`–`IMP112` | See [import diagnostic codes](imports.md) |
 
 Go package tests exercise the same `Run` entrypoint as the executable, without
 building a distributable CLI binary. Parser fuzz targets run via:

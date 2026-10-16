@@ -17,7 +17,8 @@ error (including broken stdout). `smill version` prints `smill dev` for source
 builds. To investigate: reproduce with `smill check <file>`, then
 `smill inspect <file>` to see how the parser understood the sheet (sections,
 cards, IDs, attributes, byte spans), then `smill build hugo <file> --out <new-dir>`
-for renderer issues. Report the exact command, input, stderr and exit status.
+for renderer issues. Report the exact command, input, stderr and exit status. Set sheet freshness
+(`cheatsheet.updated`, `cheatsheet.tool_version`) only from verified evidence, never guess it.
 
 ## Docs
 

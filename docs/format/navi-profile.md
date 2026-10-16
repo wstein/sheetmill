@@ -149,6 +149,7 @@ check. Stronger syntax checks remain planned.
 | --- | --- |
 | `cheatsheet.cards` | Shared card settings validated by core; see [command cards](command-cards.md) |
 | `cheatsheet.navi` | Legacy mapping with optional `shell` and `cards` only |
+| `cheatsheet.updated`, `cheatsheet.tool_version` | Sheet freshness: never exported, never a navi tag, `.cheat` bytes and identities unchanged; the companion keeps them verbatim as ordinary metadata. Source files are validated while parsing, so invalid values fail with `VAL004` ([source format](gfm-plus.md#sheet-freshness)) |
 | `.cards.<id>` | Keyed by an explicit command-card ID; mapping with only `params` |
 | `.params.<name>` | `type` (`string`, `int` or `path`; required) and `description` (optional single-line string) |
 

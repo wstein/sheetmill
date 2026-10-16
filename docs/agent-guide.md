@@ -97,6 +97,12 @@ structure, a build prints no warnings, and every fact in it is accurate.
   explicit provenance flags; preview with `--dry-run --report json` first
   ([imports](imports.md)). A license value records facts; it does not grant
   redistribution rights.
+- Set sheet freshness (`updated`/`tool_version`) only from verified evidence, never
+  by guessing: `cheatsheet.updated: "YYYY-MM-DD"` for when you actually updated the
+  sheet and `cheatsheet.tool_version` for the documented tool version. Leave a
+  field out when you cannot verify it. `smill check` rejects malformed values with
+  `VAL004`; Hugo and the preview show the facts
+  ([contract](format/gfm-plus.md#sheet-freshness)).
 - Do not invent commands, flags or keyboard shortcuts. Verify them against the
   tool's own documentation or `--help`, and say what you could not verify.
 

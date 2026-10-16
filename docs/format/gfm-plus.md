@@ -26,6 +26,8 @@ Known fields use strict types without implicit scalar/array coercion:
 | `cheatsheet` | Optional mapping |
 | `cheatsheet.schema` | Optional integer, exactly `1`; omitted means current schema |
 | `cheatsheet.tool` | Optional nonempty string |
+| `cheatsheet.updated` | Optional date `YYYY-MM-DD`: [sheet freshness](#sheet-freshness) |
+| `cheatsheet.tool_version` | Optional one-line string, 1 to 64 characters: [sheet freshness](#sheet-freshness) |
 | `cheatsheet.cards` | Optional shared card/parameter mapping; see [command cards](command-cards.md) |
 
 All other JSON-compatible fields, including unreserved nested `cheatsheet` fields, are
@@ -80,6 +82,50 @@ parser's strict scalar typing is what rejects `order: 1.0`, which JSON Schema
 alone cannot tell apart from `1`. Reference imports archive any upstream
 `navigation` as inert provenance (`IMP102`, see [imports](../imports.md)); the
 navi companion preserves it verbatim without changing `.cheat` output.
+
+## Sheet freshness {#sheet-freshness}
+
+`cheatsheet.updated` and `cheatsheet.tool_version` state when the sheet was last
+updated and which version of the tool it documents. The Hugo renderer shows them on
+library cards and sheet headers; nothing else reads them.
+
+```yaml
+cheatsheet:
+  tool_version: "2.56.0"
+  updated: 2026-10-14
+```
+
+- Both fields are optional and independent. Nothing is defaulted, inferred or
+  written back. `cheatsheet.tool` stays the tool name.
+- `updated` is a date written exactly `YYYY-MM-DD` with ASCII digits that names a
+  real calendar date (leap days included) from 1970 to 9999. Times, zones, other
+  spellings (`2026-1-5`, `20261016`, `16 Oct 2026`), numbers, Booleans, null and
+  lists are errors. Quote the date: YAML 1.1 tools turn a bare date into a date
+  object. SheetMill accepts both, because it keeps YAML timestamps as strings.
+- It is not compared with the current date, since the compiler has no clock. A
+  future date is shown as written, so keep it accurate and set it only from
+  verified evidence, never by guessing.
+- `tool_version` is free text shown as written (`10.3p1`, `2.6.0-FreeBSD`), with no
+  `v` prefix or semantic-version parsing. Write the version only, not the tool
+  name, and leave it out where the bare number would be ambiguous. It must be one
+  line of 1 to 64 characters, without surrounding whitespace, control or invisible
+  format characters, and not only blank-looking fillers (U+115F, U+1160, U+3164,
+  U+FFA0, U+2800). Private-use and unassigned characters are accepted.
+- Invalid values fail with `VAL004` at the key, in `smill check`, `smill build navi`
+  and the preview, and for semantic input given directly to the Hugo renderer.
+  `cheatsheet` that is not a mapping stays `VAL003`.
+- Hugo shows `Version V` and `Updated D` as escaped text, the date inside
+  `<time datetime="D">`, on editorial cards, compact index rows and sheet headers.
+  Ordering, URLs, related sheets, tags and search do not use them, and the output
+  never depends on the build date. The sitemap does not get a `<lastmod>`.
+- `smill build navi` ignores them: `.cheat` bytes and card identities do not
+  change, the version is not a navi tag, and the metadata companion carries them as
+  ordinary metadata. Reference imports archive upstream values with `IMP112`
+  instead of activating them ([imports](../imports.md)).
+
+Before this feature, a `cheatsheet.updated` or `cheatsheet.tool_version` of another
+shape was ordinary preserved metadata. Rename such a value to an author-owned key; the
+IR schema stays at 1.
 
 ## Markdown and cards
 

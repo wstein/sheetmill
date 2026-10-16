@@ -253,8 +253,24 @@ the description, up to three tag pills and the license. Pills are the first thre
 distinct `tags` in source order, so authors choose which tags lead; the sheet page
 and tag pages still list every tag. Nothing is computed from other sheets, and all
 text is HTML-escaped. The compact layouts (`classic-compact`, `reference-cards`)
-add only the card count to their index rows. The cards need no JavaScript, request
+add only the card count to their index rows, plus the sheet freshness facts below. The cards need no JavaScript, request
 nothing remote. They add no print-specific styling, so the facts print with the cards.
+
+## Sheet freshness {#sheet-freshness}
+
+When a sheet sets sheet freshness (`updated`/`tool_version`), see
+[the source contract](format/gfm-plus.md#sheet-freshness), all three layouts show
+`Version V · Updated D` as plain escaped text: on the editorial home card after the
+`Tool:` line, as the last item of a compact or cards index row (on its own line in
+`classic-compact`), and under the description in every sheet header. A sheet with
+one field shows only that fact, and a sheet with neither renders nothing extra. The
+date is the authored `YYYY-MM-DD` inside `<time datetime>`; the renderer never
+reads a clock, so two builds with different `--clock` values are byte-identical,
+and a date after the build date is shown as written. The facts reach the templates
+through `data/*.json` only, never through content front matter, so Hugo cannot read
+them as a page date, and the sitemap stays `<loc>`-only. Tag pages, the tag index,
+the sidebar and search results do not show them. They print with the cards. The
+Studio preview shows the facts too, because it renders through the same templates.
 
 ## Header links
 
