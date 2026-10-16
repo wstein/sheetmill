@@ -128,6 +128,9 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 		}
 		if len(archive) > 0 {
 			original["cheatsheet"] = archive
+			if len(sheet) == 0 {
+				delete(fm.Metadata, "cheatsheet") // archiving must not leave an empty active mapping
+			}
 		}
 	}
 	if ds := validate.Metadata(fm.Metadata, fm.Locations); len(ds) > 0 {
