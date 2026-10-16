@@ -22,6 +22,19 @@
       "properties": {
         "schema": {"type": "integer", "const": 1},
         "tool": {"type": "string", "pattern": "\\S"},
+        "updated": {
+          "type": "string",
+          "pattern": "^(?:19[7-9][0-9]|[2-9][0-9]{3})-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+          "$comment": "Author-stated date the sheet was last updated, written YYYY-MM-DD with ASCII digits, years 1970 to 9999. Quote it: YAML 1.1 tools turn a bare date into a date object, which this string schema rejects. SheetMill itself accepts the bare form. The pattern is looser than SheetMill for calendar validity (it accepts 2026-02-30); source validation checks real dates and reports VAL004. No time or clock comparison exists, so a future date is valid."
+        },
+        "tool_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[^\\p{Z}\\p{Cc}\\p{Cf}](?:[^\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]*[^\\p{Z}\\p{Cc}\\p{Cf}])?$",
+          "allOf": [{"pattern": "[^\\u115F\\u1160\\u3164\\uFFA0\\u2800]"}],
+          "$comment": "Version of the documented tool, shown as authored: one line of 1 to 64 code points without surrounding whitespace, control or format characters, and not only the blank-looking fillers U+115F, U+1160, U+3164, U+FFA0 and U+2800. Source validation also rejects invalid UTF-8 and reports VAL004. Private-use and unassigned code points are accepted on purpose."
+        },
         "cards": {
           "type": "object",
           "propertyNames": {
