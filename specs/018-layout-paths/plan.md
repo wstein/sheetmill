@@ -14,9 +14,10 @@
   in the test-only package `internal/pagesworkflow` (`mvdan.cc/sh/v3` is already
   pinned in `go.mod`). Switching to Go stays possible if the rules outgrow `grep`.
 - 6 Independent product: PASS. No sibling dependency.
-- 7 Human publication control: BLOCKED for the workflow change. Two new public paths
-  extend the 012 approval and need the user's confirmation (spec FR-12); the PR and
-  topic push are authorized, deployment and merge are not. T005 and T007 wait.
+- 7 Human publication control: PASS for the topic branch. Two new public paths extend the
+  012 approval; the user confirmed them on 2026-10-16 (spec FR-12). The PR and topic push
+  are authorized; deployment and merge are not, and merging to `main` would activate the
+  workflow, so it needs separate approval.
 - 8 Review evidence: PASS. Rounds in [analysis.md](analysis.md); commands and gaps
   reported.
 
@@ -28,8 +29,8 @@
    guard and mount, then the existing llms/agent-guide copy, then the verification script as the last step before upload.
 3. Add the Hugo-gated integration test.
 4. Update `specs/README.md` and AGENTS.md (T001, not blocked). Docs, llms.txt, agent guide
-   and README (T007) are blocked on the user's confirmation, as is the workflow edit
-   (T005, with its test T004).
+   and README (T007) and the workflow edit (T005, with its test T004) follow the user's
+   2026-10-16 confirmation.
 5. Local verification: gofmt, vet, test, `make check`, `make test-hugo` with
    `SHEETMILL_HUGO=/opt/bundledock/toolbox/bin/hugo`. No workflow run, no deploy.
 

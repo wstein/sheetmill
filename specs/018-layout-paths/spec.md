@@ -1,17 +1,19 @@
 # Feature 018: layout paths on GitHub Pages
 
-**Status**: Specification revised after review round 2; implementation of the
-workflow change is blocked (see Authorization).
+**Status**: Specification revised after review rounds 2 and 3; the user confirmed the
+new public paths on 2026-10-16, so the workflow change may be implemented on the topic
+branch (see Authorization). Merge and deployment remain separately gated.
 **Authorization** (the quote is not yet recorded in `AGENTS.md`; T001 adds it, until then it is unverified in the repo): the user's 2026-10-16 request ("publish the three layouts as
 separate static paths, not a JS switcher") authorizes this specification, tests and
 script on a topic branch, a topic push and a draft PR (the coordinator opens the PR).
 It extends feature 012 (Pages) and uses the `--header-link` option (#39) and the
 layouts of 004, 016. Two new public paths, `/sheetmill/demo-compact/` and
 `/sheetmill/demo-cards/`, are a **new scope extension** of the 012 Pages approval
-(constitution 7: broader publication stays gated). **That extension is not yet
-confirmed by the user.** Until the user confirms it, T005 (editing `pages.yml`) and
-T007 (docs that name the new URLs) stay blocked; T001 records the proposed extension
-as pending, never as granted. No merge, tag, release, deployment or workflow run is
+(constitution 7: broader publication stays gated). **The user confirmed that
+extension on 2026-10-16** (answer "1j" to "confirm `/demo-compact/` and `/demo-cards/`
+as new Pages paths"), so T005 (editing `pages.yml`) and T007 (docs that name the new
+URLs) are unblocked for the topic branch; T001 records the confirmation with its date.
+It authorizes the implementation, a topic push and a draft PR only. No merge, tag, release, deployment or workflow run is
 authorized by this feature; merging to `main` is what would activate the changed
 workflow and needs separate human approval.
 
@@ -177,11 +179,10 @@ others and would make the default's relative layout depend on its variants.
 - **FR-12 Authorization records.** Constitution 7: two new public paths are a scope
   extension, not part of the already authorized demo. `AGENTS.md` (the 012 bullet) and
   specs/012 (status line, FR-009, Resolved decisions) record
-  `/sheetmill/demo-compact/` and `/sheetmill/demo-cards/` as a **proposed extension
-  of the 012 approval, pending the user's confirmation**, dated 2026-10-16. No line
-  may claim the user approved it until they do; the confirmation is then added with
-  its date. The paths go live only through a separately approved merge to `main`.
-  Workflow edits (T005) and docs naming the URLs (T007) wait for the confirmation.
+  `/sheetmill/demo-compact/` and `/sheetmill/demo-cards/` as an **extension of the 012
+  approval, confirmed by the user on 2026-10-16** (the confirmation covers the paths,
+  not their activation). The paths go live only through a separately approved merge to
+  `main`; no line may say that merge, a deployment or a workflow run is approved.
 - **FR-13 Documentation.** `docs/hugo.md` (Pages section and Search engines
   paragraph), `llms.txt`, `docs/agent-guide.md` and the README list the layout URLs.
   `docs/cli.md` needs no change because no flag changes.

@@ -13,9 +13,9 @@
 | FR-9 failure, rollback | T004 (`needs: build`, step order) |
 | FR-10 cost | T008 (figures from the spec author's local measurement; not re-measured) |
 | FR-11 security | T004 (permissions, pins), T006 (script/host assertions), T006a |
-| FR-12 authorization | T001 (pending, not granted) |
+| FR-12 authorization | T001 (confirmed by the user 2026-10-16) |
 | FR-13 documentation | T007 |
-| SC-001 | T004 (blocked), T006 |
+| SC-001 | T004, T006 |
 | SC-002 | T002 (rule 7), T006 |
 | SC-003 | T002, T006 |
 | SC-004 | T006 |
