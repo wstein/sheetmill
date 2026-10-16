@@ -1,6 +1,6 @@
 # Feature Specification: Sheet freshness
 
-**Feature Branch**: `codex/017-freshness`
+**Feature Branch**: `codex/017-freshness` (spec); implementation branch `codex/017-freshness-impl` (PR #47)
 
 **Created**: 2026-10-16
 
