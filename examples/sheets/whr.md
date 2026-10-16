@@ -4,7 +4,7 @@ category: reference
 description: Notes on the WorkHarbor bootstrap repository workflow as pinned, which is a development scaffold with no implemented whr product CLI.
 tags: [workharbor, whr, bootstrap]
 source:
-  repository: https://github.com/wstein/workharbor-nxt
+  repository: https://github.com/wstein/workharbor
   revision: 916add9a7c46dc2d8d9166a01947be9495789cc5
   path: README.md
   license: EUPL-1.2
@@ -41,7 +41,7 @@ The target runs Python unittest discovery under `tests/`. `make check` uses the 
 ### Distinguish plans from a product {.col-span-2 #implementation-status}
 The README describes workspace lifecycle implementation as pending. Phoenix/Elixir/LiveView, a Go agent and initial SQLite metadata storage are architectural choices, not evidence of an installed platform.
 
-Do not borrow `whr` commands from the separate `wstein/workharbor` repository for this source revision. The corpus ID and filename `whr` identify this reference input; they do not claim a working executable.
+Do not borrow `whr` commands from the archived `wstein/workharbor-old` repository for this source revision. The corpus ID and filename `whr` identify this reference input; they do not claim a working executable.
 
 ### Inspect the workspace example {#workspace-example}
 The `examples/workspace` directory is a layout example, not a provisionable fixture. A real workspace needs its own project repository and reviewed image pins; the example intentionally supplies no fake digest.
