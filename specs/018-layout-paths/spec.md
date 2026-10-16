@@ -4,16 +4,14 @@
 new public paths on 2026-10-16, so the workflow change may be implemented on the topic
 branch (see Authorization). Merge and deployment remain separately gated.
 **Authorization** (the quote is not yet recorded in `AGENTS.md`; T001 adds it, until then it is unverified in the repo): the user's 2026-10-16 request ("publish the three layouts as
-separate static paths, not a JS switcher") authorizes this specification, tests and
-script on a topic branch, a topic push and a draft PR (the coordinator opens the PR).
-It extends feature 012 (Pages) and uses the `--header-link` option (#39) and the
+separate static paths, not a JS switcher") extends feature 012 (Pages) and uses the `--header-link` option (#39) and the
 layouts of 004, 016. Two new public paths, `/sheetmill/demo-compact/` and
 `/sheetmill/demo-cards/`, are a **new scope extension** of the 012 Pages approval
 (constitution 7: broader publication stays gated). **The user confirmed that
 extension on 2026-10-16** (answer "1j" to "confirm `/demo-compact/` and `/demo-cards/`
 as new Pages paths"), so T005 (editing `pages.yml`) and T007 (docs that name the new
 URLs) are unblocked for the topic branch; T001 records the confirmation with its date.
-It authorizes the implementation, a topic push and a draft PR only. No merge, tag, release, deployment or workflow run is
+Together the two authorize, on a topic branch only, the specification, tests, verification script, workflow and docs edits, a topic push and a draft PR (the coordinator opens the PR). No merge, tag, release, deployment or workflow run is
 authorized by this feature; merging to `main` is what would activate the changed
 workflow and needs separate human approval.
 
@@ -116,7 +114,13 @@ others and would make the default's relative layout depend on its variants.
   job on any violation. The script reads the generator's double-quoted attributes. A
   test in `internal/render/hugo` (always run, no Hugo needed) scans the theme
   templates and fails on a single-quoted or unquoted `href`, `src` or `action`
-  attribute, and the real-manual run (T006) exercises the generated HTML. The script
+  attribute. The script also carries a tag-anchored check that fails on
+  `<[a-zA-Z][^>]* (href|src|action)=[^"]`, which catches single-quoted or unquoted
+  attributes in the generated HTML, including the markup that `hugo.go` writes from Go
+  format strings (for example the `<a href=` strings near lines 365, 385 and 768),
+  which the template scan cannot see; escaped prose uses `&lt;`, so it has no false
+  positives, and it matches nothing in the current sources. The real-manual run (T006)
+  exercises the generated HTML. The script
   uses `sh` with `grep -E`, `sed`, `find`, `sort` and `comm` only, reads the local
   tree and makes no network request. Why a shell script and not Go: it must run on the
   built output tree in CI with no extra build step, its checks are plain text
@@ -213,7 +217,7 @@ release. No change to `internal/` renderer code is planned.
 - Table tests in `internal/pagesworkflow` run `sh .github/scripts/verify-pages.sh`
   through `os/exec` against synthetic trees: one valid, and one failing tree per rule
   1-8 (including the `127.0.0.1:1313` prose link that must pass and a `//` src, an
-  `http:` src, `example.invalid` and a `demonstration` entry that must fail). If `sh`
+  `http:` src, a single-quoted or unquoted `href`, `example.invalid` and a `demonstration` entry that must fail). If `sh`
   is not available the tests are skipped with a message, and a skip is not a pass.
 - With `SHEETMILL_HUGO` set, an integration test builds the real manual from
   `docs/manual-pages.txt` and the three real demos through `internal/cli.Run`, mounts

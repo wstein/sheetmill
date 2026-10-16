@@ -81,6 +81,20 @@ is in `go.mod`; `make test-hugo` runs only `internal/render/hugo` today.
 | 7 | low | Plan step 4 mixes blocked and unblocked | Split |
 | 8 | low | pages.yml header comment goes stale | In T004/T005 |
 | 9 | low | llms.txt copy is not a separate step | FR-7 reworded |
-| 10-12 | low | 017: cards.css missing from plan structure, T010 `[P]` vs chain, authorization claim | Fixed in 017 (below) |
+| 10-12 | low | 017: cards.css missing from plan structure, T010 `[P]` vs chain, authorization claim | Fixed in 017, see ../017-freshness/analysis.md |
 
 The same review confirmed 017 is consistent after round 3 apart from 10-12.
+
+2026-10-16: the user confirmed the `/demo-compact/` and `/demo-cards/` paths (answer "1j"); this covers the paths only, not their activation, merge or deployment.
+
+## Round 4 (final independent review): READY
+
+| # | Sev | Finding | Resolution |
+| --- | --- | --- | --- |
+| 1 | med | Deploy gate misses single-quoted or unquoted `href`/`src`/`action`; T006a scans only `theme/layouts`, not HTML written by `hugo.go` (lines ~365, 385, 768) | Tag-anchored check `<[a-zA-Z][^>]* (href|src|action)=[^"]` in FR-7/T003 plus a T002 negative tree; extending T006a to the format strings noted as the unchosen alternative; 0 matches in current sources |
+| 2 | low | T006 "one `<script src>` per tree" and foreign-host wording imprecise | Exactly one per HTML page (`<base>assets/app.<64hex>.js`); no absolute `src`/`<link href>` other than `https://wstein.github.io/` |
+| 3 | low | T001 AGENTS.md line omits workflow edit and docs | Names T005 and T007, still excludes merge, deployment and workflow runs |
+| 4 | low | Spec Authorization gives two scopes | One sentence listing spec, tests, script, workflow and docs edits, topic push, draft PR |
+| 5 | low | T006 lacks a Hugo invocation helper | Own helper in `internal/pagesworkflow` mirroring the workflow flags and `HUGO_CACHEDIR` |
+| 6 | low | Round 3 rows 10-12 point at nothing; confirmation not logged | Pointer to ../017-freshness/analysis.md; confirmation entry added |
+| 7 | low | Script lacks SPDX header | T003 requires `# SPDX-License-Identifier: EUPL-1.2` |
