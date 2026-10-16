@@ -165,10 +165,15 @@ type page struct {
 	CardCount int      `json:"card_count,omitempty"`
 	Tool      string   `json:"tool,omitempty"`
 	ShelfTags []string `json:"shelf_tags,omitempty"`
-	Body      string   `json:"body"`
-	EditURL   string   `json:"edit_url,omitempty"`
-	Related   []link   `json:"related,omitempty"`
-	nav       validate.NavigationSettings
+	// Updated and ToolVersion are the validated sheet freshness strings. They reach
+	// templates only through data/*.json, never content front matter, which Hugo
+	// would read as the page date.
+	Updated     string `json:"updated,omitempty"`
+	ToolVersion string `json:"tool_version,omitempty"`
+	Body        string `json:"body"`
+	EditURL     string `json:"edit_url,omitempty"`
+	Related     []link `json:"related,omitempty"`
+	nav         validate.NavigationSettings
 }
 
 type link struct {
@@ -359,6 +364,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		title, _ := s.Document.Metadata["title"].(string)
 		description, category, license, tags := sheetMetadata(s.Document.Metadata)
 		navigation, _ := validate.Navigation(s.Document.Metadata, nil)
+		freshness, _ := validate.Freshness(s.Document.Metadata, nil)
 		var b strings.Builder
 		r.nodes(&b, s.Document.Preamble, false)
 		// A jump list lets readers reach any section without JavaScript.
@@ -419,7 +425,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		}
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
 		errors = append(errors, issues(s.SourceName, r.errors)...)
-		page := page{Title: title, URL: base + s.ID + "/", Description: description, Category: category, Tags: tags, License: license, Body: b.String(), nav: navigation, CardCount: cardCount, Tool: documentedTool(s.Document.Metadata), ShelfTags: shelfTags(tags)}
+		page := page{Title: title, URL: base + s.ID + "/", Description: description, Category: category, Tags: tags, License: license, Body: b.String(), nav: navigation, CardCount: cardCount, Tool: documentedTool(s.Document.Metadata), ShelfTags: shelfTags(tags), Updated: freshness.Updated, ToolVersion: freshness.ToolVersion}
 		if editBase != "" {
 			page.EditURL = editBase + escapePath(paths[s.ID])
 		}
