@@ -33,12 +33,17 @@ type job struct {
 }
 
 type step struct {
-	ID    string
-	Name  string
-	Uses  string
-	Shell string
-	Run   string
-	With  map[string]string
+	ID               string
+	Name             string
+	Uses             string
+	Shell            string
+	Run              string
+	With             map[string]any
+	If               any    `yaml:"if"`
+	ContinueOnError  any    `yaml:"continue-on-error"`
+	WorkingDirectory string `yaml:"working-directory"`
+	Env              map[string]any
+	TimeoutMinutes   any `yaml:"timeout-minutes"`
 }
 
 func loadWorkflow(t *testing.T) (workflow, string) {
@@ -163,11 +168,12 @@ func TestPagesWorkflowStructure(t *testing.T) {
 	w, raw := loadWorkflow(t)
 
 	// Unchanged: triggers, permissions, concurrency, deploy gating, action pins.
-	if _, ok := w.On["workflow_dispatch"]; !ok || len(w.On) != 2 {
-		t.Errorf("triggers must stay push and workflow_dispatch, got %v", w.On)
+	wantOn := map[string]any{"push": map[string]any{"branches": []any{"main"}}, "workflow_dispatch": nil}
+	if !reflect.DeepEqual(w.On, wantOn) {
+		t.Errorf("triggers must stay exactly push to main and workflow_dispatch, got %v", w.On)
 	}
-	if push, _ := w.On["push"].(map[string]any); !reflect.DeepEqual(push["branches"], []any{"main"}) {
-		t.Errorf("push must stay limited to main, got %v", w.On["push"])
+	if checkout := w.Jobs["build"].Steps[0]; checkout.With["persist-credentials"] != false {
+		t.Errorf("checkout must keep persist-credentials: false, got %v", checkout.With)
 	}
 	if !reflect.DeepEqual(w.Permissions, map[string]string{"contents": "read"}) {
 		t.Errorf("top-level permissions changed: %v", w.Permissions)
@@ -390,12 +396,22 @@ func TestPagesWorkflowVerifyStep(t *testing.T) {
 	if !(build < verify && verify+1 == upload) {
 		t.Errorf("order must be build (%d), Verify the Pages tree (%d), upload (%d) with nothing between verify and upload", build, verify, upload)
 	}
+	// The gate must be unconditional and must not be able to fail open.
+	for _, i := range []int{build, verify, upload} {
+		s := steps[i]
+		if s.If != nil || s.ContinueOnError != nil || s.WorkingDirectory != "" || len(s.Env) != 0 || s.TimeoutMinutes != nil {
+			t.Errorf("step %q must have no if, continue-on-error, working-directory, env or timeout: %+v", s.Name, s)
+		}
+	}
+	if steps[verify].Shell != "" || steps[verify].Uses != "" {
+		t.Errorf("the verify step is a plain run step: %+v", steps[verify])
+	}
 	got := calls(parseRun(t, steps[verify].Run))
 	want := [][]string{{"sh", ".github/scripts/verify-pages.sh", "$RUNNER_TEMP/public"}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("verification command %v, want %v", got, want)
 	}
-	if steps[upload].With["path"] != "${{ runner.temp }}/public" {
+	if steps[upload].With["path"] != any("${{ runner.temp }}/public") {
 		t.Errorf("upload path changed: %v", steps[upload].With)
 	}
 }
