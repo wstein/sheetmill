@@ -21,7 +21,7 @@ never grants execution, merge or publication permission.
 | [014](014-library-navigation/spec.md) | Implemented and locally verified ([#33](https://github.com/wstein/sheetmill/pull/33)); Sol review clear; CI readiness tracked on PR | Per-sheet group/order first slice; manifest, titles, IDs and deployment deferred |
 | [015](015-command-cards/spec.md) | Shared command cards and migration implemented; local verification and Sol code re-review pass | Core `.command` / `cheatsheet.cards` implemented under the 015 handoff; 006 consumes it with unchanged navi bytes/hashes; no navi execution or deployment |
 | [016](016-reference-cards/spec.md) | Draft PR #35; review round 1 fixes pending re-review | Opt-in `--theme reference-cards` layout; scroll dots, highlighting, footer and deployment excluded |
-| [017](017-freshness/spec.md) | Implementation in progress on `codex/017-freshness-impl`; spec review READY | Optional `cheatsheet.updated`/`tool_version` on Hugo cards and headers; draft PR authorized, merge and deployment excluded |
+| [017](017-freshness/spec.md) | Implemented and locally verified on `codex/017-freshness-impl`; spec review READY; independent code review pending | Optional `cheatsheet.updated`/`tool_version` on Hugo cards and headers; draft PR authorized, merge and deployment excluded |
 
 The public source contract is [docs/format](../docs/format/gfm-plus.md). Each feature
 has spec, plan and tasks; use `SPECIFY_FEATURE_DIRECTORY=specs/NNN-name` with Spec
