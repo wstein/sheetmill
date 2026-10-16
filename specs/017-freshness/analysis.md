@@ -99,3 +99,7 @@ uses `unicode.IsPrint`.
 | 12 | low | Base `05eba4d` vs PR base `189e872` | Both named in SC-003 and T002 |
 | 13 | low | Unknown `cheatsheet.*` keys untested | Added to T003 and T005 |
 | 14 | low | "freshness" clashes with Studio preview staleness | FR-012 and T018 wording |
+
+Follow-up from the 018 round-3 consistency check (reviewed bad5011): `cards.css` added to
+the plan structure, `[P]` dropped from T010 (it follows T009), and the authorization
+assumption marked as not yet recorded in the repo.
