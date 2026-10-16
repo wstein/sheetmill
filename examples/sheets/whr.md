@@ -16,7 +16,7 @@ This reference documents the WorkHarbor bootstrap repository. At the pinned revi
 ## Repository workflow {#workflow}
 ### Start the WorkHarbor checkout {.col-span-2 #start-checkout}
 ```sh
-git clone https://github.com/wstein/workharbor-nxt.git workharbor
+git clone https://github.com/wstein/workharbor.git workharbor
 cd workharbor
 make check
 ```

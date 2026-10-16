@@ -102,7 +102,7 @@
     ],
     "copy": {
       "card": "start-checkout",
-      "text": "git clone https://github.com/wstein/workharbor-nxt.git workharbor\ncd workharbor\nmake check\n"
+      "text": "git clone https://github.com/wstein/workharbor.git workharbor\ncd workharbor\nmake check\n"
     },
     "permalink": {
       "card": "implementation-status",
