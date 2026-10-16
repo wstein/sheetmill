@@ -4,7 +4,7 @@
    `comm`; no network) and its table tests first.
 2. Add the workflow test (fails on today's workflow), then edit `pages.yml`:
    replace the single demo export by three explicit exports, a three-way collision
-   guard and mount, then run the script, then the existing llms/agent-guide copy.
+   guard and mount, then the existing llms/agent-guide copy, then the verification script as the last step before upload.
 3. Add the Hugo-gated integration test.
 4. Update docs, llms.txt, agent guide, README, `specs/README.md`, AGENTS.md.
 5. Local verification: gofmt, vet, test, `make check`, `make test-hugo` with
