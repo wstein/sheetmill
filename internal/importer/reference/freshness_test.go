@@ -121,3 +121,17 @@ func TestEmptiedCheatsheetMappingIsRemoved(t *testing.T) {
 		t.Fatalf("the archive must keep the values: %#v", original)
 	}
 }
+
+func TestAuthoredEmptyCheatsheetMappingIsKept(t *testing.T) {
+	r, ds := Convert([]byte("---\ntitle: X\ncheatsheet: {}\n---\n## S\n### C\nText.\n"), provenance())
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	d, pds := markdown.Parse(r.Markdown)
+	if len(pds) > 0 {
+		t.Fatal(pds)
+	}
+	if _, ok := d.Metadata["cheatsheet"]; !ok {
+		t.Fatal("an authored empty mapping is not ours to remove")
+	}
+}
