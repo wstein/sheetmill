@@ -17,7 +17,8 @@ navi `.cheat` files (text only; navi is never run). PDF output
 remains planned for a later milestone.
 Read the [SheetMill manual](https://wstein.github.io/sheetmill/), itself built
 with SheetMill from `docs/`, and try the [live demo library](https://wstein.github.io/sheetmill/demo/),
-generated from the independently authored example sheets, also in the
+generated from the independently authored example sheets. After the approved merge
+and deployment, the same sheets are also published in the
 [compact](https://wstein.github.io/sheetmill/demo-compact/) and
 [cards](https://wstein.github.io/sheetmill/demo-cards/) layouts.
 Nothing in a source sheet is executed.
