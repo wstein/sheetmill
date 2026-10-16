@@ -92,7 +92,7 @@ library cards and sheet headers; nothing else reads them.
 ```yaml
 cheatsheet:
   tool_version: "2.56.0"
-  updated: 2026-10-14
+  updated: "2026-10-14"
 ```
 
 - Both fields are optional and independent. Nothing is defaulted, inferred or
@@ -110,7 +110,9 @@ cheatsheet:
   name, and leave it out where the bare number would be ambiguous. It must be one
   line of 1 to 64 characters, without surrounding whitespace, control or invisible
   format characters, and not only blank-looking fillers (U+115F, U+1160, U+3164,
-  U+FFA0, U+2800). Private-use and unassigned characters are accepted.
+  U+FFA0, U+2800). Private-use and unassigned characters are accepted. Quote the
+  version: an unquoted `3.81` or `3.10` is a YAML number (and `3.10` loses its
+  zero), so it fails with `VAL004` asking for a quoted string, e.g. `"3.81"`.
 - Invalid values fail with `VAL004` at the key, in `smill check`, `smill build navi`
   and the preview, and for semantic input given directly to the Hugo renderer.
   `cheatsheet` that is not a mapping stays `VAL003`.

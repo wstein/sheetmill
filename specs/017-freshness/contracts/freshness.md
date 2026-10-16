@@ -5,7 +5,7 @@
 title: Git
 cheatsheet:
   tool_version: "2.56.0"
-  updated: 2026-10-14
+  updated: "2026-10-14"
 ---
 ```
 
@@ -26,6 +26,9 @@ cheatsheet:
   number would be ambiguous without it (the demo `tar` sheet documents bsdtar 3.5.3,
   while GNU tar is 1.x; see research.md). Freshness is read from the validated
   metadata and exposed through `data/*.json` only, never through content front matter.
+- Quote `tool_version`: an unquoted `3.81` or `3.10` is a YAML number, not text, and is
+  rejected with its own `VAL004` message, "must be a quoted YAML string", rather than
+  the length and character rule. The same message covers a non-string `updated`.
 - Errors use `VAL004` at the key (`cheatsheet.updated` / `cheatsheet.tool_version`),
   or at the document start for direct IR. `cheatsheet` not being a mapping stays `VAL003`.
 

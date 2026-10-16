@@ -141,3 +141,19 @@ func TestFreshnessKeepsUnknownCheatsheetKeys(t *testing.T) {
 		t.Fatalf("Metadata must accept unknown cheatsheet keys beside freshness: %+v", ds)
 	}
 }
+
+func TestFreshnessNonStringAdvisesQuoting(t *testing.T) {
+	for _, key := range []string{"updated", "tool_version"} {
+		for _, v := range []any{3.81, 3.10, int64(3), true, nil} {
+			_, ds := Freshness(map[string]any{"cheatsheet": map[string]any{key: v}}, nil)
+			if len(ds) != 1 || !strings.Contains(ds[0].Message, "must be a quoted YAML string") || !strings.Contains(ds[0].Message, "cheatsheet."+key) {
+				t.Errorf("%s=%#v: want a quote-it message, got %+v", key, v, ds)
+			}
+		}
+	}
+	// A string that is merely invalid keeps the rule text, not the quoting advice.
+	_, ds := Freshness(map[string]any{"cheatsheet": map[string]any{"tool_version": ""}}, nil)
+	if len(ds) != 1 || strings.Contains(ds[0].Message, "quoted YAML string") || !strings.Contains(ds[0].Message, "1 to 64") {
+		t.Errorf("invalid string: want the rule message, got %+v", ds)
+	}
+}
