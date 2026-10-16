@@ -37,5 +37,5 @@ has occurred because no candidate logo assets were authorized/generated yet.
 
 - [BundleDock brand](https://github.com/wstein/bundledock/blob/78da624484f57f84b097dd421ed61a8145427560/brand/README.md)
   and `assets/logo.svg` at the same revision.
-- [WorkHarbor brand](https://github.com/wstein/workharbor/blob/5d6a8a423ec509383e1cf169bdea0a76d58ecd92/assets/BRAND.md).
+- [WorkHarbor brand](https://github.com/wstein/workharbor-old/blob/5d6a8a423ec509383e1cf169bdea0a76d58ecd92/assets/BRAND.md).
 - [CrewBook brand](https://github.com/wstein/crewbook/blob/d58c563ed86e9e335033d940ed6d74b0f8ce6011/assets/BRAND.md).
