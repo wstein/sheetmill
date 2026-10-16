@@ -70,7 +70,9 @@ func TestDuplicatePosition(t *testing.T) {
 }
 
 func FuzzParse(f *testing.F) {
-	for _, s := range []string{"", "---\ntitle: X\n---\n", "---\na: &a [*a]\n---\n"} {
+	for _, s := range []string{"", "---\ntitle: X\n---\n", "---\na: &a [*a]\n---\n",
+		"---\ntitle: X\ncheatsheet:\n  updated: 2026-10-14\n  tool_version: \"2.56.0\"\n---\n",
+		"---\ntitle: X\ncheatsheet: {updated: 2026-13-45, tool_version: \"\\u200b\"}\n---\n"} {
 		f.Add([]byte(s))
 	}
 	f.Fuzz(func(t *testing.T, b []byte) { Parse(b) })
@@ -90,5 +92,53 @@ func TestNavigationExactPositionsAndNoPartialResult(t *testing.T) {
 		if result.Metadata != nil || result.Body != nil {
 			t.Fatal("partial result returned")
 		}
+	}
+}
+
+func TestFreshnessYAMLForms(t *testing.T) {
+	for _, tt := range []struct {
+		name, fields string
+		code         string
+		line, column int
+	}{
+		{"unquoted date", "  updated: 2026-10-14\n", "", 0, 0},
+		{"quoted date", "  updated: \"2026-10-14\"\n", "", 0, 0},
+		{"single quoted date", "  updated: '2026-10-14'\n", "", 0, 0},
+		{"both fields", "  tool_version: \"2.56.0\"\n  updated: 2026-10-14\n", "", 0, 0},
+		{"timestamp with time", "  updated: 2026-10-14T09:00:00Z\n", "VAL004", 4, 3},
+		{"unpadded date", "  updated: 2026-1-5\n", "VAL004", 4, 3},
+		{"impossible date", "  updated: 2026-02-30\n", "VAL004", 4, 3},
+		{"number", "  updated: 20261014\n", "VAL004", 4, 3},
+		{"bool version", "  tool: git\n  tool_version: true\n", "VAL004", 5, 3},
+		{"empty version", "  tool_version: ''\n", "VAL004", 4, 3},
+		{"newline version", "  tool_version: \"1\\n2\"\n", "VAL004", 4, 3},
+		{"zero width version", "  tool_version: \"1.\\u200b0\"\n", "VAL004", 4, 3},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			result, ds := Parse([]byte("---\ntitle: T\ncheatsheet:\n" + tt.fields + "---\nBody\n"))
+			if tt.code == "" {
+				if len(ds) != 0 {
+					t.Fatalf("want accepted, got %+v", ds)
+				}
+				return
+			}
+			if len(ds) != 1 || ds[0].Code != tt.code || ds[0].Span.Start.Line != tt.line || ds[0].Span.Start.Column != tt.column {
+				t.Fatalf("want one %s at %d:%d, got %+v", tt.code, tt.line, tt.column, ds)
+			}
+			if result.Metadata != nil || result.Body != nil {
+				t.Fatal("partial result returned")
+			}
+		})
+	}
+}
+
+func TestFreshnessPreservesAuthoredStrings(t *testing.T) {
+	result, ds := Parse([]byte("---\ntitle: T\ncheatsheet:\n  updated: 2026-10-14\n  tool_version: 10.3p1\n  owner: docs-team\n---\n"))
+	if len(ds) != 0 {
+		t.Fatal(ds)
+	}
+	cs, _ := result.Metadata["cheatsheet"].(map[string]any)
+	if cs["updated"] != "2026-10-14" || cs["tool_version"] != "10.3p1" || cs["owner"] != "docs-team" {
+		t.Fatalf("authored strings and unknown keys must survive verbatim: %#v", cs)
 	}
 }

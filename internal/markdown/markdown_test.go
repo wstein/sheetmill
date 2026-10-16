@@ -111,7 +111,9 @@ func TestStableIDs(t *testing.T) {
 }
 
 func FuzzParse(f *testing.F) {
-	for _, s := range []string{"---\ntitle: X\n---\n## S\n### C\n```\nx\n```", "---\ntitle: X\n---\n## {.navi}"} {
+	for _, s := range []string{"---\ntitle: X\n---\n## S\n### C\n```\nx\n```", "---\ntitle: X\n---\n## {.navi}",
+		"---\ntitle: X\ncheatsheet:\n  updated: 2026-10-14\n  tool_version: \"2.56.0\"\n---\n## S\n### C\nx\n",
+		"---\ntitle: X\ncheatsheet: {updated: 2026-02-30, tool_version: \" \"}\n---\n"} {
 		f.Add([]byte(s))
 	}
 	f.Fuzz(func(t *testing.T, b []byte) {

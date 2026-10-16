@@ -309,3 +309,25 @@ func TestLinkerFlagStampsTheVersion(t *testing.T) {
 		t.Fatalf("stamped binary printed %q (%v)", output, err)
 	}
 }
+
+func TestInvalidFreshnessFailsCheckAndNaviBuild(t *testing.T) {
+	dir := tempDir(t)
+	bad := filepath.Join(dir, "bad.md")
+	os.WriteFile(bad, []byte("---\ntitle: Bad\nlicense: x\ncheatsheet:\n  updated: 2026-02-30\n---\n## S\n\n### C {.navi #c}\n\n```bash\nls\n```\n"), 0600)
+	good := filepath.Join(dir, "good.md")
+	os.WriteFile(good, []byte("---\ntitle: Good\nlicense: x\ncheatsheet:\n  updated: 2026-10-14\n  tool_version: \"2.56.0\"\n---\n## S\n\n### C {.navi #c}\n\n```bash\nls\n```\n"), 0600)
+	for _, args := range [][]string{{"check", bad}, {"build", "navi", bad, "--out", filepath.Join(dir, "out")}} {
+		var out, errout bytes.Buffer
+		code := Run(args, &out, &errout)
+		if code != 1 || !strings.Contains(errout.String(), "VAL004") || !strings.Contains(errout.String(), bad+":5:3") {
+			t.Fatalf("%v: want exit 1 and a positioned VAL004, got %d %q", args, code, errout.String())
+		}
+	}
+	if _, err := os.Stat(filepath.Join(dir, "out")); !os.IsNotExist(err) {
+		t.Fatal("a failed navi build created output", err)
+	}
+	var out, errout bytes.Buffer
+	if code := Run([]string{"check", good}, &out, &errout); code != 0 {
+		t.Fatalf("valid freshness must pass: %d %q", code, errout.String())
+	}
+}

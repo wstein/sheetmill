@@ -29,6 +29,7 @@ warnings end with `(warning)` and do not change the exit status unless you use `
 | `VAL001` | `title` is missing or empty. |
 | `VAL002` | `category` or `description` is not a string, or `tags` is not an array of non-empty strings. |
 | `VAL003` | `cheatsheet` is not a mapping, `cheatsheet.schema` is not `1`, `cheatsheet.tool` is empty, or `navigation` is not a mapping with only a non-blank string `group` and an integer `order` from 0 to 1000000. |
+| `VAL004` | `cheatsheet.updated` is not a real `YYYY-MM-DD` calendar date (years 1970 to 9999), or `cheatsheet.tool_version` is not one line of 1 to 64 characters without surrounding whitespace, control or invisible format characters. |
 
 ## Structure and attributes {#structure}
 ### Sections and cards {#structure-codes}
