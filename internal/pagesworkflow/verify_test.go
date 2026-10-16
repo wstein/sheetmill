@@ -207,6 +207,16 @@ func TestVerifyPagesTrees(t *testing.T) {
 			replaceIn(f, "git/index.html", `<img src="/sheetmill/brand/logo.svg"`, `<img src=/sheetmill/brand/logo.svg`)
 		}},
 
+		{name: "uppercase single-quoted HREF", rule: 0, edit: func(f map[string]string) {
+			replaceIn(f, "demo/git/index.html", "<main>", "<main><A HREF='/sheetmill/demo/'>x</A>")
+		}},
+		{name: "tab before an unquoted href", rule: 0, edit: func(f map[string]string) {
+			replaceIn(f, "demo/git/index.html", "<main>", "<main><a\thref=/sheetmill/demo/>x</a>")
+		}},
+		{name: "unquoted href at line end", rule: 0, edit: func(f map[string]string) {
+			replaceIn(f, "demo/git/index.html", "<main>", "<main><a href=\n>x</a>")
+		}},
+
 		// Rule 1: top-level entries.
 		{name: "missing demo directory", rule: 1, edit: func(f map[string]string) {
 			for name := range f {
@@ -274,6 +284,16 @@ func TestVerifyPagesTrees(t *testing.T) {
 			replaceIn(f, "demo-cards/git/index.html", `rel="canonical" href="`+origin+`demo-cards/git/"`, `rel="canonical" href="/sheetmill/demo-cards/git/"`)
 		}},
 
+		{name: "page without a canonical link", rule: 4, edit: func(f map[string]string) {
+			replaceIn(f, "demo-compact/git/index.html", `<link rel="canonical" href="`+origin+`demo-compact/git/">`, ``)
+		}},
+		{name: "page with two canonical links", rule: 4, edit: func(f map[string]string) {
+			replaceIn(f, "git/index.html", `<meta charset="utf-8">`, `<meta charset="utf-8"><link rel="canonical" href="`+origin+`git/">`)
+		}},
+		{name: "manual page without a canonical link", rule: 4, edit: func(f map[string]string) {
+			replaceIn(f, "cli/index.html", `<link rel="canonical" href="`+origin+`cli/">`, ``)
+		}},
+
 		// Rule 5: layout markers.
 		{name: "compact lacks the classic body token", rule: 5, edit: func(f map[string]string) {
 			replaceIn(f, "demo-compact/git/index.html", `<body class="classic">`, `<body>`)
@@ -318,6 +338,16 @@ func TestVerifyPagesTrees(t *testing.T) {
 			replaceIn(f, "demo/index.html", `<p class="hero-links"><a href="/sheetmill/demo-compact/">`, `<p class="hero-links"><a href="/sheetmill/demo/">`)
 		}},
 
+		{name: "editorial nav repeats a link", rule: 7, edit: func(f map[string]string) {
+			replaceIn(f, "demo/index.html", `<nav class="header-links" aria-label="Related sites"><a href="/sheetmill/demo-compact/">Layout /sheetmill/demo-compact/</a>`, `<nav class="header-links" aria-label="Related sites"><a href="/sheetmill/demo-compact/">Layout /sheetmill/demo-compact/</a><a href="/sheetmill/demo-compact/">again</a>`)
+		}},
+		{name: "classic top bar repeats a link", rule: 7, edit: func(f map[string]string) {
+			replaceIn(f, "demo-cards/index.html", `</header>`, `<a class="topbar-link" href="/sheetmill/demo/">again</a></header>`)
+		}},
+		{name: "manual home lost its Example library link", rule: 7, edit: func(f map[string]string) {
+			f["index.html"] = strings.ReplaceAll(f["index.html"], `"/sheetmill/demo/"`, `"/sheetmill/cli/"`)
+		}},
+
 		// Rule 8: protocol-relative and insecure URLs.
 		{name: "protocol-relative src", rule: 8, edit: func(f map[string]string) {
 			replaceIn(f, "demo/git/index.html", `<main>`, `<main><img src="//cdn.example.org/x.png">`)
@@ -330,6 +360,30 @@ func TestVerifyPagesTrees(t *testing.T) {
 		}},
 		{name: "http stylesheet link", rule: 8, edit: func(f map[string]string) {
 			replaceIn(f, "cli/index.html", `<main>`, `<main><link rel="stylesheet" href="http://example.org/x.css">`)
+		}},
+		{name: "foreign https script", rule: 8, edit: func(f map[string]string) {
+			replaceIn(f, "demo/git/index.html", `<main>`, `<main><script src="https://cdn.example.org/x.js"></script>`)
+		}},
+		{name: "foreign https stylesheet link", rule: 8, edit: func(f map[string]string) {
+			replaceIn(f, "cli/index.html", `<main>`, `<main><link rel="stylesheet" href="https://cdn.example.org/x.css">`)
+		}},
+		{name: "foreign https form action", rule: 8, edit: func(f map[string]string) {
+			replaceIn(f, "demo-compact/git/index.html", `<main>`, `<main><form action="https://example.org/q"></form>`)
+		}},
+		{name: "foreign srcset", rule: 8, edit: func(f map[string]string) {
+			replaceIn(f, "demo-cards/git/index.html", `<main>`, `<main><img srcset="https://cdn.example.org/x.png 2x" alt="">`)
+		}},
+		{name: "protocol-relative srcset", rule: 8, edit: func(f map[string]string) {
+			replaceIn(f, "demo/git/index.html", `<main>`, `<main><img srcset="//cdn.example.org/x.png 2x" alt="">`)
+		}},
+		{name: "uppercase HTTP script", rule: 8, edit: func(f map[string]string) {
+			replaceIn(f, "demo/git/index.html", `<main>`, `<main><SCRIPT SRC="HTTP://example.org/x.js"></SCRIPT>`)
+		}},
+		{name: "base element", rule: 8, edit: func(f map[string]string) {
+			replaceIn(f, "demo/git/index.html", `<meta charset="utf-8">`, `<meta charset="utf-8"><base href="/">`)
+		}},
+		{name: "own-site https script is accepted", pass: true, edit: func(f map[string]string) {
+			replaceIn(f, "demo/git/index.html", `<main>`, `<main><img src="`+origin+`demo/brand/logo.svg" alt="">`)
 		}},
 		{name: "http form action", rule: 8, edit: func(f map[string]string) {
 			replaceIn(f, "demo-cards/git/index.html", `<main>`, `<main><form action="http://example.org/q"></form>`)
@@ -353,6 +407,23 @@ func TestVerifyPagesTrees(t *testing.T) {
 			}
 			if want := fmt.Sprintf("FAIL rule %d:", tc.rule); !strings.Contains(out, want) {
 				t.Fatalf("output lacks %q:\n%s", want, out)
+			}
+		})
+	}
+}
+
+// Roots outside [A-Za-z0-9/._-] could be mis-split or vacuously pass, so they are usage errors.
+func TestVerifyPagesRejectsUnsafeRoots(t *testing.T) {
+	for _, name := range []string{"with space", "pipe|dir", "glob*dir", "quote'dir"} {
+		t.Run(name, func(t *testing.T) {
+			parent := t.TempDir()
+			root := filepath.Join(parent, name)
+			if err := os.Mkdir(root, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			code, out := runScript(t, root)
+			if code != 2 {
+				t.Fatalf("exit %d, want 2:\n%s", code, out)
 			}
 		})
 	}
