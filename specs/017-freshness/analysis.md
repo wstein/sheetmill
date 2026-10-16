@@ -9,9 +9,9 @@
 | FR-004 | T005, T006 |
 | FR-005 | T003, T018 |
 | FR-006 | T007, T008 |
-| FR-007 | T009, T010 |
-| FR-008 | T010a, T010 |
-| FR-009 | T007 |
+| FR-007 | T009, T011 |
+| FR-008 | T010 (CSS-level only; the rendered 320px wrap is an unverified gap), T011 |
+| FR-009 | T007, T008 (front matter and no `<lastmod>`) |
 | FR-010 | T013, T014 |
 | FR-011 | T005, T015 |
 | FR-012 | T018 |
@@ -23,6 +23,15 @@
 | SC-004 | T002, T015, T019 |
 | SC-005 | T009 |
 | SC-006 | T019 |
+
+Task numbers in the round records below are as of the round; since round 3 the CSS
+tests are T010 and the implementation T011 (T010a is gone, there is no gap).
+
+## Unverified (not claimed)
+
+Rendered wrapping at 320px and the desktop `index-fresh` row (no browser); upstream
+correctness of demo versions (sheets' own notes only); real-Hugo results until
+`SHEETMILL_HUGO` tests run.
 
 ## Round 1 (reviewed revision 07fcbdf5449e, Plan/opus, read-only)
 
@@ -63,3 +72,30 @@ Verdict: NOT READY (1 high, 2 medium, 7 low). Round-1 resolutions otherwise conf
 | 3 | med | Spaces inside aria-hidden span | Spaces outside, `·` hidden |
 | 4 | med | Baseline hash procedure unspecified | Fixture, helper, `-update-base`, recorded Options/Hugo, lifetime |
 | 5-10 | low | Fuzz seeds, schema regex dialect, data-model wording, git log revision, test layers, clock pairing | Applied in tasks, data model, research |
+
+## Round 3 (reviewed revision 0f0548c, independent review)
+
+Verdict: READY (no critical or high; fix 1-4 before implementation). Facts re-checked
+against the code in this round: `home.html` row order is `a`, `.index-desc`,
+`.index-count`, `.index-license` and all 15 demo sheets carry a license; Studio calls
+`hugo.Render` (`internal/studio/compile.go`); `hugo.go` writes `<loc>`-only sitemaps and
+front matter `title`/`url`/`sheetid`; the editorial build links only `site.css`;
+`git diff 05eba4d 189e872 -- internal/render/hugo/theme` is empty; `validateHeaderLink`
+uses `unicode.IsPrint`.
+
+| # | Sev | Finding | Resolution |
+| --- | --- | --- | --- |
+| 1 | med | `.index-fresh` "after the card count" would strand the license under `flex-basis:100%` | Last child, after `.index-license`: contract, plan, US1.2, T009(a) |
+| 2 | med | T020 lacks `make test-studio`; Studio shares the templates | Contract changed-output list and T020 |
+| 3 | med | FR-008 "wrap at 320px" is unverifiable | FR-008 reworded to CSS-level assertions (T010); 320px listed as unverified here and in the spec |
+| 4 | med | `tar` card would read bsdtar's 3.5.3 as bare "Version" | Decision: omit `tool_version` for `tar` (research, FR-013, contract, T019); no qualified value, no tool name |
+| 5 | med | Status line stale | Updated, round 3 recorded |
+| 6 | low | Research #9 called spaces-outside the existing pattern | Reworded: deliberate difference from the provenance markup |
+| 7 | low | Front matter date risk | Plan, data model and spec guard; T008 asserts front matter keys |
+| 8 | low | `Co`/`Cn` accepted while header links reject | Recorded in FR-003 with the toolchain-determinism reason |
+| 9 | low | Sitemap `<lastmod>` undecided | Decided no (FR-009, out of scope, T008) |
+| 10 | low | "every build changes site, classic, cards css" | "each emitted stylesheet"; `app.js` unchanged |
+| 11 | low | T011 missing, T010a before T010 | Renumbered: CSS tests T010, implementation T011 |
+| 12 | low | Base `05eba4d` vs PR base `189e872` | Both named in SC-003 and T002 |
+| 13 | low | Unknown `cheatsheet.*` keys untested | Added to T003 and T005 |
+| 14 | low | "freshness" clashes with Studio preview staleness | FR-012 and T018 wording |
