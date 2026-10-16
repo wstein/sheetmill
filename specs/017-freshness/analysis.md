@@ -120,7 +120,8 @@ Baseline results before any 017 code: `go test ./...`, `make check` and
 SHA-256 of the 31 pre-existing files under `testdata/` (the `sha256sum` lines sorted by
 path, hashed again): `2f4d84e67ad611adceb465491ae5d73bdeedff549bc3244c8ab921a21da633fa`.
 Reproduce with
-`find testdata -type f ! -path 'testdata/hugo/freshness/*' | sort | xargs sha256sum | sha256sum`.
+`find testdata -type f ! -path 'testdata/hugo/freshness/*' ! -path 'testdata/import/reference/freshness/*' ! -path 'testdata/reference-compatible/freshness.md*' | sort | xargs sha256sum | sha256sum`
+(the three excluded paths hold the 017 fixtures added after the baseline).
 
 Navi base export of `examples/sheets` (`smill build navi examples/sheets --root
 examples/sheets --out <scratch>`): no demo sheet marks a card for navi, so the build
@@ -167,3 +168,32 @@ Implementation notes and deviations from the written plan:
   by the Go tables only.
 - Diagnostics docs (`VAL004`, `IMP112`) were added in the commits that introduced the
   codes because `TestDiagnosticsCatalogueIsComplete` requires them.
+Deviation 6 (previously unrecorded; known bisect gap): `e85d5c2` (`test(validate): add sheet freshness
+  accept/reject tables`) is test-first by design and does not compile on its own
+  (`undefined: Freshness`); the next commit, `08ef2fb`, adds the validator. A
+  `git bisect` that lands on `e85d5c2` must skip it. The history was not rewritten to
+  add a stub.
+
+## Round: implementation review at a82163d (CLEAR, 1 medium, 8 low; 45 mutants, 42 killed, 1 survived, 2 equivalent)
+
+Independent review of PR #47 at `a82163d`. The branch was first restacked onto
+`origin/codex/review-fixes-40-44` (`857d605`); both upstream round entries and the
+verification record above are kept. Resolutions:
+
+| # | Sev | Finding | Resolution |
+| --- | --- | --- | --- |
+| F1 | medium | Unquoted `tool_version: 3.81` (a YAML float) got the "one line of 1 to 64 characters" message | Non-string values get "must be a quoted YAML string, e.g. ..." (test first); advice added to `gfm-plus.md`, the contract and `diagnostics.md` |
+| F2 | low | `1900-02-29` is below the 1970 floor, so the century rule was untested in range (mutant M04 survived) | Added `2100-02-29` invalid and `2400-02-29` valid; the schema test lists the former as calendar-only looseness; M04 now killed |
+| F3 | low | Examples showed a bare `updated: 2026-10-14` next to the advice to quote it | Quoted in `gfm-plus.md` and the contract |
+| F4 | low | T002 digest command no longer reproduced `2f4d84e6...` | Command excludes the three 017 fixture paths; re-run gives `2f4d84e6...` |
+| F5 | low | `e85d5c2` does not compile alone | Not rewritten; recorded as deviation 6 above |
+| F6 | low | `.classic .index-group li{flex-wrap:wrap}` changed rows without freshness | Scoped to `li:has(.index-fresh)` with a CSS contract test; the theme already uses `:has()`; browser check still pending; CSS stays within the budget |
+| F7 | low | Schema `tool_version` pattern needs ECMA-262 Unicode mode | Stated in the `$comment` and pinned by the schema test |
+| F8 | low | Import left `cheatsheet: {}` after archiving the only keys | Emptied mapping deleted (test first); an authored `cheatsheet: {}` is kept; no golden changed |
+| F9 | low | Spec and tasks named `codex/017-freshness` for the implementation | spec.md, plan.md and T021 distinguish the spec branch `codex/017-freshness` from the implementation branch `codex/017-freshness-impl` (PR #47) |
+
+Mutation spot-checks of the fixes (10, all killed after two test additions): dropping the
+Cf check, disabling or inverting either quote-it branch, dropping the example text
+(first survived, now killed), removing the emptied-mapping delete, deleting an authored
+empty mapping (first survived, now killed), unscoping the CSS rule, shortening the schema
+`$comment`, a 1971 and a 1900 year floor, and the century rule in range (M04).
