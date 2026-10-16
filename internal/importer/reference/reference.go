@@ -109,11 +109,25 @@ func Convert(src []byte, p Provenance) (Result, []diagnostic.Diagnostic) {
 	// Upstream shared command declarations are not an opt-in to SheetMill's
 	// command semantics. Preserve their complete value, regardless of shape,
 	// before shared metadata or document-reference validation can see it.
+	// Upstream updated and tool_version have unknown semantics, so they are
+	// archived too (sheet freshness, specs/017-freshness), merged with the cards
+	// archive; nothing is inferred and no shape can fail the import.
 	if sheet, ok := fm.Metadata["cheatsheet"].(map[string]any); ok {
+		archive := map[string]any{}
 		if cards, exists := sheet["cards"]; exists {
-			original["cheatsheet"] = map[string]any{"cards": cards}
+			archive["cards"] = cards
 			delete(sheet, "cards")
 			warn("IMP111", "upstream cheatsheet.cards archived as inert source data", fm.Locations["cheatsheet.cards"])
+		}
+		for _, key := range []string{"updated", "tool_version"} {
+			if value, exists := sheet[key]; exists {
+				archive[key] = value
+				delete(sheet, key)
+				warn("IMP112", "upstream cheatsheet."+key+" archived as inert source data; no date or version is inferred", fm.Locations["cheatsheet."+key])
+			}
+		}
+		if len(archive) > 0 {
+			original["cheatsheet"] = archive
 		}
 	}
 	if ds := validate.Metadata(fm.Metadata, fm.Locations); len(ds) > 0 {

@@ -54,6 +54,7 @@ unknown data survive, with the following legacy behavior archived under
 | `IMP109` | Standalone attribute line such as `{.shortcuts}` or `{.marker-none}` removed (warning) |
 | `IMP110` | Standalone `{.shortcuts}` inside a card removed; the card is marked `.keys` so its key table renders as keys (warning) |
 | `IMP111` | Upstream `cheatsheet.cards` or `.command` heading marker archived as inert source data before shared validation/selection (warning) |
+| `IMP112` | Upstream `cheatsheet.updated` or `cheatsheet.tool_version` of any shape archived as inert source data; no date or version is inferred (warning) |
 | Core diagnostic codes | Unsupported structural attrs/YAML/GFM+ contract errors |
 
 Code blocks/code spans are excluded from directive scanning. This is an explicit
@@ -97,5 +98,9 @@ Archival preserves semantic JSON values, not YAML token spelling, comments or
 numeric token types such as the distinction between `1` and `1.0`.
 Upstream `.command` markers are removed and archived as inert original attributes
 with positioned findings; they never activate canonical command selection.
+Upstream `cheatsheet.updated` and `cheatsheet.tool_version` are archived the same way
+(merged into the same `cheatsheet` entry) with `IMP112`, whatever their shape: their
+upstream meaning is unknown, so the import never activates, validates or infers sheet
+freshness (`updated`/`tool_version`). Set them yourself only from verified evidence.
 Other cheatsheet fields and existing legacy import behavior are retained. Commands
 inside code examples remain literal content and are never executed.
