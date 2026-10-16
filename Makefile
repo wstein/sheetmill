@@ -57,7 +57,7 @@ check-hugo:
 	    *) printf 'Expected Hugo %s; got %s\n' "$$pin" "$$version" >&2; exit 1;; esac
 
 test-hugo: check-hugo
-	go test ./internal/render/hugo -count=1
+	go test ./internal/render/hugo ./internal/pagesworkflow -count=1
 
 test-studio: check-hugo
 	go test -race ./internal/studio -count=1
