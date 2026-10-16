@@ -3,6 +3,8 @@ title: SheetMill CLI
 category: reference
 description: Check, inspect, export, import and preview sheets with the smill command line, from a first validation to a local Hugo library.
 tags: [sheetmill, smill, markdown]
+cheatsheet:
+  updated: "2026-10-16"
 source:
   repository: https://github.com/wstein/sheetmill
   revision: 92d64e3965454540e6b7dab2177edc279ed10147

@@ -3,6 +3,9 @@ title: SSH
 description: Log in to remote hosts, manage keys, tunnel ports and keep connections tidy with OpenSSH.
 category: networking
 tags: [ssh, openssh, keys, tunnels, remote]
+cheatsheet:
+  tool_version: "10.3p1"
+  updated: "2026-10-14"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors

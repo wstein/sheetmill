@@ -3,6 +3,9 @@ title: grep
 description: Search text files and streams for lines that match a pattern.
 category: search
 tags: [grep, search, regex, text]
+cheatsheet:
+  tool_version: "2.6.0-FreeBSD"
+  updated: "2026-10-14"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors

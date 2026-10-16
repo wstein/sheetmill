@@ -3,6 +3,8 @@ title: BundleDock CLI
 category: reference
 description: Discover the bdock CLI, initialize shared tool volumes, pin a reviewed image, and upgrade the source catalog lock.
 tags: [bundledock, bdock, oci]
+cheatsheet:
+  updated: "2026-10-16"
 source:
   repository: https://github.com/wstein/bundledock
   revision: 81c2688ea8dcb782f34b51f96c3c2f18bdd00d85

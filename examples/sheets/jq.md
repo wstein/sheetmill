@@ -3,6 +3,9 @@ title: jq
 description: Filter, reshape and summarize JSON on the command line with jq's small expression language.
 category: data
 tags: [jq, json, data, cli, filters]
+cheatsheet:
+  tool_version: "1.8.2"
+  updated: "2026-10-14"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors

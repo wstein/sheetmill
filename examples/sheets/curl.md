@@ -3,6 +3,9 @@ title: curl
 description: Transfer data to and from URLs from the command line, with a focus on HTTP requests, uploads and scripting.
 category: networking
 tags: [curl, http, networking, api, cli]
+cheatsheet:
+  tool_version: "8.7.1"
+  updated: "2026-10-14"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors

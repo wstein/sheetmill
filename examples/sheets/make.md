@@ -3,6 +3,9 @@ title: GNU Make
 description: Describe how files are rebuilt from their prerequisites and let GNU Make run only the recipes that are out of date.
 category: build
 tags: [make, gnu, build, makefile, automation]
+cheatsheet:
+  tool_version: "3.81"
+  updated: "2026-10-14"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors

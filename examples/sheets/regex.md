@@ -3,6 +3,8 @@ title: Regular expressions
 description: POSIX extended regular expressions as used by grep -E, with notes on where Perl-style engines differ.
 category: text
 tags: [regex, posix, ere, grep, patterns]
+cheatsheet:
+  updated: "2026-10-14"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors
