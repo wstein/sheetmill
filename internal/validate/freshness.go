@@ -46,15 +46,21 @@ func Freshness(m map[string]any, locations map[string]diagnostic.Span) (Freshnes
 		ds = append(ds, diagnostic.Diagnostic{Code: "VAL004", Message: msg, Span: span})
 	}
 	if v, ok := cs["updated"]; ok {
-		if s, ok := v.(string); ok && validUpdated(s) {
+		s, isString := v.(string)
+		if isString && validUpdated(s) {
 			settings.Updated = s
+		} else if !isString {
+			add("cheatsheet.updated must be a quoted YAML string, e.g. \"2026-10-14\"", "cheatsheet.updated")
 		} else {
 			add("cheatsheet.updated must be a real calendar date written YYYY-MM-DD (years 1970 to 9999)", "cheatsheet.updated")
 		}
 	}
 	if v, ok := cs["tool_version"]; ok {
-		if s, ok := v.(string); ok && validToolVersion(s) {
+		s, isString := v.(string)
+		if isString && validToolVersion(s) {
 			settings.ToolVersion = s
+		} else if !isString {
+			add("cheatsheet.tool_version must be a quoted YAML string, e.g. \"3.81\": an unquoted 3.81 or 3.10 is a number", "cheatsheet.tool_version")
 		} else {
 			add("cheatsheet.tool_version must be one line of 1 to 64 characters without surrounding whitespace, control or invisible format characters", "cheatsheet.tool_version")
 		}
