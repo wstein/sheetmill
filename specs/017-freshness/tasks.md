@@ -32,7 +32,7 @@ build, PDF, release, deployment or sibling edit.
 
 - [x] T013 [US3] Failing tests plus fixtures under `testdata/import/reference/freshness/` (valid, wrong-type, with and without `cards`): archived under `source.original_metadata.cheatsheet`, `IMP112` positioned at the key, no active freshness, no inferred date, cards archive intact, finding order stable. (FR-010)
 - [x] T014 [US3] Implement the merged archival in `internal/importer/reference/reference.go` before `validate.Metadata`.
-- [ ] T015 [P] [US3] Pair regression in `internal/render/navi/navi_test.go`: `.cheat` bytes, entry identities and diagnostics identical with/without the fields; companion keeps them verbatim; version is not a navi tag. Passes without navi code changes. (FR-011, SC-004)
+- [x] T015 [P] [US3] Pair regression in `internal/render/navi/navi_test.go`: `.cheat` bytes, entry identities and diagnostics identical with/without the fields; companion keeps them verbatim; version is not a navi tag. Passes without navi code changes. (FR-011, SC-004)
 
 ## Phase 5: Contract, goldens, docs, demos
 

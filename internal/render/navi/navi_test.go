@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -695,5 +696,52 @@ func TestSidecarRejectsHostPaths(t *testing.T) {
 		if len(errs) != 1 || errs[0].Code != "REN001" || len(p.Files) != 0 {
 			t.Fatalf("%s: %v %v", path, errs, p.Files)
 		}
+	}
+}
+
+// Sheet freshness (spec 017) is presentation metadata: it must not change .cheat
+// bytes, card identities, diagnostics or tags; the companion keeps it verbatim.
+func TestSheetFreshnessDoesNotChangeCheatOutput(t *testing.T) {
+	for _, shell := range ProfileNames() {
+		t.Run(shell, func(t *testing.T) {
+			plain := sheet(t, card("bash", "echo <sheet>"))
+			fresh := sheet(t, card("bash", "echo <sheet>"))
+			cs := fresh.Document.Metadata["cheatsheet"].(map[string]any)
+			cs["updated"] = "2026-10-14"
+			cs["tool_version"] = "2.56.0 <v>"
+			pp, perrs := Render([]Sheet{plain}, Options{Shell: shell})
+			fp, ferrs := Render([]Sheet{fresh}, Options{Shell: shell})
+			if len(perrs) > 0 || len(ferrs) > 0 || !reflect.DeepEqual(pp.Warnings, fp.Warnings) {
+				t.Fatalf("%v %v %v %v", perrs, ferrs, pp.Warnings, fp.Warnings)
+			}
+			if !bytes.Equal(pp.Files["demo.cheat"], fp.Files["demo.cheat"]) || len(pp.Files["demo.cheat"]) == 0 {
+				t.Fatalf("freshness changed .cheat bytes:\n%s\n%s", pp.Files["demo.cheat"], fp.Files["demo.cheat"])
+			}
+			if strings.Contains(string(fp.Files["demo.cheat"]), "2.56.0") || strings.Contains(string(fp.Files["demo.cheat"]), "2026-10-14") {
+				t.Fatal("the version and date must not reach the tags or any .cheat line")
+			}
+			type sc struct {
+				Metadata struct {
+					Cheatsheet map[string]any
+				}
+				Cards []struct{ ID, Title, Context string }
+			}
+			var a, b sc
+			if err := json.Unmarshal(pp.Files["demo.navi.json"], &a); err != nil {
+				t.Fatal(err)
+			}
+			if err := json.Unmarshal(fp.Files["demo.navi.json"], &b); err != nil {
+				t.Fatal(err)
+			}
+			if len(a.Cards) != 1 || len(b.Cards) != 1 || a.Cards[0] != b.Cards[0] {
+				t.Fatalf("card identities differ: %v %v", a.Cards, b.Cards)
+			}
+			if b.Metadata.Cheatsheet["updated"] != "2026-10-14" || b.Metadata.Cheatsheet["tool_version"] != "2.56.0 <v>" {
+				t.Fatalf("companion must carry the fields verbatim: %v", b.Metadata.Cheatsheet)
+			}
+			if _, ok := a.Metadata.Cheatsheet["updated"]; ok {
+				t.Fatal("the plain companion must not gain the fields")
+			}
+		})
 	}
 }
