@@ -34,7 +34,7 @@ from the local checkout's committed revision, rather than its mutable worktree.
 This revision is a project bootstrap with implementation pending and **no `whr`
 product CLI**. The sheet is titled **WorkHarbor bootstrap** and documents verified
 contributor workflows. Its corpus ID/filename `whr` is an input identity, not an
-executable availability claim. The separate `wstein/workharbor` command tree is
+executable availability claim. The separate `wstein/workharbor-old` command tree is
 not used as evidence for this user-selected source.
 
 | Displayed command | Verified contract |
