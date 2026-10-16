@@ -14,13 +14,15 @@ category: reference
 | `smill build navi <file-or-directory>... --out <new-dir> [--shell bash\|zsh\|fish\|nu] [--root <dir>] [--strict]` | Export `{.navi #id}` cards as [navi `.cheat` files with `.navi.json` metadata companions](format/navi-profile.md); never runs navi or any command |
 
 `--header-link` is repeatable (at most four) and adds a text link to the top bar and
-the home page introduction, for example `--header-link 'Example library=/sheetmill/demo/'`.
-The label is 1 to 40 printable characters (the only space allowed is U+0020) without surrounding whitespace, and labels must be unique (exact, case-sensitive); the value after
-the first `=` must be an `https://` URL without credentials or a root-relative path
-starting with a single `/`. Other schemes (`javascript:`, `data:`, `http:`), `//host`
-URLs, spaces, quotes, angle brackets, backslashes, control and non-ASCII characters
-fail with `REN003` and exit 1 before anything is written. Root-relative values are
-used as written and are not prefixed with `--base-path`.
+the home page introduction, for example
+`--header-link 'Example library=/sheetmill/demo/'`. The label is 1 to 40 printable
+characters (the only space allowed is U+0020) without surrounding whitespace, and
+labels must be unique (exact, case-sensitive). The value after the first `=` must be
+an `https://` URL without credentials or a root-relative path starting with a single
+`/`. Other schemes (`javascript:`, `data:`, `http:`), `//host` URLs, spaces, quotes,
+angle brackets, backslashes, control and non-ASCII characters in the URL fail with
+`REN003` and exit 1 before anything is written. Root-relative values are used as
+written and are not prefixed with `--base-path`.
 
 A release build stamps the version with the linker, for example
 `go build -trimpath -ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=v0.1.0" ./cmd/smill`;
