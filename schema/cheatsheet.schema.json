@@ -33,7 +33,7 @@
           "maxLength": 64,
           "pattern": "^[^\\p{Z}\\p{Cc}\\p{Cf}](?:[^\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]*[^\\p{Z}\\p{Cc}\\p{Cf}])?$",
           "allOf": [{"pattern": "[^\\u115F\\u1160\\u3164\\uFFA0\\u2800]"}],
-          "$comment": "Version of the documented tool, shown as authored: one line of 1 to 64 code points without surrounding whitespace, control or format characters, and not only the blank-looking fillers U+115F, U+1160, U+3164, U+FFA0 and U+2800. Source validation also rejects invalid UTF-8 and reports VAL004. Private-use and unassigned code points are accepted on purpose."
+          "$comment": "Version of the documented tool, shown as authored: one line of 1 to 64 code points without surrounding whitespace, control or format characters, and not only the blank-looking fillers U+115F, U+1160, U+3164, U+FFA0 and U+2800. Source validation also rejects invalid UTF-8 and reports VAL004. Private-use and unassigned code points are accepted on purpose. The pattern uses \\p{Z}, \\p{Cc} and \\p{Cf}, so validators must compile it as an ECMA-262 regular expression in Unicode mode (the u flag)."
         },
         "cards": {
           "type": "object",

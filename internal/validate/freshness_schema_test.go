@@ -119,4 +119,7 @@ func TestSchemaMatchesFreshnessTables(t *testing.T) {
 	if c := freshnessSchema(t, "tool_version").Comment; !strings.Contains(c, "U+3164") {
 		t.Error("tool_version $comment must document the filler and source-only rules")
 	}
+	if c := freshnessSchema(t, "tool_version").Comment; !strings.Contains(c, "ECMA-262") || !strings.Contains(c, "Unicode mode") {
+		t.Error("tool_version $comment must say its \\p{...} patterns need ECMA-262 Unicode mode")
+	}
 }
