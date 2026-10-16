@@ -254,7 +254,7 @@ distinct `tags` in source order, so authors choose which tags lead; the sheet pa
 and tag pages still list every tag. Nothing is computed from other sheets, and all
 text is HTML-escaped. The compact layouts (`classic-compact`, `reference-cards`)
 add only the card count to their index rows. The cards need no JavaScript, request
-nothing remote and do not alter print output.
+nothing remote. They add no print-specific styling, so the facts print with the cards.
 
 ## Header links
 

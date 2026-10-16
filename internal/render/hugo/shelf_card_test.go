@@ -37,6 +37,7 @@ func TestShelfCardData(t *testing.T) {
 		described(t, "git", "title: Git\ncheatsheet: {tool: git}\ntags: [vcs, cli, history, extra, more]\n", "## A\n### One\nx\n### Two\nx\n## B\n### Three\nx\n"),
 		described(t, "intro", "title: Intro\n", "Only a preamble.\n"),
 		described(t, "dups", "title: Dups\ntags: [b, a, b, a, c, d]\n", "## A\n### One\nx\n"),
+		described(t, "fenced", "title: Fenced\n", "## A\n### Real\n```md\n## Not a section\n### Not a card\n```\n"),
 		described(t, "hostile", "title: Hostile\ncheatsheet: {tool: '<script>alert(1)</script>'}\ntags: ['<img src=x onerror=1>', 'a&b']\n", "## A\n### One\nx\n"),
 	}, Options{})
 	if len(ds) > 0 {
@@ -52,6 +53,9 @@ func TestShelfCardData(t *testing.T) {
 	}
 	if len(git.Tags) != 5 {
 		t.Errorf("full tag list must stay intact for tag pages: %v", git.Tags)
+	}
+	if f := got["Fenced"]; f.CardCount != 1 {
+		t.Errorf("headings inside a fenced block are not cards: %+v", f)
 	}
 	if intro := got["Intro"]; intro.CardCount != 0 || intro.Tool != "" || len(intro.ShelfTags) != 0 {
 		t.Errorf("preamble-only sheet: %+v", intro)
@@ -126,6 +130,10 @@ func TestHugoIntegrationShelfCards(t *testing.T) {
 			}
 			card := home[strings.LastIndex(home[:start], `<a class="library-item"`):]
 			card = card[:strings.Index(card, "</a>")]
+			// The link's accessible name starts with the title: facts follow the heading.
+			if h, n := strings.Index(card, "<h3>"), strings.Index(card, `class="shelf-number"`); h < 0 || n < h {
+				t.Errorf("shelf-number must follow the title in the DOM: %s", card)
+			}
 			for _, want := range []string{
 				`<p class="shelf-number">3 cards</p>`,
 				`<p class="library-tool">Tool: git</p>`,
