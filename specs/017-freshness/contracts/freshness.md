@@ -14,13 +14,15 @@ cheatsheet:
 - Both fields are optional children of the `cheatsheet` mapping.
 - `updated` is date-only ISO 8601: exactly four-digit year, two-digit month and day
   separated by `-`, ASCII digits, a real calendar date, year 1970 to 9999. Quoting
-  is optional. Times, zones, `YYYY-M-D`, `YYYYMMDD`, `Oct 14 2026`, numbers,
+  is optional for SheetMill, but quote it for YAML 1.1 tools that turn bare dates
+  into date objects. Times, zones, `YYYY-M-D`, `YYYYMMDD`, `Oct 14 2026`, numbers,
   Booleans, null and lists are errors.
 - `updated` is not compared with the current date. The compiler has no clock; an
   author who writes a future date gets that date. Keep it accurate.
 - `tool_version` is free text identifying the version of the tool the sheet
   documents: 1–64 characters, one line, no surrounding whitespace, no control or
-  invisible format characters. Write the version only (`3.5.3`), not the tool name.
+  invisible format characters, not only blank-looking filler characters (U+115F,
+  U+1160, U+3164, U+FFA0, U+2800); other unusual marks are not policed. Write the version only (`3.5.3`), not the tool name.
 - Errors use `VAL004` at the key (`cheatsheet.updated` / `cheatsheet.tool_version`),
   or at the document start for direct IR. `cheatsheet` not being a mapping stays `VAL003`.
 
@@ -30,30 +32,40 @@ Text is always escaped; the date is the only machine-readable element.
 
 | Place | Markup when a field is present |
 | --- | --- |
-| Editorial home card | `<p class="library-fresh"><span>Version V</span><span>Updated <time datetime="D">D</time></span></p>` after the `Tool:` line |
+| Editorial home card | `<p class="library-fresh"><span>Version V</span><span aria-hidden="true"> · </span><span>Updated <time datetime="D">D</time></span></p>` after the `Tool:` line (separator only between two present facts) |
 | Compact/cards index row | `<span class="index-fresh">` with the same two spans after the card count |
 | Sheet header, editorial | `<p class="sheet-fresh">` after the description, before tag chips |
 | Sheet header, classic-compact and reference-cards | same `<p class="sheet-fresh">` after the description |
 
 Only the present spans are emitted; with neither field nothing is emitted (no
-wrapper). Separators are CSS `::before` content, not text. No JavaScript, no title
-attribute, no icons. Facts print. Colors are existing palette tokens.
+wrapper). The separator is a real aria-hidden text span, never CSS content. No
+JavaScript, no title attribute, no icons. Facts print. Colors are existing palette
+tokens. CSS selectors are scoped (`.library-item .library-fresh`,
+`.page-heading .sheet-fresh`, `.sheet-head .sheet-fresh`) so they out-rank
+`.library-item p`. In `classic-compact` the `.index-fresh` span takes its own
+full-width line (`flex-basis:100%`) so the non-wrapping row cannot overflow at
+320px; in `reference-cards` `.sheet-fresh` is centred like the header. Tag pages, the
+tag index, the sidebar and search results do not show freshness.
 
 ## Other contracts
 
 - `smill build navi`: `.cheat` bytes and identities unchanged; companion metadata
-  carries `cheatsheet.updated`/`tool_version` verbatim; no new navi tag or diagnostic.
+  carries `cheatsheet.updated`/`tool_version` verbatim; no new navi tag or navi code.
+  Source files pass the shared parser first, so invalid freshness fails with `VAL004`
+  (also `smill check`, Studio); direct-IR navi input is not validated.
 - Reference import: `IMP112` archives upstream values; nothing is inferred.
 - Sorting, routes, related references, tag pages, search and the IR schema number
   are unaffected.
 
 ## Changed generated output (only for sheets carrying the fields)
 
-`data/library.json`, `data/shelves.json`, `data/sheets.json` (keys `updated`,
-`tool_version`); `index.html` (home) and each `<id>/index.html`; `assets/site.css`
-and `assets/classic.css` (fingerprinted names change; contents add `.library-fresh`,
-`.sheet-fresh`, `.index-fresh` rules); `assets/cards.css` only if its theme needs
-overrides. Parser golden `testdata/reference-compatible/freshness.md.json` is new;
+For sheets carrying the fields: `data/library.json`, `data/shelves.json`,
+`data/sheets/<id>.json`, `data/tags/<id>.json`, `data/tagindex.json` (keys `updated`,
+`tool_version`), `data/ir/<id>.json` (metadata), `index.html` and each
+`<id>/index.html`. For every build: the fingerprinted names of `assets/site.css`,
+`assets/classic.css` and `assets/cards.css` (contents gain the `.library-fresh`,
+`.sheet-fresh`, `.index-fresh` rules; `cards.css` the centring rule), hence every
+href in `baseof.html` output and `hugo.json` params. Parser golden `testdata/reference-compatible/freshness.md.json` is new;
 no existing golden changes. The navi companion of the demo sheets changes (new
 metadata only), their `.cheat` files do not.
 

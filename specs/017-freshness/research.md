@@ -35,11 +35,13 @@
 8. **Navi.** `renderSheet` reads only `cheatsheet.tool` and `cheatsheet.navi`;
    the companion serializes all metadata. So bytes are unchanged by construction;
    a regression test pins it. The version is deliberately not a navi tag.
-9. **Rendering shape.** One small helper partial `freshness.html` renders
-   `<span class="fresh">`/`<p class="…-fresh">` with `Version …` and `Updated
-   <time>` and a CSS-drawn `·` separator (decorative, not selectable text). Same
-   partial for editorial card, classic index row and all sheet headers keeps wording
-   consistent. Existing sheets without fields render exactly as before.
+9. **Rendering shape.** One helper partial `freshness.html` renders unclassed
+   `<span>Version …</span>` and `<span>Updated <time>…</time></span>` with a real
+   `<span aria-hidden="true"> · </span>` between them (the renderer's existing
+   pattern; generated CSS content is announced by assistive technology and vanishes
+   in reader views). The wrapper class is chosen by the caller (`library-fresh`,
+   `index-fresh`, `sheet-fresh`). Sheets without fields render as before, apart
+   from the fingerprinted stylesheet names.
 10. **Print and a11y.** The facts are text in normal flow, so they print by default
     and are read in order by assistive technology; the shelf card is one link whose
     accessible name already includes its content. `<time>` adds machine meaning
@@ -53,7 +55,8 @@ No sibling repository or network source was consulted (policy: no fetching).
   of the sheet file's last change at base `05eba4d` from
   `git log -1 --format=%cs -- <file>`: 2026-10-16 for bdock, reference-writing,
   sheetmill, smill, whr; 2026-10-14 for the other ten. It states when the sheet was
-  last updated, not when the tool was released.
+  last updated before this feature (the T019 commit becomes the newest change but
+  does not alter the stated dates), not when the tool was released.
 - `tool_version`: taken from each sheet's own `source.note` (the sheet records the
   documentation it was authored from): curl 8.7.1, git 2.56.0, jq 1.8.2, make 3.81
   (GNU Make), grep 2.6.0-FreeBSD, ssh 10.3p1 (OpenSSH), tar 3.5.3 (bsdtar). Omitted:

@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-16
 
-**Status**: Specification under independent review; no implementation yet
+**Status**: Specification revised after review round 1; no implementation yet
 
 **Input**: User request (2026-10-16), prompted by a comparison with a public
 cheatsheet site: show an `updated` date and the documented tool version on library
@@ -29,10 +29,12 @@ builds with different Hugo `--clock` values are byte-identical.
 1. **Given** a sheet with `cheatsheet.tool_version: "2.56.0"` and
    `cheatsheet.updated: 2026-10-14`, **When** the editorial home page is built,
    **Then** its shelf card shows `Version 2.56.0` and
-   `Updated <time datetime="2026-10-14">2026-10-14</time>` in one compact line.
+   `Updated <time datetime="2026-10-14">2026-10-14</time>` in one compact line,
+   separated by a real `aria-hidden` ` · ` text separator.
 2. **Given** the same sheet, **When** the sheet page is built in `editorial`,
    `classic-compact` and `reference-cards`, **Then** the header shows both facts in
-   the same wording and the compact layouts' index rows show them as short text.
+   the same wording and the compact layouts' index rows show the same two facts in a `index-fresh` span
+   (same wording, own full-width line in `classic-compact`).
 3. **Given** a sheet with neither field, **When** building, **Then** no freshness
    element, label, separator or empty wrapper is emitted and nothing is reported.
 4. **Given** only one of the two fields, **When** building, **Then** only that fact
@@ -110,8 +112,10 @@ exports keep their command bytes.
   spelling or non-string is rejected. There is no relation check to the build date.
 - **FR-003**: `cheatsheet.tool_version` MUST be a string of 1–64 Unicode code
   points, single-line, without surrounding Unicode whitespace and without Unicode
-  control, format (`Cf`), line- or paragraph-separator characters. Content is
-  otherwise free (`10.3p1`, `2.6.0-FreeBSD`).
+  control, format (`Cf`), line- or paragraph-separator characters, and MUST contain
+  at least one character other than the blank-looking fillers U+115F, U+1160,
+  U+3164, U+FFA0 and U+2800. Content is otherwise free (`10.3p1`, `2.6.0-FreeBSD`).
+  Variation selectors and other combining marks are not otherwise policed.
 - **FR-004**: Invalid freshness fails with new code `VAL004`, positioned at the
   offending key where known, otherwise at the document start. The check is shared by
   source validation and the Hugo direct-IR boundary (`validate.Freshness`).
@@ -123,8 +127,11 @@ exports keep their command bytes.
 - **FR-007**: Templates MUST render, in all three themes, shelf/index facts and
   sheet-header facts as static escaped text with the date inside
   `<time datetime="YYYY-MM-DD">`; the visible date text is the same ISO string.
-  Labels are visible text (`Version`, `Updated`), so no extra ARIA name is needed
-  and nothing relies on colour alone. No JavaScript, request or new font.
+  Labels are visible text (`Version`, `Updated`); between two present facts a
+  literal `<span aria-hidden="true"> · </span>` separates them, so plain-text and
+  reader views never run the facts together. No extra ARIA name is needed and
+  nothing relies on colour alone. No JavaScript, request or new font. Tag pages,
+  the tag index, the sidebar and the search results do not show freshness.
 - **FR-008**: Freshness MUST appear in print output (no print-hiding rule), use
   existing palette tokens only, and wrap at 320px.
 - **FR-009**: Shelf order, route, related scoring, tag pages and search content
@@ -134,16 +141,20 @@ exports keep their command bytes.
   the existing `cheatsheet.cards` archive; it MUST NOT infer either field.
 - **FR-011**: `smill build navi` MUST keep `.cheat` bytes, card identities and
   existing diagnostics unchanged; the version is not added to navi tags; the
-  companion keeps the fields as generic metadata. Navi does not validate them.
-- **FR-012**: The JSON Schema, `docs/format/gfm-plus.md`, `docs/diagnostics.md`,
+  companion keeps the fields as generic metadata. The exporter itself does not read
+  them, but source files reach it through the shared parser, so invalid freshness
+  fails `smill check`, `smill build navi` and Studio with `VAL004` like any other
+  invalid known field; direct-IR navi input is not validated.
+- **FR-012**: The JSON Schema, `docs/agent-guide.md`, `llms.txt` (one line: set
+  these only from verified evidence, never guess), `docs/format/gfm-plus.md`, `docs/diagnostics.md`,
   `docs/hugo.md`, `docs/imports.md`, `docs/format/navi-profile.md` and `docs/cli.md`
   describe the implemented contract.
 - **FR-013**: The 15 sheets in `examples/sheets` gain real `updated` values and,
   where the sheet names a documented version, `tool_version`, derived and recorded
   as in [research.md](research.md); no `cheatsheet.tool` is added to them (it would
   add a navi tag).
-- **FR-014**: Verification MUST keep every pre-existing parser/import/navi golden
-  byte-identical, add one small freshness parser golden, and list every changed file
+- **FR-014**: Verification MUST keep every pre-existing file under `testdata/` and
+  every navi expectation byte-identical, add one small freshness parser golden, and list every changed file
   of generated output (see [contract](contracts/freshness.md)).
 
 ### Key Entities
@@ -160,19 +171,23 @@ exports keep their command bytes.
   documented accept/reject result and position, in source and direct-IR paths (FR-002..004).
 - **SC-002**: Two real-Hugo builds with different `--clock` values and shuffled
   input order are byte-identical across all three themes (US1.5, FR-006).
-- **SC-003**: Without the fields, the rendered HTML of all three themes is
-  byte-identical to the base revision `05eba4d` outputs for existing fixtures (FR-007, US1.3).
+- **SC-003**: Without the fields, the rendered HTML of all three themes equals the
+  base revision `05eba4d` HTML after normalising the fingerprinted stylesheet
+  hrefs, and no freshness class, `<time>` or empty wrapper appears (FR-007, US1.3).
+  Normalised base hashes are captured in T002 before any template change.
 - **SC-004**: All existing goldens and navi `.cheat` bytes are unchanged; the navi
   pair test shows identical `.cheat` bytes with/without the fields (FR-011, FR-014).
 - **SC-005**: Hostile values appear only HTML-escaped; `datetime` attributes match
   `^[0-9]{4}-[0-9]{2}-[0-9]{2}$` in every emitted page (FR-007).
-- **SC-006**: The demo library builds with the fields visible in the three themes
-  and `smill check` passes on all 15 sheets (FR-013).
+- **SC-006**: The demo library built in the three themes contains the expected
+  `<time>` facts for every sheet that declares them, and `smill check` passes on
+  all 15 sheets (FR-013).
 
 ## Assumptions
 
-- Authorized by the user on 2026-10-16 (feature and a draft PR), recorded in
-  AGENTS.md. Merge, deployment and distribution remain separately gated.
+- Authorized by the user on 2026-10-16 (feature and a draft PR); the AGENTS.md
+  line is written by T001 and implementation does not start before it exists.
+  Merge, deployment and distribution remain separately gated.
 - Browser E2E needs Node, which is not installed in the authoring environment; it
   is not claimed. Markup, determinism and CSS are covered by Go and Hugo tests.
 - Out of scope: automatic dates, "stale" badges, relative dates ("3 days ago"),

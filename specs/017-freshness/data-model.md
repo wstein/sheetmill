@@ -25,14 +25,17 @@ cheatsheet:
 clock and never reformats; the returned `Updated` is the validated input string.
 Diagnostics are `VAL004`; `locations` may be nil (direct IR, document start).
 If `cheatsheet` is not a mapping the function returns no diagnostic (`VAL003`
-owns that case).
+owns that case on the source path; on the Hugo direct-IR path a non-mapping
+`cheatsheet` is silently ignored, as for `cheatsheet.tool`, and US2.5 does not cover it).
 
 ## Renderer data
 
 `page` gains `Updated string json:"updated,omitempty"` and
 `ToolVersion string json:"tool_version,omitempty"`, so `data/library.json`,
-`data/shelves.json` members and `data/sheets.json` entries gain the keys only when
-present. Ordering, related scoring and `ShelfTags` do not read them. Search index
+`data/shelves.json` members, `data/sheets/<id>.json` and, because `tagCatalog`
+embeds `page`, `data/tags/<id>.json` and `data/tagindex.json` gain the keys only
+when present (accepted; tag templates ignore them). `data/ir/<id>.json` carries the
+metadata as authored. Ordering, related scoring and `ShelfTags` do not read them. Search index
 text is unchanged.
 
 ## Import provenance

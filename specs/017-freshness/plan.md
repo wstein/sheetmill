@@ -63,14 +63,21 @@ testdata/reference-compatible/freshness.md(.json), testdata/import/reference/fre
   `time.Parse("2006-01-02", s)` and `Year()>=1970` (parse enforces 9999).
 - Version check: `utf8.RuneCountInString` 1..64, `strings.TrimSpace(s)==s`, no rune
   satisfying `unicode.IsControl`, `unicode.Is(unicode.Cf, r)`, U+2028, U+2029.
-  Invalid UTF-8 cannot occur (source decoding rejects it; direct IR strings are
+  Also reject filler-only values (FR-003). Invalid UTF-8 cannot occur (source decoding rejects it; direct IR strings are
   checked with `utf8.ValidString`).
 - Partial `freshness.html` takes a map-like sheet and emits nothing unless a field
   is set; callers wrap using the same `with` guard so no wrapper leaks. Uses
   `{{ with .tool_version }}` and `{{ with .updated }}`; `datetime` uses the same value.
-- CSS: `.library-fresh,.sheet-fresh,.index-fresh` colour `var(--muted)`, 13px,
-  `display:flex;flex-wrap:wrap;gap:0 .6em`; `span+span::before{content:"·"}` with the
-  middle dot as non-selectable generated content. No print rule.
+- CSS: scoped selectors `.library-item .library-fresh`, `.page-heading .sheet-fresh`,
+  `.sheet-head .sheet-fresh`, `.index-group .index-fresh` (specificity above
+  `.library-item p`), colour `var(--muted)`, 13px, `flex-wrap:wrap`; `.index-fresh`
+  gets `flex-basis:100%` in the non-wrapping classic row; `cards.css` centres
+  `.sheet-fresh`. Separator is a text span, not CSS content. No print rule.
+  `TestPerformanceBudget` (site.css+app.js ~30.9 of 32 KiB) guards size.
 - Importer: build a single `cheatsheet` archival map before `validate.Metadata`.
+- Template tests that need built pages use real Hugo and are SKIPPED without
+  `SHEETMILL_HUGO`; a skip does not count as passing. A template-text test (the
+  `TestShelfCardMarkupInTemplate` pattern) runs always. The existing `hugoBuild`
+  helpers hard-code the clock, so T012 adds a clock-parameterised variant.
 - Risk: the CSS fingerprint changes every theme's asset names; tests that hard-code
   asset names must derive them. Checked at T010.
