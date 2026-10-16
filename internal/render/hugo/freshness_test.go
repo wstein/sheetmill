@@ -4,6 +4,9 @@ package hugo
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
@@ -245,5 +248,79 @@ func TestFreshnessStaysOutOfContentFrontMatterAndSitemap(t *testing.T) {
 	sitemap := string(p.Files["static/sitemap.xml"])
 	if !strings.Contains(sitemap, "<loc>") || strings.Contains(sitemap, "lastmod") || strings.Contains(sitemap, "2999") || strings.Contains(sitemap, "2026-10-14") {
 		t.Errorf("sitemap must stay <loc>-only: %s", sitemap)
+	}
+}
+
+// hugoBuildClock is hugoBuild with an explicit Hugo --clock value.
+func hugoBuildClock(t *testing.T, binary string, p Project, clock string) string {
+	t.Helper()
+	root := t.TempDir()
+	for name, data := range p.Files {
+		full := filepath.Join(root, name)
+		if err := os.MkdirAll(filepath.Dir(full), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, data, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out := filepath.Join(root, "public")
+	cmd := exec.Command(binary, "--source", root, "--destination", out, "--clock", clock, "--noBuildLock", "--quiet")
+	cmd.Env = append(os.Environ(), "HUGO_CACHEDIR="+filepath.Join(root, "cache"))
+	if b, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("hugo: %v %s", err, b)
+	}
+	return out
+}
+
+func readTree(t *testing.T, root string) map[string][]byte {
+	t.Helper()
+	files := map[string][]byte{}
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		b, err := os.ReadFile(path)
+		rel, _ := filepath.Rel(root, path)
+		files[filepath.ToSlash(rel)] = b
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return files
+}
+
+func TestHugoIntegrationFreshnessIgnoresTheClock(t *testing.T) {
+	binary := os.Getenv("SHEETMILL_HUGO")
+	if binary == "" {
+		t.Skip("SKIPPED, NOT PASSED: set SHEETMILL_HUGO to an installed pinned Hugo to compare clock-independent builds")
+	}
+	dates := [3]string{"2999-01-01", "1970-01-01", "2026-10-14"}
+	versions := [3]string{"2.56.0", "", "10.3p1"}
+	for _, theme := range []string{"editorial", "classic-compact", "reference-cards"} {
+		t.Run(theme, func(t *testing.T) {
+			a, ds := Render(freshLibrary(t, dates, versions, [3]int{0, 1, 2}), Options{Theme: theme, SiteURL: "https://example.com/"})
+			if len(ds) != 0 {
+				t.Fatal(ds)
+			}
+			b, ds := Render(freshLibrary(t, dates, versions, [3]int{2, 0, 1}), Options{Theme: theme, SiteURL: "https://example.com/"})
+			if len(ds) != 0 {
+				t.Fatal(ds)
+			}
+			first := readTree(t, hugoBuildClock(t, binary, a, "2000-01-01T00:00:00Z"))
+			second := readTree(t, hugoBuildClock(t, binary, b, "2031-06-01T00:00:00Z"))
+			if len(first) == 0 || len(first) != len(second) {
+				t.Fatalf("file sets differ: %d vs %d", len(first), len(second))
+			}
+			for name, data := range first {
+				if !bytes.Equal(data, second[name]) {
+					t.Errorf("%s differs between clocks and input orders", name)
+				}
+			}
+			if !strings.Contains(string(first["alpha/index.html"]), `<time datetime="2999-01-01">2999-01-01</time>`) {
+				t.Error("a date after the build clock must still be shown as authored")
+			}
+		})
 	}
 }
