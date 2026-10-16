@@ -310,3 +310,30 @@ func TestHugoBuildSiteURL(t *testing.T) {
 		t.Fatal(code, errout.String())
 	}
 }
+
+func TestHeaderLinkFlag(t *testing.T) {
+	dir := tempDir(t)
+	input := filepath.Join(dir, "a.md")
+	if err := os.WriteFile(input, []byte("---\ntitle: A\n---\n## S\n### C\nText.\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var out, errout bytes.Buffer
+	good := filepath.Join(dir, "good")
+	if code := Run([]string{"build", "hugo", input, "--out", good, "--header-link", "Example library=/sheetmill/demo/", "--header-link", "Query=https://example.org/?a=b"}, &out, &errout); code != 0 {
+		t.Fatalf("%d %s", code, errout.String())
+	}
+	config, _ := os.ReadFile(filepath.Join(good, "hugo.json"))
+	if !bytes.Contains(config, []byte(`"url": "https://example.org/?a=b"`)) || !bytes.Contains(config, []byte(`"label": "Example library"`)) {
+		t.Fatalf("%s", config)
+	}
+	for _, bad := range []string{"no-separator", "=/x/", "Demo=javascript:alert(1)", "Demo=//evil.example/", "Demo=/a\x01b"} {
+		errout.Reset()
+		target := filepath.Join(dir, "bad")
+		if code := Run([]string{"build", "hugo", input, "--out", target, "--header-link", bad}, &out, &errout); code != 1 || !strings.Contains(errout.String(), "REN003: invalid header link") {
+			t.Errorf("%q: %d %s", bad, code, errout.String())
+		}
+		if _, err := os.Stat(target); err == nil {
+			t.Errorf("%q created output", bad)
+		}
+	}
+}

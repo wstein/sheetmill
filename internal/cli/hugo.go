@@ -18,9 +18,10 @@ import (
 
 func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	build := &cobra.Command{Use: "build", Short: "Export a renderer project (no tool execution)"}
+	var headerLinks []string
 	var destination, title, description, base, editBase, sourceBase, siteURL, theme, palette string
 	command := &cobra.Command{Use: "hugo <file-or-directory>...", Short: "Export a self-contained Hugo project to a new directory", Args: cobra.MinimumNArgs(1), Run: func(cmd *cobra.Command, args []string) {
-		*status = runHugo(args, destination, hugo.Options{Title: title, Description: description, BasePath: base, EditBaseURL: editBase, SourceBaseURL: sourceBase, SiteURL: siteURL, Theme: theme, Palette: palette}, out, errout)
+		*status = runHugo(args, destination, hugo.Options{Title: title, Description: description, BasePath: base, EditBaseURL: editBase, SourceBaseURL: sourceBase, SiteURL: siteURL, Theme: theme, Palette: palette, HeaderLinks: parseHeaderLinks(headerLinks)}, out, errout)
 	}}
 	command.Flags().StringVar(&destination, "out", "", "new project directory; never overwritten")
 	command.Flags().StringVar(&title, "title", "SheetMill References", "reference library title")
@@ -31,11 +32,23 @@ func buildCommand(out, errout io.Writer, status *int) *cobra.Command {
 	command.Flags().StringVar(&siteURL, "site-url", "", "canonical https://host/<base-path>/ of the published site; enables canonical links and a sitemap")
 	command.Flags().StringVar(&theme, "theme", "editorial", "page layout: editorial, classic-compact or reference-cards")
 	command.Flags().StringVar(&palette, "palette", "graphite-coral", "color palette: "+strings.Join(hugo.PaletteNames(), ", "))
+	command.Flags().StringArrayVar(&headerLinks, "header-link", nil, "repeatable LABEL=URL link (https or root-relative, at most four) for the top bar and home page")
 	command.MarkFlagRequired("out")
 	build.AddCommand(command)
 	build.AddCommand(naviCommand(out, errout, status))
 	build.RunE = func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a renderer is required") }
 	return build
+}
+
+// parseHeaderLinks splits LABEL=URL at the first "="; a value without "=" keeps an
+// empty URL so the renderer reports it as an invalid header link.
+func parseHeaderLinks(values []string) []hugo.HeaderLink {
+	var links []hugo.HeaderLink
+	for _, v := range values {
+		label, url, _ := strings.Cut(v, "=")
+		links = append(links, hugo.HeaderLink{Label: label, URL: url})
+	}
+	return links
 }
 func runHugo(args []string, destination string, options hugo.Options, out, errout io.Writer) int {
 	project, count, report, status := renderSelection(args, options, errout)

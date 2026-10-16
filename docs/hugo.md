@@ -256,6 +256,14 @@ text is HTML-escaped. The compact layouts (`classic-compact`, `reference-cards`)
 add only the card count to their index rows. The cards need no JavaScript, request
 nothing remote and do not alter print output.
 
+## Header links
+
+`smill build hugo --header-link 'LABEL=URL'` (repeatable, at most four) adds
+validated text links to the top bar of every page and to the home page
+introduction, for instance to link a manual to its example library. Only `https://`
+and root-relative URLs are accepted; see the [CLI reference](cli.md) for the exact
+rules. The links are static and hidden in print.
+
 ## Color palettes
 
 Palette, layout and light/dark appearance are independent:

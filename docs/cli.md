@@ -10,8 +10,17 @@ category: reference
 | `smill inspect <file>` | Validate one file and print canonical JSON |
 | `smill import reference <file> [options]` | [Controlled conversion](imports.md), dry-run and loss reports |
 | `smill serve [file-or-directory] [--open] [--port 0..65535] [--hugo /absolute/path]` | Authenticated read-only local live preview through installed Hugo 0.167.0 |
-| `smill build hugo <file-or-directory>... --out <new-project> [--title <name>] [--description <text>] [--base-path </path/>] [--site-url <https-site-url>] [--edit-base-url <GitHub-edit-directory>] [--source-base-url <GitHub-blob-directory>] [--theme editorial\|classic-compact\|reference-cards] [--palette <name>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
+| `smill build hugo <file-or-directory>... --out <new-project> [--title <name>] [--description <text>] [--base-path </path/>] [--site-url <https-site-url>] [--edit-base-url <GitHub-edit-directory>] [--source-base-url <GitHub-blob-directory>] [--theme editorial\|classic-compact\|reference-cards] [--palette <name>] [--header-link <label>=<url>]...` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
 | `smill build navi <file-or-directory>... --out <new-dir> [--shell bash\|zsh\|fish\|nu] [--root <dir>] [--strict]` | Export `{.navi #id}` cards as [navi `.cheat` files with `.navi.json` metadata companions](format/navi-profile.md); never runs navi or any command |
+
+`--header-link` is repeatable (at most four) and adds a text link to the top bar and
+the home page introduction, for example `--header-link 'Example library=/sheetmill/demo/'`.
+The label is 1 to 40 printable characters without surrounding whitespace; the value after
+the first `=` must be an `https://` URL without credentials or a root-relative path
+starting with a single `/`. Other schemes (`javascript:`, `data:`, `http:`), `//host`
+URLs, spaces, quotes, angle brackets, backslashes, control and non-ASCII characters
+fail with `REN003` and exit 1 before anything is written. Root-relative values are
+used as written and are not prefixed with `--base-path`.
 
 A release build stamps the version with the linker, for example
 `go build -trimpath -ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=v0.1.0" ./cmd/smill`;
