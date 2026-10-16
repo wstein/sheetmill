@@ -244,6 +244,18 @@ other disclosure preferences persist per site base path. At narrow widths the
 library moves above the content and remains collapsible. Existing section jump
 links remain in the content; the sidebar does not enumerate individual cards.
 
+## Home page shelf cards
+
+Each library card on the editorial home page shows facts the sheet already
+declares, as plain text: the number of reference cards (`3 cards`, `1 card`;
+omitted for a sheet without cards), `Tool: NAME` from `cheatsheet.tool` when set,
+the description, up to three tag pills and the license. Pills are the first three
+distinct `tags` in source order, so authors choose which tags lead; the sheet page
+and tag pages still list every tag. Nothing is computed from other sheets, and all
+text is HTML-escaped. The compact layouts (`classic-compact`, `reference-cards`)
+add only the card count to their index rows. The cards need no JavaScript, request
+nothing remote and do not alter print output.
+
 ## Color palettes
 
 Palette, layout and light/dark appearance are independent:

@@ -120,6 +120,32 @@ func sheetMetadata(m map[string]any) (description, category, license string, tag
 	return description, category, license, tags
 }
 
+// maxShelfTags bounds the tag pills on one home page card.
+const maxShelfTags = 3
+
+// shelfTags returns up to maxShelfTags distinct tags in source order.
+func shelfTags(tags []string) []string {
+	var out []string
+	for _, tag := range tags {
+		if len(out) == maxShelfTags {
+			break
+		}
+		if !slices.Contains(out, tag) {
+			out = append(out, tag)
+		}
+	}
+	return out
+}
+
+// documentedTool reads the validated cheatsheet.tool field.
+func documentedTool(m map[string]any) string {
+	if cs, ok := m["cheatsheet"].(map[string]any); ok {
+		tool, _ := cs["tool"].(string)
+		return tool
+	}
+	return ""
+}
+
 type page struct {
 	Title       string   `json:"title"`
 	URL         string   `json:"url"`
@@ -128,10 +154,15 @@ type page struct {
 	Tags        []string `json:"tags,omitempty"`
 	TagLinks    []link   `json:"tag_links,omitempty"`
 	License     string   `json:"license,omitempty"`
-	Body        string   `json:"body"`
-	EditURL     string   `json:"edit_url,omitempty"`
-	Related     []link   `json:"related,omitempty"`
-	nav         validate.NavigationSettings
+	// CardCount, Tool and ShelfTags feed the home page shelf cards. ShelfTags is the
+	// first maxShelfTags distinct tags in source order; Tags keeps the full list.
+	CardCount int      `json:"card_count,omitempty"`
+	Tool      string   `json:"tool,omitempty"`
+	ShelfTags []string `json:"shelf_tags,omitempty"`
+	Body      string   `json:"body"`
+	EditURL   string   `json:"edit_url,omitempty"`
+	Related   []link   `json:"related,omitempty"`
+	nav       validate.NavigationSettings
 }
 
 type link struct {
@@ -326,7 +357,9 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 			}
 			b.WriteString(`</ul></nav>`)
 		}
+		cardCount := 0
 		for _, section := range s.Document.Sections {
+			cardCount += len(section.Cards)
 			fmt.Fprintf(&b, `<section class="sheet-section" id="ref-%s"><h2>%s</h2>`, esc(section.ID), r.heading(section.Heading))
 			r.nodes(&b, section.Content, false)
 			// Cards never span more columns than their section's grid provides.
@@ -374,7 +407,7 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		}
 		p.Warnings = append(p.Warnings, issues(s.SourceName, r.warnings)...)
 		errors = append(errors, issues(s.SourceName, r.errors)...)
-		page := page{Title: title, URL: base + s.ID + "/", Description: description, Category: category, Tags: tags, License: license, Body: b.String(), nav: navigation}
+		page := page{Title: title, URL: base + s.ID + "/", Description: description, Category: category, Tags: tags, License: license, Body: b.String(), nav: navigation, CardCount: cardCount, Tool: documentedTool(s.Document.Metadata), ShelfTags: shelfTags(tags)}
 		if editBase != "" {
 			page.EditURL = editBase + escapePath(paths[s.ID])
 		}
