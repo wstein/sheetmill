@@ -56,8 +56,6 @@ jobs:
           - os: linux
             arch: arm64
           - os: darwin
-            arch: amd64
-          - os: darwin
             arch: arm64
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -67,9 +65,11 @@ jobs:
         with:
           go-version-file: .go-version
           check-latest: false
+          # Own cache would be saved first and displace the core job's cache.
+          cache: false
       - name: Build smill binary (${{ matrix.os }}/${{ matrix.arch }})
         env:
           CGO_ENABLED: '0'
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
-        run: go build -trimpath -o /dev/null ./cmd/smill
+        run: go build -trimpath -ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=v0.0.0-ci" -o /dev/null ./cmd/smill
