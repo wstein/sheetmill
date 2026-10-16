@@ -146,7 +146,7 @@ func TestFreshnessNonStringAdvisesQuoting(t *testing.T) {
 	for _, key := range []string{"updated", "tool_version"} {
 		for _, v := range []any{3.81, 3.10, int64(3), true, nil} {
 			_, ds := Freshness(map[string]any{"cheatsheet": map[string]any{key: v}}, nil)
-			if len(ds) != 1 || !strings.Contains(ds[0].Message, "must be a quoted YAML string") || !strings.Contains(ds[0].Message, "cheatsheet."+key) {
+			if len(ds) != 1 || !strings.Contains(ds[0].Message, "must be a quoted YAML string") || !strings.Contains(ds[0].Message, "cheatsheet."+key) || !strings.Contains(ds[0].Message, map[string]string{"updated": `e.g. "2026-10-14"`, "tool_version": `e.g. "3.81"`}[key]) {
 				t.Errorf("%s=%#v: want a quote-it message, got %+v", key, v, ds)
 			}
 		}
