@@ -105,3 +105,33 @@ the plan structure, `[P]` dropped from T010 (it follows T009), and the authoriza
 assumption marked as not yet recorded in the repo.
 
 Final independent review (both specs READY), finding 8 (low): the contract placed `.library-fresh` "after the `Tool:` line" although no demo sheet sets `cheatsheet.tool` and FR-013 forbids adding it. Resolved: the contract states the template position (after the optional `.library-tool`, before `.library-description`, same with or without tool) and T009(a) pins it.
+
+## Implementation baseline (T002)
+
+Implementation worktree base `f9cefd3` (branch `codex/017-freshness-impl`, on
+`codex/review-fixes-40-44`). `git diff 05eba4d HEAD -- internal/render/hugo/theme` is
+empty and so is `git diff 05eba4d 189e872 -- internal/render/hugo/theme`: templates and
+stylesheets equal the named base `05eba4d`; the other differences are tests, docs and
+the workflow. Hugo `v0.167.0-3fff6fb5c267dacb26280c78dbe8c344054249c8`.
+
+Baseline results before any 017 code: `go test ./...`, `make check` and
+`make test-hugo` (with `SHEETMILL_HUGO=/opt/bundledock/toolbox/bin/hugo`) all pass.
+
+SHA-256 of the 31 pre-existing files under `testdata/` (the `sha256sum` lines sorted by
+path, hashed again): `2f4d84e67ad611adceb465491ae5d73bdeedff549bc3244c8ab921a21da633fa`.
+Reproduce with
+`find testdata -type f ! -path 'testdata/hugo/freshness/*' | sort | xargs sha256sum | sha256sum`.
+
+Navi base export of `examples/sheets` (`smill build navi examples/sheets --root
+examples/sheets --out <scratch>`): no demo sheet marks a card for navi, so the build
+exits 1 with `NAV106` for every sheet, writes no `.cheat` or companion file, and the 31
+diagnostic lines (worktree path replaced by `WT`) hash to
+`88cf552195f0edee8a366756429ffeb42625d1685f763ab1f8a843009d83f9c4`. T019 compares that
+output; the byte guard for `.cheat` text is the T015 pair test.
+
+Rendered-page base: `testdata/hugo/freshness/*.md` rendered in the three themes with
+fixed Options, per-page SHA-256 after normalising `assets/(site|classic|cards).<hash>.css`,
+in `testdata/hugo/freshness/base-hashes.json` (written once with
+`go test ./internal/render/hugo -run NoFreshnessBase -update-base` before any template
+change). `TestHugoIntegrationNoFreshnessBase` is a one-time 017 guard: retire it or
+reduce it to a no-freshness-markup assertion after 017 merges.
