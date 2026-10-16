@@ -18,6 +18,10 @@ func TestHeaderLinksRejectHostileValues(t *testing.T) {
 		{"long label", long, "/demo/"},
 		{"newline in label", "De\nmo", "/demo/"},
 		{"nul in label", "De\x00mo", "/demo/"},
+		{"line separator in label", "De\u2028mo", "/demo/"},
+		{"paragraph separator in label", "De\u2029mo", "/demo/"},
+		{"no-break space in label", "De\u00a0mo", "/demo/"},
+		{"ideographic space in label", "De\u3000mo", "/demo/"},
 		{"bidi override in label", "De‮mo", "/demo/"},
 		{"empty url", "Demo", ""},
 		{"javascript", "Demo", "javascript:alert(1)"},
@@ -48,8 +52,19 @@ func TestHeaderLinksRejectHostileValues(t *testing.T) {
 			}
 		})
 	}
-	if _, ds := Render([]Sheet{sheet(t, "a", "## S\n### C\nText.\n")}, Options{HeaderLinks: make([]HeaderLink, 5)}); len(ds) == 0 {
-		t.Error("more than four links accepted")
+	var valid []HeaderLink
+	for _, label := range []string{"One", "Two", "Three", "Four", "Five"} {
+		valid = append(valid, HeaderLink{label, "/" + strings.ToLower(label) + "/"})
+	}
+	if _, ds := Render([]Sheet{sheet(t, "a", "## S\n### C\nText.\n")}, Options{HeaderLinks: valid[:4]}); len(ds) > 0 {
+		t.Errorf("four valid links rejected: %v", ds)
+	}
+	if _, ds := Render([]Sheet{sheet(t, "a", "## S\n### C\nText.\n")}, Options{HeaderLinks: valid}); len(ds) == 0 || ds[0].Code != "REN003" || !strings.Contains(ds[0].Message, "at most 4") {
+		t.Errorf("five valid links accepted: %v", ds)
+	}
+	_, ds := Render([]Sheet{sheet(t, "a", "## S\n### C\nText.\n")}, Options{HeaderLinks: []HeaderLink{{"Demo", "/a/"}, {"Demo", "/b/"}}})
+	if len(ds) == 0 || ds[0].Code != "REN003" || !strings.Contains(ds[0].Message, "duplicate") {
+		t.Errorf("duplicate label accepted: %v", ds)
 	}
 }
 
