@@ -5,13 +5,17 @@ category: reference
 ---
 | Command | Behavior |
 | --- | --- |
-| `smill version` | Print `smill dev` and LF |
+| `smill version` | Print `smill <version>` and LF; `dev` unless a build stamped it |
 | `smill check <file-or-directory>... [--strict [--source-base-url <GitHub-blob-directory>]]` | Validate selected Markdown; no success output. `--strict` also renders the selection in memory and fails on renderer warnings such as unresolved links (`REN103`) |
 | `smill inspect <file>` | Validate one file and print canonical JSON |
 | `smill import reference <file> [options]` | [Controlled conversion](imports.md), dry-run and loss reports |
 | `smill serve [file-or-directory] [--open] [--port 0..65535] [--hugo /absolute/path]` | Authenticated read-only local live preview through installed Hugo 0.167.0 |
 | `smill build hugo <file-or-directory>... --out <new-project> [--title <name>] [--description <text>] [--base-path </path/>] [--site-url <https-site-url>] [--edit-base-url <GitHub-edit-directory>] [--source-base-url <GitHub-blob-directory>] [--theme editorial\|classic-compact\|reference-cards] [--palette <name>]` | Export a self-contained [Hugo project](hugo.md); never launches Hugo |
 | `smill build navi <file-or-directory>... --out <new-dir> [--shell bash\|zsh\|fish\|nu] [--root <dir>] [--strict]` | Export `{.navi #id}` cards as [navi `.cheat` files with `.navi.json` metadata companions](format/navi-profile.md); never runs navi or any command |
+
+A release build stamps the version with the linker, for example
+`go build -trimpath -ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=v0.1.0" ./cmd/smill`;
+the repository provides no build target, and distribution builds need separate approval.
 
 Cobra v1.10.2 parses commands and flags. `--help` works at every command level;
 top-level help (`smill --help`, `smill help`) ends with a notice pointing AI agents
