@@ -82,19 +82,27 @@ links. See [verified corpus identities](e2e-corpus.md).
 
 ## GitHub Pages
 
-Authorized on 2026-10-13 and extended on 2026-10-14 (AGENTS.md, specs/012).
+Authorized on 2026-10-13 and extended on 2026-10-14 and 2026-10-16 (AGENTS.md, specs/012, specs/018).
 `.github/workflows/pages.yml` runs on pushes to `main` and manual dispatch. It
 repeats the core checks, then builds with the pinned Hugo:
 
 - the manual from the pages listed in `docs/manual-pages.txt`, at
   <https://wstein.github.io/sheetmill/>, with `--source-base-url` and
   `--edit-base-url` pointing at `docs/` on GitHub;
-- the independently authored `examples/sheets` demo at
-  <https://wstein.github.io/sheetmill/demo/>;
+- the independently authored `examples/sheets` demo, built three times from the
+  same sources, one static site per layout, with ordinary header links between
+  them and no script or cookie:
+  - editorial (default): <https://wstein.github.io/sheetmill/demo/>;
+  - `--theme classic-compact`: <https://wstein.github.io/sheetmill/demo-compact/>;
+  - `--theme reference-cards`: <https://wstein.github.io/sheetmill/demo-cards/>;
 - `llms.txt` and `agent-guide.md` as plain files at the site root.
 
+A separate step, `.github/scripts/verify-pages.sh`, checks the assembled tree
+before upload (base paths, canonical URLs, layout markers, equal page sets, header
+links) and fails the job on any violation, so the previous deployment stays live.
 It deploys through the `github-pages` environment, which accepts `main` only.
-A test builds the manual pages and fails on any warning. Other sheets need the
+The new layout paths go live only when a human-approved merge to `main` runs the
+workflow. A test builds the manual pages and fails on any warning. Other sheets need the
 012 redistribution gate first.
 
 ## Search engines and sharing
@@ -106,6 +114,17 @@ also get a canonical link, `og:url` and `og:image` (the brand social preview), a
 the export adds `sitemap.xml` with the home page and every sheet; it has no dates,
 so output stays deterministic. No `robots.txt` is generated: crawlers only read it
 at a host root, which a project site under a path does not control.
+
+Each layout of the Pages demo is canonical for itself: its `--site-url` is its own
+URL, so its canonical link, `og:url`, `og:image` and `sitemap.xml` name
+`/sheetmill/demo/`, `/sheetmill/demo-compact/` or `/sheetmill/demo-cards/`. The
+layouts differ in markup and navigation, carry no `noindex`, and search engines may
+still cluster them as near-duplicates; that is accepted for a demo. Only the
+manual's `sitemap.xml` and each demo's own sitemap exist; there is no sitemap index,
+so the variant sitemaps are not advertised and discovery is through the header
+links. Known limitations: below 640px the classic layouts hide the top-bar links,
+so the layout switch is on the home page only; no page names its own layout beyond
+the title suffix.
 
 ## Sheets in several directories
 

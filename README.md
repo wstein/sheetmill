@@ -17,7 +17,9 @@ navi `.cheat` files (text only; navi is never run). PDF output
 remains planned for a later milestone.
 Read the [SheetMill manual](https://wstein.github.io/sheetmill/), itself built
 with SheetMill from `docs/`, and try the [live demo library](https://wstein.github.io/sheetmill/demo/),
-generated from the independently authored example sheets.
+generated from the independently authored example sheets, also in the
+[compact](https://wstein.github.io/sheetmill/demo-compact/) and
+[cards](https://wstein.github.io/sheetmill/demo-cards/) layouts.
 Nothing in a source sheet is executed.
 
 The CLI executable is `smill`. Go **1.27.2** is the pinned development toolchain.

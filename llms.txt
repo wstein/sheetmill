@@ -56,3 +56,5 @@ for renderer issues. Report the exact command, input, stderr and exit status. Se
 - [Repository](https://github.com/wstein/sheetmill): issues and pull requests
 - [Manual](https://wstein.github.io/sheetmill/): these docs built with SheetMill and deployed from `main`
 - [Live demo](https://wstein.github.io/sheetmill/demo/): the example sheets built and deployed from `main`
+- [Live demo, compact layout](https://wstein.github.io/sheetmill/demo-compact/): the same sheets with `--theme classic-compact`
+- [Live demo, cards layout](https://wstein.github.io/sheetmill/demo-cards/): the same sheets with `--theme reference-cards`

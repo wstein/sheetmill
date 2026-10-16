@@ -16,7 +16,9 @@ frontmatter into a semantic JSON representation and a self-contained Hugo websit
 The CLI is `smill`. Nothing in a sheet is ever executed or fetched: code blocks are
 displayed text, raw HTML is shown inertly, and images stay unfetched links.
 Typst/PDF output is planned, not implemented; navi export is `smill build navi`. Manual:
-<https://wstein.github.io/sheetmill/>; demo: <https://wstein.github.io/sheetmill/demo/>.
+<https://wstein.github.io/sheetmill/>; demo: <https://wstein.github.io/sheetmill/demo/> (also in the compact layout at
+<https://wstein.github.io/sheetmill/demo-compact/> and the cards layout at
+<https://wstein.github.io/sheetmill/demo-cards/>).
 
 ## Setting up
 
