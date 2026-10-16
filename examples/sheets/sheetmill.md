@@ -1,6 +1,7 @@
 ---
 title: SheetMill essentials
 category: workflow
+description: A short tour of the SheetMill authoring loop, from checking a sheet and structuring it into cards to exporting a local library.
 tags: [sheetmill, markdown, compiler]
 source:
   license: EUPL-1.2

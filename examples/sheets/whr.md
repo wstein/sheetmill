@@ -1,6 +1,7 @@
 ---
 title: WorkHarbor bootstrap
 category: reference
+description: Notes on the WorkHarbor bootstrap repository workflow as pinned, which is a development scaffold with no implemented whr product CLI.
 tags: [workharbor, whr, bootstrap]
 source:
   repository: https://github.com/wstein/workharbor-nxt
