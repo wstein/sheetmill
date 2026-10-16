@@ -312,6 +312,9 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		if _, nav := validate.Navigation(s.Document.Metadata, nil); len(nav) > 0 {
 			return Project{}, issues(s.SourceName, nav)
 		}
+		if _, fresh := validate.Freshness(s.Document.Metadata, nil); len(fresh) > 0 {
+			return Project{}, issues(s.SourceName, fresh)
+		}
 		if path.Base(s.SourceName) != s.SourceName || s.SourceName == "" || s.SourceName == "." || s.SourceName == ".." {
 			return Project{}, issues(s.SourceName, []diagnostic.Diagnostic{{Code: "REN003", Message: "source name must be a basename"}})
 		}
