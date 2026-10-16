@@ -1,7 +1,7 @@
 ---
 title: BundleDock CLI
 category: reference
-description: Discover the bdock CLI, initialize and pin shared tool volumes, and upgrade the source catalog lock, with examples that are only displayed.
+description: Discover the bdock CLI, initialize shared tool volumes, pin a reviewed image, and upgrade the source catalog lock.
 tags: [bundledock, bdock, oci]
 source:
   repository: https://github.com/wstein/bundledock
