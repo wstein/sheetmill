@@ -69,10 +69,10 @@ testdata/reference-compatible/freshness.md(.json), testdata/import/reference/fre
   is set; callers wrap using the same `with` guard so no wrapper leaks. Uses
   `{{ with .tool_version }}` and `{{ with .updated }}`; `datetime` uses the same value.
 - CSS: scoped selectors `.library-item .library-fresh`, `.page-heading .sheet-fresh`,
-  `.sheet-head .sheet-fresh`, `.index-group .index-fresh` (specificity above
-  `.library-item p`), colour `var(--muted)`, 13px, `flex-wrap:wrap`; `.index-fresh`
-  gets `flex-basis:100%` in the non-wrapping classic row; `cards.css` centres
-  `.sheet-fresh`. Separator is a text span, not CSS content. No print rule.
+  `.classic .sheet-fresh`, `.classic .index-fresh` (above `.library-item p`),
+  colour `var(--muted)`, 13px; `.classic .index-group li{flex-wrap:wrap}` with
+  `.classic .index-fresh{flex-basis:100%}`; `cards.css` resets the basis to auto and
+  centres `.reference-cards .sheet-fresh`. Separator is a text span, not CSS content. No print rule.
   `TestPerformanceBudget` (site.css+app.js ~30.9 of 32 KiB) guards size.
 - Importer: build a single `cheatsheet` archival map before `validate.Metadata`.
 - Template tests that need built pages use real Hugo and are SKIPPED without

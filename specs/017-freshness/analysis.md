@@ -45,9 +45,21 @@ asset names, demo dates and versions.
 | 11 | low | Task order and dependencies | T010a before T010; T016 needs T005 |
 | 12 | low | Baseline hashes only json | Hash all of `testdata/` plus navi export |
 | 13 | low | agent-guide/llms.txt | Added to FR-012, T018 |
-| 14 | low | Fuzz seeds | In T005 |
+| 14 | low | Fuzz seeds | In T005 (`f.Add` seeds) |
 | 15 | low | Performance budget | Noted in plan and T010 |
 | 16 | low | Blank-looking fillers | FR-003 rejects fillers; limitation documented |
 | 17 | low | Direct IR non-mapping cheatsheet | Stated in data model and T006 |
 | 18 | low | Schema test, YAML 1.1 dates | Schema-vs-table test; quote advice |
 | 19 | low | Circular "last updated" wording | Research reworded |
+
+## Round 2 (reviewed revision e0adb0118e9d, Plan/opus, read-only)
+
+Verdict: NOT READY (1 high, 2 medium, 7 low). Round-1 resolutions otherwise confirmed.
+
+| # | Sev | Finding | Resolution |
+| --- | --- | --- | --- |
+| 1 | high | Classic `flex-basis:100%` ineffective without wrapping; cards column | `.classic .index-group li{flex-wrap:wrap}`, cards reset; desktop layout marked unverified |
+| 2 | med | Classic header placement/selector contradictory | Exact insertion point after description; `.classic .sheet-fresh` |
+| 3 | med | Spaces inside aria-hidden span | Spaces outside, `·` hidden |
+| 4 | med | Baseline hash procedure unspecified | Fixture, helper, `-update-base`, recorded Options/Hugo, lifetime |
+| 5-10 | low | Fuzz seeds, schema regex dialect, data-model wording, git log revision, test layers, clock pairing | Applied in tasks, data model, research |
