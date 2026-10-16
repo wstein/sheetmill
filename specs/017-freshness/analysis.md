@@ -103,3 +103,5 @@ uses `unicode.IsPrint`.
 Follow-up from the 018 round-3 consistency check (reviewed bad5011): `cards.css` added to
 the plan structure, `[P]` dropped from T010 (it follows T009), and the authorization
 assumption marked as not yet recorded in the repo.
+
+Final independent review (both specs READY), finding 8 (low): the contract placed `.library-fresh` "after the `Tool:` line" although no demo sheet sets `cheatsheet.tool` and FR-013 forbids adding it. Resolved: the contract states the template position (after the optional `.library-tool`, before `.library-description`, same with or without tool) and T009(a) pins it.

@@ -35,7 +35,7 @@ Text is always escaped; the date is the only machine-readable element.
 
 | Place | Markup when a field is present |
 | --- | --- |
-| Editorial home card | `<p class="library-fresh"><span>Version V</span> <span aria-hidden="true">·</span> <span>Updated <time datetime="D">D</time></span></p>` after the `Tool:` line (separator only between two present facts) |
+| Editorial home card | `<p class="library-fresh"><span>Version V</span> <span aria-hidden="true">·</span> <span>Updated <time datetime="D">D</time></span></p>` after the optional `.library-tool` and before `.library-description`, the same place whether or not `tool` is set (no demo sheet has `cheatsheet.tool` and FR-013 forbids adding it) (separator only between two present facts) |
 | Compact/cards index row | `<span class="index-fresh">` with the same two spans as the **last child** of the row, after `.index-desc`, `.index-count` and `.index-license` (the template order; all 15 demo sheets carry a license, so placing it earlier would strand the license after a full-width line) |
 | Sheet header, editorial | `<p class="sheet-fresh">` after the description, before tag chips |
 | Sheet header, classic-compact and reference-cards | same `<p class="sheet-fresh">` placed directly after `</div>` of `.sheet-head` and after the optional `<p class="sheet-description">` (the description sits outside `.sheet-head`); with no description it follows `.sheet-head` directly |
