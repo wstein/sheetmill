@@ -15,10 +15,11 @@ const (
 	maxHeaderURLBytes   = 2048
 )
 
-// validateHeaderLinks accepts at most four links whose labels are short, trimmed,
-// printable text and whose URLs are either root-relative paths or https URLs
-// without credentials. Nothing else (javascript:, data:, http:, protocol-relative
-// URLs, whitespace, control or non-ASCII characters) is allowed.
+// validateHeaderLinks accepts at most four links with unique labels. A label is
+// short, trimmed text of printable characters (Unicode letters are fine; controls,
+// invisible, private-use, unassigned and non-ASCII space characters are not). A URL
+// is a root-relative path or an https URL without credentials, in printable ASCII
+// only; javascript:, data:, http: and protocol-relative URLs are rejected.
 func validateHeaderLinks(links []HeaderLink) error {
 	if len(links) > maxHeaderLinks {
 		return fmt.Errorf("invalid header link: at most %d links are allowed", maxHeaderLinks)
@@ -44,8 +45,8 @@ func validateHeaderLink(l HeaderLink) error {
 		return fmt.Errorf("the label is longer than %d characters", maxHeaderLabelRunes)
 	}
 	for _, r := range l.Label {
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) || r == utf8.RuneError || (unicode.IsSpace(r) && r != ' ') || unicode.In(r, unicode.Zl, unicode.Zp, unicode.Zs) && r != ' ' {
-			return fmt.Errorf("the label contains a control, invisible or non-ASCII-space character")
+		if !unicode.IsPrint(r) || r == utf8.RuneError {
+			return fmt.Errorf("the label contains a control, invisible, private-use, unassigned or non-ASCII-space character")
 		}
 	}
 	if l.URL == "" || len(l.URL) > maxHeaderURLBytes {
