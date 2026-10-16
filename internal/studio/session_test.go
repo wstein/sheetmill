@@ -176,3 +176,33 @@ func TestListenerFailureIsFatalAndCleansOwnedState(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+
+// The preview renders through the same Hugo templates, so it shows the sheet
+// freshness facts (spec 017) and rejects malformed values like the CLI.
+func TestPreviewShowsSheetFreshness(t *testing.T) {
+	tool := os.Getenv("SHEETMILL_HUGO")
+	if tool == "" {
+		t.Skip("SKIPPED, NOT PASSED: set SHEETMILL_HUGO to an installed pinned Hugo to render the preview")
+	}
+	path := fixture(t, "one.md", "---\ntitle: One\ncheatsheet:\n  tool_version: \"2.56.0\"\n  updated: 2026-10-14\n---\n## S\n### C\nhello\n")
+	s, e := Start(context.Background(), Options{Input: path, Hugo: tool})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	page := string(s.files["one/index.html"])
+	for _, want := range []string{`<p class="sheet-fresh"><span>Version 2.56.0</span>`, `<time datetime="2026-10-14">2026-10-14</time>`} {
+		if !strings.Contains(page, want) {
+			t.Errorf("preview lacks %s", want)
+		}
+	}
+	bad := fixture(t, "two.md", "---\ntitle: Two\ncheatsheet:\n  updated: 2026-02-30\n---\n## S\n### C\nhello\n")
+	b, e := Start(context.Background(), Options{Input: bad, Hugo: tool})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer b.Close()
+	if st := b.State().Sheets[0]; st.Status != "invalid" {
+		t.Fatalf("malformed freshness must be diagnosed in the preview: %+v", st)
+	}
+}
