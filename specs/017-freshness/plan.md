@@ -1,6 +1,6 @@
 # Implementation Plan: Sheet freshness
 
-**Branch**: `codex/017-freshness` | **Date**: 2026-10-16 | **Spec**: [spec.md](spec.md)
+**Branch**: `codex/017-freshness` (spec), `codex/017-freshness-impl` (implementation) | **Date**: 2026-10-16 | **Spec**: [spec.md](spec.md)
 
 ## Summary
 
@@ -72,7 +72,7 @@ testdata/reference-compatible/freshness.md(.json), testdata/import/reference/fre
   `.classic .sheet-fresh`, `.classic .index-fresh` (above `.library-item p`; the
   `index-fresh` span is the last child of the row, after `.index-license`, which
   `home.html` emits as `a, .index-desc, .index-count, .index-license`),
-  colour `var(--muted)`, 13px; `.classic .index-group li{flex-wrap:wrap}` with
+  colour `var(--muted)`, 13px; `.classic .index-group li:has(.index-fresh){flex-wrap:wrap}` with
   `.classic .index-fresh{flex-basis:100%}`; `cards.css` resets the basis to auto and
   centres `.reference-cards .sheet-fresh`. Separator is a text span, not CSS content. No print rule.
   `TestPerformanceBudget` (site.css+app.js ~30.9 of 32 KiB) guards size.
