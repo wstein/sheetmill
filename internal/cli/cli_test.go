@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -286,10 +287,20 @@ func TestLinkerFlagStampsTheVersion(t *testing.T) {
 	if err != nil {
 		t.Skip("go tool not available")
 	}
-	binary := filepath.Join(t.TempDir(), "smill")
+	name := "smill"
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+	binary := filepath.Join(t.TempDir(), name)
 	build := exec.Command(goTool, "build", "-trimpath", "-o", binary,
 		"-ldflags", "-X github.com/wstein/sheetmill/internal/cli.Version=v0.1.0", "../../cmd/smill")
-	build.Env = append(os.Environ(), "CGO_ENABLED=0")
+	// The caller's GOFLAGS could add its own -ldflags and change the stamp under test.
+	for _, entry := range os.Environ() {
+		if !strings.HasPrefix(entry, "GOFLAGS=") {
+			build.Env = append(build.Env, entry)
+		}
+	}
+	build.Env = append(build.Env, "CGO_ENABLED=0")
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build failed: %v\n%s", err, output)
 	}
