@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: EUPL-1.2
-# Authorized 2026-10-13 (AGENTS.md, specs/012): publish only the independently
-# authored examples/sheets to https://wstein.github.io/sheetmill/.
+# Authorized 2026-10-13 (AGENTS.md, specs/012): publish the manual built from docs/
+# at https://wstein.github.io/sheetmill/ and the independently authored
+# examples/sheets demo library. The demo is published three times, one static site
+# per layout, at /sheetmill/demo/ (editorial), /sheetmill/demo-compact/ and
+# /sheetmill/demo-cards/ (paths confirmed by the user on 2026-10-16, specs/018).
 name: pages
 on:
   push:
@@ -38,22 +41,32 @@ jobs:
           curl --fail --location --retry 3 --output "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_0.167.0_linux-amd64.tar.gz
           echo '4d84519b9f619e6d4c3fb45a50157abeabeb724f859c60605f44c23def6e1169  '"$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/sheetmill-hugo/hugo.tar.gz" -C "$RUNNER_TEMP/sheetmill-hugo" hugo
-      - name: Export and build the manual and the demo library
+      - name: Export and build the manual and the three demo layouts
         shell: bash
         run: |
           set -euo pipefail
           hugo() { HUGO_CACHEDIR="$RUNNER_TEMP/hugo-cache" "$RUNNER_TEMP/sheetmill-hugo/hugo" --source "$1" --destination "$2" --clock 2000-01-01T00:00:00Z --noBuildLock --quiet; }
           mapfile -t pages < <(grep -v -e '^#' -e '^$' docs/manual-pages.txt)
           go run ./cmd/smill build hugo "${pages[@]}" --out "$RUNNER_TEMP/manual" --header-link 'Example library=/sheetmill/demo/' --title 'SheetMill Manual' --description 'How to write, check and publish reference sheets with SheetMill.' --base-path /sheetmill/ --site-url https://wstein.github.io/sheetmill/ --source-base-url https://github.com/wstein/sheetmill/blob/main/docs/ --edit-base-url https://github.com/wstein/sheetmill/edit/main/docs/
-          go run ./cmd/smill build hugo examples/sheets --out "$RUNNER_TEMP/demo" --title 'SheetMill Demo' --description 'Example reference sheets, independently authored and compiled with SheetMill.' --base-path /sheetmill/demo/ --site-url https://wstein.github.io/sheetmill/demo/ --edit-base-url https://github.com/wstein/sheetmill/edit/main/examples/sheets/
+          demo_description='Example reference sheets, independently authored and compiled with SheetMill.'
+          demo_edit=https://github.com/wstein/sheetmill/edit/main/examples/sheets/
+          go run ./cmd/smill build hugo examples/sheets --out "$RUNNER_TEMP/demo" --title 'SheetMill Demo' --description "$demo_description" --base-path /sheetmill/demo/ --site-url https://wstein.github.io/sheetmill/demo/ --edit-base-url "$demo_edit" --header-link 'Compact layout=/sheetmill/demo-compact/' --header-link 'Cards layout=/sheetmill/demo-cards/'
+          go run ./cmd/smill build hugo examples/sheets --out "$RUNNER_TEMP/demo-compact" --theme classic-compact --title 'SheetMill Demo (compact layout)' --description "$demo_description" --base-path /sheetmill/demo-compact/ --site-url https://wstein.github.io/sheetmill/demo-compact/ --edit-base-url "$demo_edit" --header-link 'Editorial layout=/sheetmill/demo/' --header-link 'Cards layout=/sheetmill/demo-cards/'
+          go run ./cmd/smill build hugo examples/sheets --out "$RUNNER_TEMP/demo-cards" --theme reference-cards --title 'SheetMill Demo (cards layout)' --description "$demo_description" --base-path /sheetmill/demo-cards/ --site-url https://wstein.github.io/sheetmill/demo-cards/ --edit-base-url "$demo_edit" --header-link 'Editorial layout=/sheetmill/demo/' --header-link 'Compact layout=/sheetmill/demo-compact/'
           hugo "$RUNNER_TEMP/manual" "$RUNNER_TEMP/public"
-          # The demo is mounted below the manual; refuse to merge over a manual page.
+          # The demos are mounted below the manual; refuse to merge over a manual page.
           test ! -e "$RUNNER_TEMP/public/demo"
           hugo "$RUNNER_TEMP/demo" "$RUNNER_TEMP/public/demo"
+          test ! -e "$RUNNER_TEMP/public/demo-compact"
+          hugo "$RUNNER_TEMP/demo-compact" "$RUNNER_TEMP/public/demo-compact"
+          test ! -e "$RUNNER_TEMP/public/demo-cards"
+          hugo "$RUNNER_TEMP/demo-cards" "$RUNNER_TEMP/public/demo-cards"
           # Plain-text resources for AI agents, linked from smill --help.
           test ! -e "$RUNNER_TEMP/public/llms.txt" && test ! -e "$RUNNER_TEMP/public/agent-guide.md"
           cp llms.txt "$RUNNER_TEMP/public/llms.txt"
           cp docs/agent-guide.md "$RUNNER_TEMP/public/agent-guide.md"
+      - name: Verify the Pages tree
+        run: sh .github/scripts/verify-pages.sh "$RUNNER_TEMP/public"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: ${{ runner.temp }}/public
