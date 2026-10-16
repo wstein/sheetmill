@@ -98,3 +98,12 @@ The same review confirmed 017 is consistent after round 3 apart from 10-12.
 | 5 | low | T006 lacks a Hugo invocation helper | Own helper in `internal/pagesworkflow` mirroring the workflow flags and `HUGO_CACHEDIR` |
 | 6 | low | Round 3 rows 10-12 point at nothing; confirmation not logged | Pointer to ../017-freshness/analysis.md; confirmation entry added |
 | 7 | low | Script lacks SPDX header | T003 requires `# SPDX-License-Identifier: EUPL-1.2` |
+
+## Implementation checks (T008, 2026-10-16, Hugo 0.167.0 arm64)
+
+Run locally on the topic branch: `gofmt -l`, `go vet ./...`, `go test ./...`,
+`make check`, and `make test-hugo` with `SHEETMILL_HUGO=/opt/bundledock/toolbox/bin/hugo`
+(includes the real manual-plus-three-demos tree, the verifier on it and a byte-identical
+rebuild). Not run: the browser E2E suite (Node is not installed), `go test -race`, any
+workflow, deployment or merge. FR-10 sizes were not re-measured. The verifier takes about
+1.5 s on the real 218-page tree.
