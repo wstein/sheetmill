@@ -88,3 +88,6 @@ kbd{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.85em}k
 /* Authored tag labels can be long, unbroken text in every layout. */
 .page-heading,.sheet-head h1,.tag-results,.sheet-tags{min-width:0;overflow-wrap:anywhere}
 .sheet-tags li{min-width:0;max-width:100%}
+/* Optional header links (--header-link): text links, underlined so colour is not the only cue. */
+.header-links{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px}.hero-links{display:flex;flex-wrap:wrap;gap:6px 20px;margin:18px 0 0;font-size:15px}.header-links a,.hero-links a{font-weight:600}
+@media print{.header-links,.hero-links{display:none}}

@@ -64,7 +64,13 @@ type Options struct {
 	Theme string
 	// Palette selects a color palette independently of the layout; empty uses graphite-coral.
 	Palette string
+	// HeaderLinks adds up to four validated links to the top bar and the home page
+	// introduction, such as a sibling site. See ValidateHeaderLinks.
+	HeaderLinks []HeaderLink
 }
+
+// HeaderLink is an optional navigation link shown in the top bar and on the home page.
+type HeaderLink struct{ Label, URL string }
 
 // Themes lists the accepted Options.Theme values.
 var Themes = []string{"editorial", "classic-compact", "reference-cards"}
@@ -266,6 +272,9 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 	}
 	if len(sheets) == 0 {
 		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: "select at least one sheet"}})
+	}
+	if err := validateHeaderLinks(options.HeaderLinks); err != nil {
+		return Project{}, issues("", []diagnostic.Diagnostic{{Code: "REN003", Message: err.Error()}})
 	}
 	editBase, err := githubBase(options.EditBaseURL, "edit")
 	if err != nil {
@@ -477,6 +486,9 @@ func Render(sheets []Sheet, options Options) (Project, []Issue) {
 		title = "SheetMill References"
 	}
 	params := map[string]any{"base": base, "description": options.Description, "palette": paletteName}
+	if len(options.HeaderLinks) > 0 {
+		params["headerlinks"] = headerLinkParams(options.HeaderLinks)
+	}
 	if classic {
 		params["classic"] = true
 	}
