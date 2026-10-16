@@ -101,3 +101,23 @@ func TestReferenceWithoutFreshnessEmitsNoIMP112(t *testing.T) {
 		}
 	}
 }
+
+// When updated/tool_version were the only cheatsheet keys, archiving them must not
+// leave an empty "cheatsheet: {}" behind as active metadata.
+func TestEmptiedCheatsheetMappingIsRemoved(t *testing.T) {
+	r, ds := Convert([]byte("---\ntitle: X\ncheatsheet:\n  updated: 2026-10-14\n  tool_version: \"1.0\"\n---\n## S\n### C\nText.\n"), provenance())
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	d, pds := markdown.Parse(r.Markdown)
+	if len(pds) > 0 {
+		t.Fatal(pds)
+	}
+	if v, ok := d.Metadata["cheatsheet"]; ok {
+		t.Fatalf("emptied cheatsheet mapping must be removed, got %#v", v)
+	}
+	original := d.Metadata["source"].(map[string]any)["original_metadata"].(map[string]any)
+	if original["cheatsheet"].(map[string]any)["updated"] == nil {
+		t.Fatalf("the archive must keep the values: %#v", original)
+	}
+}
