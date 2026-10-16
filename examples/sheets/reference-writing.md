@@ -3,6 +3,8 @@ title: Writing a good reference
 category: authoring
 description: Practical advice for writing a reference that answers a task quickly, with literal code, deliberate links and recorded sources.
 tags: [writing, markdown, reference]
+cheatsheet:
+  updated: "2026-10-16"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors

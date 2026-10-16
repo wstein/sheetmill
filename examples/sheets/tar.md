@@ -3,6 +3,8 @@ title: tar
 description: Create, list and extract tape archives, with or without compression.
 category: files
 tags: [tar, archive, compression, backup]
+cheatsheet:
+  updated: "2026-10-14"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors

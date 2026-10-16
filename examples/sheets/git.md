@@ -3,6 +3,9 @@ title: Git
 description: Everyday Git commands for recording, inspecting, branching, syncing and undoing work.
 category: version-control
 tags: [git, vcs, branches, history]
+cheatsheet:
+  tool_version: "2.56.0"
+  updated: "2026-10-14"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors

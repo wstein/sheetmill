@@ -3,6 +3,8 @@ title: Markdown
 description: GitHub Flavored Markdown as SheetMill accepts it, plus the frontmatter, section, card and attribute rules of SheetMill sheets.
 category: markup
 tags: [markdown, gfm, sheetmill, writing]
+cheatsheet:
+  updated: "2026-10-14"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors

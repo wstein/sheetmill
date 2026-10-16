@@ -3,6 +3,8 @@ title: find
 description: Walk directory trees and select files by name, type, size, age or permissions, then act on them.
 category: search
 tags: [find, files, filesystem, shell]
+cheatsheet:
+  updated: "2026-10-14"
 source:
   license: EUPL-1.2
   attribution: SheetMill contributors

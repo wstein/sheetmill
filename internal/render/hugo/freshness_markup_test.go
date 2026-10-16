@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/wstein/sheetmill/internal/markdown"
 )
 
 const (
@@ -234,6 +236,70 @@ func TestHugoIntegrationFreshnessMarkup(t *testing.T) {
 			evil := readOut(t, out, "evil/index.html")
 			if !strings.Contains(evil, `<p class="sheet-fresh"><span>Version &lt;script&gt;`) {
 				t.Errorf("evil sheet header: %s", evil)
+			}
+		})
+	}
+}
+
+// demoVersions are the documented versions recorded in specs/017-freshness/research.md;
+// tar is deliberately absent (a bare bsdtar number would read as GNU tar's).
+var demoVersions = map[string]string{"curl": "8.7.1", "git": "2.56.0", "jq": "1.8.2", "make": "3.81", "grep": "2.6.0-FreeBSD", "ssh": "10.3p1"}
+
+func TestHugoIntegrationDemoSheetsShowTheirFreshness(t *testing.T) {
+	binary := os.Getenv("SHEETMILL_HUGO")
+	if binary == "" {
+		t.Skip("SKIPPED, NOT PASSED: set SHEETMILL_HUGO to an installed pinned Hugo to render the demo sheets")
+	}
+	files, err := filepath.Glob(filepath.Join("..", "..", "..", "examples", "sheets", "*.md"))
+	if err != nil || len(files) != 15 {
+		t.Fatalf("want the 15 demo sheets, got %d %v", len(files), err)
+	}
+	var sheets []Sheet
+	for _, f := range files {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		d, ds := markdown.Parse(b)
+		if len(ds) > 0 {
+			t.Fatal(f, ds)
+		}
+		name := filepath.Base(f)
+		sheets = append(sheets, Sheet{ID: strings.TrimSuffix(name, ".md"), SourceName: name, Document: d})
+	}
+	date := regexp.MustCompile(`^20[0-9]{2}-[0-9]{2}-[0-9]{2}$`)
+	for _, theme := range []string{"editorial", "classic-compact", "reference-cards"} {
+		t.Run(theme, func(t *testing.T) {
+			p, ds := Render(sheets, Options{Theme: theme})
+			if len(ds) > 0 {
+				t.Fatal(ds)
+			}
+			out := hugoBuild(t, binary, p)
+			home := readOut(t, out, "index.html")
+			for _, s := range sheets {
+				cs, _ := s.Document.Metadata["cheatsheet"].(map[string]any)
+				updated, _ := cs["updated"].(string)
+				version, _ := cs["tool_version"].(string)
+				if !date.MatchString(updated) {
+					t.Errorf("%s: every demo sheet needs a real updated date, got %q", s.ID, updated)
+				}
+				if version != demoVersions[s.ID] {
+					t.Errorf("%s: tool_version %q, research.md records %q", s.ID, version, demoVersions[s.ID])
+				}
+				if _, ok := cs["tool"]; ok {
+					t.Errorf("%s: adding cheatsheet.tool would add a navi tag", s.ID)
+				}
+				page := readOut(t, out, s.ID+"/index.html")
+				want := `Updated <time datetime="` + updated + `">` + updated + `</time>`
+				if !strings.Contains(page, want) || !strings.Contains(home, want) {
+					t.Errorf("%s: missing %s", s.ID, want)
+				}
+				if version != "" && (!strings.Contains(page, "<span>Version "+version+"</span>") || !strings.Contains(home, "<span>Version "+version+"</span>")) {
+					t.Errorf("%s: missing version %s", s.ID, version)
+				}
+				if version == "" && strings.Contains(page, "<span>Version ") {
+					t.Errorf("%s: no version expected", s.ID)
+				}
 			}
 		})
 	}
