@@ -4,6 +4,7 @@ package cli
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -267,5 +268,33 @@ func TestAgentResourcesExist(t *testing.T) {
 		if _, err := os.Stat(filepath.Join("..", "..", filepath.FromSlash(strings.TrimPrefix(u, prefix)))); err != nil {
 			t.Errorf("%s: %v", u, err)
 		}
+	}
+}
+
+func TestVersionCommandPrintsTheStampedVersion(t *testing.T) {
+	original := Version
+	t.Cleanup(func() { Version = original })
+	Version = "v0.1.0"
+	var out, errOut bytes.Buffer
+	if code := Run([]string{"version"}, &out, &errOut); code != 0 || out.String() != "smill v0.1.0\n" || errOut.Len() != 0 {
+		t.Fatalf("code %d, stdout %q, stderr %q", code, out.String(), errOut.String())
+	}
+}
+
+func TestLinkerFlagStampsTheVersion(t *testing.T) {
+	goTool, err := exec.LookPath("go")
+	if err != nil {
+		t.Skip("go tool not available")
+	}
+	binary := filepath.Join(t.TempDir(), "smill")
+	build := exec.Command(goTool, "build", "-trimpath", "-o", binary,
+		"-ldflags", "-X github.com/wstein/sheetmill/internal/cli.Version=v0.1.0", "../../cmd/smill")
+	build.Env = append(os.Environ(), "CGO_ENABLED=0")
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build failed: %v\n%s", err, output)
+	}
+	output, err := exec.Command(binary, "version").Output()
+	if err != nil || string(output) != "smill v0.1.0\n" {
+		t.Fatalf("stamped binary printed %q (%v)", output, err)
 	}
 }

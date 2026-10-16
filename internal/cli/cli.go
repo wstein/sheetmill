@@ -14,7 +14,9 @@ import (
 	"github.com/wstein/sheetmill/internal/markdown"
 )
 
-const Version = "dev"
+// Version is "dev" for an unstamped build. A release build stamps it with
+// -ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=v0.1.0".
+var Version = "dev"
 
 // Agent resources are published as plain files with the manual from main.
 const (
