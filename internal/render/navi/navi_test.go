@@ -704,8 +704,8 @@ func TestSidecarRejectsHostPaths(t *testing.T) {
 func TestSheetFreshnessDoesNotChangeCheatOutput(t *testing.T) {
 	for _, shell := range ProfileNames() {
 		t.Run(shell, func(t *testing.T) {
-			plain := sheet(t, card("bash", "echo <sheet>"))
-			fresh := sheet(t, card("bash", "echo <sheet>"))
+			plain := sheet(t, card(shell, "echo <sheet>"))
+			fresh := sheet(t, card(shell, "echo <sheet>"))
 			cs := fresh.Document.Metadata["cheatsheet"].(map[string]any)
 			cs["updated"] = "2026-10-14"
 			cs["tool_version"] = "2.56.0 <v>"
