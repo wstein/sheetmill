@@ -135,3 +135,35 @@ in `testdata/hugo/freshness/base-hashes.json` (written once with
 `go test ./internal/render/hugo -run NoFreshnessBase -update-base` before any template
 change). `TestHugoIntegrationNoFreshnessBase` is a one-time 017 guard: retire it or
 reduce it to a no-freshness-markup assertion after 017 merges.
+
+## Implementation verification (T020)
+
+Run in the implementation worktree (`SHEETMILL_HUGO=/opt/bundledock/toolbox/bin/hugo`,
+Hugo v0.167.0): `gofmt -l cmd internal assets` (clean), `go vet ./...`,
+`go test ./... -count=1`, `make check`, `make test-hugo`, `make test-studio` (race),
+`make fuzz` (three 5 s targets, with the new freshness seeds) and `git diff --check`
+all pass. The pre-existing 31 `testdata/` files are byte-identical to the T002 hashes,
+and the `smill build navi` diagnostics for `examples/sheets` equal the T002 base.
+One run of `TestInPlaceWritesNeverAcceptMixedSnapshot` (Studio, existing test, unrelated
+to freshness) failed once while the whole suite ran in parallel and passed in three
+repeated runs and in every later full run; recorded as a possible pre-existing flake.
+
+Not run: browser E2E and the 320px wrap check (Node and a browser are not installed);
+no distribution build, release, tag, deployment, PDF or workflow run.
+
+Implementation notes and deviations from the written plan:
+
+- The shared accept/reject tables live in `internal/validate/freshcases` (a normal
+  package imported only by tests), because Go test files cannot be imported across
+  packages.
+- The partial `freshness.html` emits only the inner spans; the caller owns the wrapper
+  (`p.library-fresh`, `span.index-fresh`, `p.sheet-fresh`) behind the same
+  `or .tool_version .updated` guard, because html/template cannot vary a tag name.
+- The demo sheets mark no card for navi, so the base navi export writes no `.cheat`
+  files (NAV106); the byte guard for `.cheat` text is the four-profile pair test.
+- The schema checks `updated` with a pattern that is looser than SheetMill for calendar
+  validity (documented in its `$comment`); `tool_version` is fully expressible with an
+  `allOf` pattern. Invalid UTF-8 cannot appear in a JSON schema document and is covered
+  by the Go tables only.
+- Diagnostics docs (`VAL004`, `IMP112`) were added in the commits that introduced the
+  codes because `TestDiagnosticsCatalogueIsComplete` requires them.

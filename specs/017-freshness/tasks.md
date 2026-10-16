@@ -2,7 +2,7 @@
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md),
 [data-model.md](data-model.md), [contract](contracts/freshness.md).
-**State**: Specification set; implementation starts after the review is READY.
+**State**: Implemented (T001-T020 done); T021 hand-over pending the draft PR and independent review.
 Write each behavioral test first and observe the expected failure before the code.
 Commands use `SHEETMILL_HUGO=/opt/bundledock/toolbox/bin/hugo`. No distribution
 build, PDF, release, deployment or sibling edit.
@@ -43,7 +43,7 @@ build, PDF, release, deployment or sibling edit.
 
 ## Phase 6: Verification and handoff
 
-- [ ] T020 Run `gofmt -l`, `go vet ./...`, `go test ./...`, `make check`, `make test-hugo` and `make test-studio` (both with `SHEETMILL_HUGO`; Studio renders through the same templates), `make fuzz` if bounded, and `git diff --check`; report what ran and what did not (browser E2E and the 320px check need Node/a browser and are not run). (SC-001..006)
+- [x] T020 Run `gofmt -l`, `go vet ./...`, `go test ./...`, `make check`, `make test-hugo` and `make test-studio` (both with `SHEETMILL_HUGO`; Studio renders through the same templates), `make fuzz` if bounded, and `git diff --check`; report what ran and what did not (browser E2E and the 320px check need Node/a browser and are not run). (SC-001..006)
 - [ ] T021 Record review rounds in `analysis.md`, push `codex/017-freshness`, hand over for the draft PR. No merge or deployment.
 
 ## Dependencies

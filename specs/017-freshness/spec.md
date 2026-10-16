@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-16
 
-**Status**: Specification revised after review round 3 (READY, see [analysis](analysis.md)); no implementation yet
+**Status**: Implemented on `codex/017-freshness-impl` after review round 3 (READY, see [analysis](analysis.md)); local verification recorded there; independent code review and merge pending
 
 **Input**: User request (2026-10-16), prompted by a comparison with a public
 cheatsheet site: show an `updated` date and the documented tool version on library
