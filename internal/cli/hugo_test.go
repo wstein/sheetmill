@@ -3,9 +3,11 @@ package cli
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -264,9 +266,12 @@ func TestCheckStrict(t *testing.T) {
 	}
 }
 
-// Every diagnostic code the sources can emit must be documented.
+// Every diagnostic code the sources can emit must be documented, and every
+// documented NAV, CMD or STU code must still be emitted unless it is retired.
 func TestDiagnosticsCatalogueIsComplete(t *testing.T) {
-	code := regexp.MustCompile(`"((?:SRC|FM|VAL|MD|ATTR|ID|IO|REN|IMP)[0-9]{3})"`)
+	code := regexp.MustCompile(`"((?:SRC|FM|VAL|MD|ATTR|ID|IO|REN|IMP|NAV|CMD|STU)[0-9]{3})"`)
+	// NAV000 is printed from a format string rather than a quoted code literal.
+	printed := regexp.MustCompile(`smill:1:1: ((?:NAV)[0-9]{3}):`)
 	documented := ""
 	for _, doc := range []string{"diagnostics.md", "imports.md"} {
 		b, err := os.ReadFile(filepath.Join("..", "..", "docs", doc))
@@ -275,15 +280,29 @@ func TestDiagnosticsCatalogueIsComplete(t *testing.T) {
 		}
 		documented += string(b)
 	}
+	// A range such as `NAV101`–`NAV106` documents every code between its ends.
+	rng := regexp.MustCompile("`([A-Z]+)([0-9]{3})`–`[A-Z]+([0-9]{3})`")
+	for _, m := range rng.FindAllStringSubmatch(documented, -1) {
+		lo, _ := strconv.Atoi(m[2])
+		hi, _ := strconv.Atoi(m[3])
+		for n := lo; n <= hi; n++ {
+			documented += fmt.Sprintf(" `%s%03d`", m[1], n)
+		}
+	}
+	emitted := map[string]bool{}
 	found := 0
 	err := filepath.WalkDir(filepath.Join("..", ".."), func(path string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 			return err
 		}
 		b, err := os.ReadFile(path)
+		for _, m := range printed.FindAllStringSubmatch(string(b), -1) {
+			emitted[m[1]] = true
+		}
 		for _, m := range code.FindAllStringSubmatch(string(b), -1) {
 			found++
-			if !strings.Contains(documented, "`"+m[1]+"`") && !strings.Contains(documented, m[1]+"`–") && !strings.Contains(documented, "–`"+m[1]) {
+			emitted[m[1]] = true
+			if !strings.Contains(documented, "`"+m[1]+"`") {
 				t.Errorf("%s emits undocumented %s", path, m[1])
 			}
 		}
@@ -291,6 +310,13 @@ func TestDiagnosticsCatalogueIsComplete(t *testing.T) {
 	})
 	if err != nil || found == 0 {
 		t.Fatal(err, found)
+	}
+	retired := map[string]bool{"NAV007": true, "NAV107": true}
+	live := regexp.MustCompile("`((?:NAV|CMD|STU)[0-9]{3})`")
+	for _, m := range live.FindAllStringSubmatch(documented, -1) {
+		if !emitted[m[1]] && !retired[m[1]] {
+			t.Errorf("%s is documented but no source emits it; retire it explicitly in this test and the catalogue", m[1])
+		}
 	}
 }
 

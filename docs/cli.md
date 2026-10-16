@@ -62,7 +62,7 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `ATTR001`, `ATTR002`, `ATTR003` | Unsupported/malformed attribute; duplicate/conflict; attribute group outside a root `##`/`###` heading |
 | `ID001` | Duplicate explicit/reserved ID |
 | `IO001`, `IO002`, `IO003` | Input access/selection; stdout failure; output creation/write |
-| `REN001`, `REN002`, `REN003` | Unsupported IR; unsafe URL; invalid/ambiguous route or base path |
+| `REN001`, `REN002`, `REN003` | Unsupported IR; unsafe URL; invalid, reserved or ambiguous route, base path, site URL, header link, theme or palette (see [diagnostics](diagnostics.md)) |
 | `REN101`, `REN102`, `REN103` | Inert raw HTML; images retained as unfetched links; unresolved internal link (warnings) |
 | `NAV000`, `NAV001`, `NAV006`, `NAV008` | navi export errors: `--strict` with warnings; profile; metadata; navi identity collision (`NAV007` is retired) |
 | `NAV101`–`NAV106` | navi export warnings: card skipped (shape, command text, placeholder, declarations); license; empty sheet (`NAV107` retired: companions preserve frontmatter). See [navi export](format/navi-profile.md) |
