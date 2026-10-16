@@ -6,20 +6,20 @@
 | --- | --- |
 | FR-1, FR-2, FR-3 | T004, T005 (rule 7 in T002) |
 | FR-4 canonical | T006 (rule 4), T002 |
-| FR-5 sitemap, robots | T006 (rules 2 and 4), T002 |
+| FR-5 sitemap, robots | T006 (rules 2 and 4, incl. manual sitemap), T002 |
 | FR-6 mount, collisions, `demo*` prefix | T002 (rules 1, 3), T004, T005 |
 | FR-7 verification | T002, T003, T004, T006, T006a |
 | FR-8 determinism | T006 |
 | FR-9 failure, rollback | T004 (`needs: build`, step order) |
 | FR-10 cost | T008 (figures from the spec author's local measurement; not re-measured) |
-| FR-11 security | T004 (permissions, pins), T006a, T008 |
+| FR-11 security | T004 (permissions, pins), T006 (script/host assertions), T006a |
 | FR-12 authorization | T001 (pending, not granted) |
 | FR-13 documentation | T007 |
-| SC-001 | T004, T006 |
+| SC-001 | T004 (blocked), T006 |
 | SC-002 | T002 (rule 7), T006 |
 | SC-003 | T002, T006 |
 | SC-004 | T006 |
-| SC-005 | T004, T006a |
+| SC-005 | T006, T006a |
 | SC-006 | T004 |
 | SC-007 | T004 |
 
@@ -67,3 +67,20 @@ is in `go.mod`; `make test-hugo` runs only `internal/render/hugo` today.
 | 9 | low | Verification step vs run block unclear | Separate step `Verify the Pages tree`; T004 asserts order |
 | 10 | low | Cross-layout links on mobile; no page names its layout | Accepted limitations section |
 | 11 | low | `example.invalid` leak | Added to rule 4 (public docs and examples contain none, so the rule is safe) |
+
+## Round 3 (reviewer on bad5011, Plan/opus, read-only): NOT READY
+
+| # | Sev | Finding | Resolution |
+| --- | --- | --- | --- |
+| 1 | high | T004 fails on today's workflow while T005 is blocked: red branch, T006 blocked | T004 lands with T005; T006 depends on T003 only; header states both |
+| 2 | med | The request authorization is not recorded in AGENTS.md | T001 adds the 018 line; spec marks the quote unverified until then |
+| 3 | med | FR-11/SC-005 point at tasks that do not test them | T006 asserts one script, no inline script/style, no foreign host |
+| 4 | low | Manual sitemap not checked | Added to rule 4 |
+| 5 | low | "012 FR-7" dangling | FR-007 |
+| 6 | low | Plan "reads and writes nothing" | Reworded |
+| 7 | low | Plan step 4 mixes blocked and unblocked | Split |
+| 8 | low | pages.yml header comment goes stale | In T004/T005 |
+| 9 | low | llms.txt copy is not a separate step | FR-7 reworded |
+| 10-12 | low | 017: cards.css missing from plan structure, T010 `[P]` vs chain, authorization claim | Fixed in 017 (below) |
+
+The same review confirmed 017 is consistent after round 3 apart from 10-12.
