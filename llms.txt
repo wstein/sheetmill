@@ -14,7 +14,8 @@ inside the repository must follow AGENTS.md.
 Diagnostics are written to stderr as `path:line:column: CODE: message`; warnings
 end with `(warning)`. Exit status: 0 success, 1 invalid source, 2 usage or IO
 error (including broken stdout). `smill version` prints `smill dev` for source
-builds. To investigate: reproduce with `smill check <file>`, then
+builds and `smill vX.Y.Z` for release binaries, which CI builds from owner-pushed version tags
+(docs/releasing.md). To investigate: reproduce with `smill check <file>`, then
 `smill inspect <file>` to see how the parser understood the sheet (sections,
 cards, IDs, attributes, byte spans), then `smill build hugo <file> --out <new-dir>`
 for renderer issues. Report the exact command, input, stderr and exit status. Set sheet freshness

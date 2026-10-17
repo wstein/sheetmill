@@ -26,7 +26,9 @@ written and are not prefixed with `--base-path`.
 
 A release build stamps the version with the linker, for example
 `go build -trimpath -ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=v0.1.0" ./cmd/smill`;
-the repository provides no build target, and distribution builds need separate approval.
+the repository provides no build target. Official release binaries come only from the
+tag-triggered release workflow ([releasing](releasing.md)); other distribution builds need
+separate approval.
 
 Cobra v1.10.2 parses commands and flags. `--help` works at every command level;
 top-level help (`smill --help`, `smill help`) ends with a notice pointing AI agents
@@ -70,7 +72,7 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `IMP001`–`IMP112` | See [import diagnostic codes](imports.md) |
 
 Go package tests exercise the same `Run` entrypoint as the executable, without
-building a distributable CLI binary. Parser fuzz targets run via:
+building a distributable CLI binary (the release workflow builds those). Parser fuzz targets run via:
 
 ```sh
 go test ./internal/frontmatter -run '^$' -fuzz FuzzParse -fuzztime 5s -parallel 2
