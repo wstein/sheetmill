@@ -73,8 +73,9 @@ Sibling repository policies do not govern this repository.
   protection rules, signing, attestations and any other distribution channel remain separate
   human approvals. Re-creating `v0.1.0` is discouraged (the Go module proxy and checksum
   database hold the old `v0.1.0`); the default is a new version such as `v0.1.1`.
-- Use `codex/` feature branches and Conventional Commits. Topic pushes and draft
-  PRs belong to an authorized implementation handoff; otherwise ask before publishing.
+- Use `codex/` feature branches and Conventional Commits. Topic pushes and PRs for
+  reviewed work within an authorized request or feature scope follow "Pull requests
+  and history" below; a local-only assignment authorizes neither.
 - Merge, tag, release, deploy, distribution builds, PDF generation, artifact
   publication and sibling-repository edits require separate human approval.
   Local Hugo site generation and the approved brand exports are authorized.
@@ -82,6 +83,15 @@ Sibling repository policies do not govern this repository.
   protections, add automatic merges or publish artifacts from CI, except the
   authorized Pages deployment and the feature 019 tag-triggered release workflow above.
 - Unknown source metadata must be preserved or diagnosed, never silently dropped.
+
+## Pull requests and history
+
+Agents push only their own topic branches and open pull requests for reviewed
+work within the requested task. They never push the default branch or tags, never
+merge, and never rewrite commits they did not author. The owner merges. A containing
+workspace may add owner-workflow rules in its own `AGENTS.md`; follow them when
+present. The feature grants above are dated records of what was authorized then
+(including "draft PR"); pull requests follow the rule above.
 
 ## Implementation and verification
 
