@@ -27,11 +27,11 @@ such as `-rc1` start nothing) runs `.github/workflows/release.yml`:
 Nothing is signed or notarized and there are no attestations. `SHA256SUMS` detects a damaged
 download, not a malicious release. Reproducibility is checked on one runner only.
 
-## One-time setup (owner, optional but recommended)
+## One-time setup (owner, optional)
 
-- Settings, Environments, `release`: add yourself as required reviewer so publish waits for
-  your approval; allow deployment from tags matching `v*`. Without this the environment is
-  created unprotected and the pushed tag alone releases.
+- The `release` environment needs no setup: the owner decided (2026-10-17) not to configure a
+  required-reviewer rule. GitHub creates the environment unprotected on first use, so the
+  pushed tag alone releases; the workflow's own checks are the control.
 - Rulesets: protect `v*` tags against deletion and updates once the release exists.
 - Repository variable `SHEETMILL_RELEASE_DRAFT=true` makes the next release a draft that you
   publish by hand (default: published immediately).
@@ -55,9 +55,10 @@ The default path is a **new** version, `v0.1.1` in the first release (any unused
    git push origin refs/tags/<version>
    ```
 
-5. Watch the `release` run under Actions. Approve the `release` environment if protected, and
-   do so within 24 hours: the build artifacts expire after one day (`retention-days: 1`), and a
-   later approval makes publish fail at the download. If it expired, see "When something goes wrong".
+5. Watch the `release` run under Actions. Publish starts as soon as build and smoke pass. If
+   a reviewer rule is ever added to the environment, approve within 24 hours: the build
+   artifacts expire after one day (`retention-days: 1`), and a later approval fails at the
+   download (see "When something goes wrong").
 
 ## Discouraged alternative: re-create v0.1.0
 
@@ -94,6 +95,14 @@ On the Apple silicon Mac mini, download `smill_<number>_darwin_arm64.tar.gz` and
 `smill version` and `smill check examples/sheets` from a checkout. Downloads made with `curl`
 or `gh` are not quarantined; a browser download is, and Gatekeeper may refuse the unsigned
 binary (clear it with `xattr -d com.apple.quarantine <file>` only if you trust the checksum).
+
+## Known limitations
+
+Without a required-reviewer rule on the `release` environment, any tag push by the owner that
+passes the checks publishes immediately; there is no pause between the push and the public
+release. The remaining controls are the owner-only actor checks, the annotated-tag, ancestor,
+version and green-`check` verification, the refusal to publish when a release or draft exists,
+and the rule never to delete and re-create a published version's tag. Nothing is signed.
 
 ## Maintaining the workflow
 
