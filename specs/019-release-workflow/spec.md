@@ -15,9 +15,8 @@ update CI pipeline". This feature reads that as three decisions:
 
 The decision replaces the `AGENTS.md` rule "do not publish artifacts from CI" **for this
 workflow only**. An owner-pushed tag matching `v[0-9]+.[0-9]+.[0-9]+` is the publication
-approval for that tag's release assets; this spec reads the quote as that standing rule for
-future matching tags too, and `AGENTS.md` records the reading so the owner can correct it
-(open decision 6). It authorizes, on the topic branch, the spec,
+approval for that tag's release assets; the workflow pattern is general, but whether the quote also approves every future tag is an open owner confirmation
+(open decision 6), recorded in `AGENTS.md` as pending. It authorizes, on the topic branch, the spec,
 tests, scripts, `release.yml`, the `check.yml` comment, docs, a topic push and a
 coordinator-opened draft PR. It does **not** authorize: merging the workflow PR,
 creating, moving or deleting any tag, running the workflow (a dry run is started only by the owner through `workflow_dispatch`;
@@ -73,12 +72,12 @@ that commit only, and publishes them with checksums. Nothing is signed or notari
     name must match, so `v1.2.3-rc1` triggers nothing; pre-releases are out of scope);
   - `workflow_dispatch` with one string input `version` (default `v0.0.0-dryrun`).
   A dispatch is a **dry run**: it runs `verify` (tag-specific checks skipped), `build` and
-  `smoke`, and `publish` is skipped. Dry-run workflow artifacts live one day. No branch
+  `smoke`, and `publish` is skipped. Dry-run workflow artifacts live one day and, in a public repository, can be downloaded by any signed-in GitHub user. No branch
   `push` and no `pull_request` trigger (a PR trigger would build binaries on the draft PR
   without the owner's approval of a distribution build).
 - **FR-2 Verify job** (`contents: read`, `actions: read`). In every run kind first: the version is
   resolved and `github.triggering_actor` must equal `github.repository_owner` (so a dispatch
-  is owner-only too). On a tag push, then in order:
+  is owner-only too) and `github.actor` (the original starter of a re-run) must too, so an owner re-run of someone else's run does not count as approval. On a tag push, then in order:
   (a) the tag name matches the strict pattern `^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`;
   (b) the tag object is an annotated tag (`git cat-file -t refs/tags/<tag>` is `tag`), after
   fetching the tag explicitly;
@@ -202,19 +201,18 @@ changelog files, Hugo in the smoke test, running the workflow, tagging and mergi
 ## Open decisions (recommendations)
 
 1. Amend constitution 7 to name this workflow beside Pages: recommended, owner's change.
-2. **Blocking, decide before the retag.** The proxy already serves `v0.1.0` from `05eba4d`, and
-   the checksum database (not queried by the author: a lookup records the version) very likely
-   holds that hash. Re-creating the tag at a new commit then leaves `go install ...@v0.1.0`
-   resolving the old tree, and a build that fetches the new tag directly (for example
-   `GOPROXY=direct`) fails with a checksum mismatch. Release binaries are unaffected (they stamp
-   the version themselves). Recommendation: tag `v0.1.1` and leave `v0.1.0` alone, which departs
-   from the literal "v0.1.0" in the quote; keeping v0.1.0 is the owner's call and the workflow
-   serves either.
+2. **Default: a new version, `v0.1.1`.** sum.golang.org holds a checksum record for
+   `github.com/wstein/sheetmill@v0.1.0` and proxy.golang.org serves it as `05eba4d`. If the owner
+   re-creates `v0.1.0`, `go install ...@v0.1.0` will resolve the old tree permanently and a direct
+   fetch of the new tag (for example `GOPROXY=direct`) will fail with a checksum mismatch.
+   Release binaries are unaffected (they stamp the version themselves). The docs present
+   `<version>`/`v0.1.1` as the default and the `v0.1.0` retag as a documented, discouraged
+   alternative; the choice is the owner's and the workflow serves either.
 3. Add build provenance attestations later: recommended after the first release.
 4. Protect the `release` environment with the owner as required reviewer, and restrict
    deployment tags to `v*`: recommended.
 5. Make a `v*` tag ruleset (block deletion/update after release): recommended.
-6. Confirm that the 2026-10-17 quote is a standing approval for every later `vX.Y.Z` tag
+6. Confirm (pending, not granted) that the 2026-10-17 quote is a standing approval for every later `vX.Y.Z` tag
    pushed by the owner (this spec's reading), not for v0.1.0 only. If v0.1.0 only, change
    the `AGENTS.md` line; each later release then needs a new approval.
 7. Pull request dry runs: a `pull_request` trigger would exercise the pipeline on every change

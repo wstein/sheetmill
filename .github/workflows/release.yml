@@ -68,10 +68,12 @@ jobs:
         shell: bash
         env:
           ACTOR: ${{ github.triggering_actor }}
+          PUSHER: ${{ github.actor }}
           OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
           test "$ACTOR" = "$OWNER" || { echo "run started by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }
+          test "$PUSHER" = "$OWNER" || { echo "run originally started by $PUSHER, not by the repository owner $OWNER" >&2; exit 1; }
       - name: Require an annotated tag on a commit of main
         if: steps.resolve.outputs.dry_run == 'false'
         shell: bash
@@ -152,8 +154,10 @@ jobs:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
           VERSION: ${{ needs.verify.outputs.version }}
+          COMMIT: ${{ needs.verify.outputs.commit }}
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$COMMIT" || { echo "checkout is not the verified commit $COMMIT" >&2; exit 1; }
           mkdir -p "$RUNNER_TEMP/bin"
           go build -trimpath -ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=$VERSION" -o "$RUNNER_TEMP/bin/smill" ./cmd/smill
           # A second build with an empty build cache must give the same bytes.
@@ -209,8 +213,10 @@ jobs:
           VERSION: ${{ needs.verify.outputs.version }}
           OS: ${{ matrix.os }}
           ARCH: ${{ matrix.arch }}
+          COMMIT: ${{ needs.verify.outputs.commit }}
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$COMMIT" || { echo "checkout is not the verified commit $COMMIT" >&2; exit 1; }
           plain=${VERSION#v}
           sh .github/scripts/release-smoke.sh "$VERSION" "$RUNNER_TEMP/dist/smill_${plain}_${OS}_${ARCH}.tar.gz" "$GITHUB_WORKSPACE"
 
@@ -242,11 +248,13 @@ jobs:
           COMMIT: ${{ needs.verify.outputs.commit }}
           DRAFT: ${{ vars.SHEETMILL_RELEASE_DRAFT }}
           ACTOR: ${{ github.triggering_actor }}
+          PUSHER: ${{ github.actor }}
           OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
           # A re-run by someone else must not publish on the owner's earlier approval.
           test "$ACTOR" = "$OWNER" || { echo "run triggered by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }
+          test "$PUSHER" = "$OWNER" || { echo "run originally started by $PUSHER, not by the repository owner $OWNER" >&2; exit 1; }
           # Drafts are invisible to the verify job's read token; refuse any release, draft or not, for the tag.
           existing=$(gh api "repos/$REPO/releases" --paginate --jq ".[] | select(.tag_name == \"$TAG\") | .id")
           test -z "$existing" || { echo "a release (possibly a draft) for $TAG already exists: $existing" >&2; exit 1; }

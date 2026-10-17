@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: EUPL-1.2
-# Compile-only guard for every push. Releases are built, smoke-tested and published by
+# The build job is a compile-only guard for every push. Releases are built, smoke-tested and published by
 # release.yml (specs/019-release-workflow); the build matrix below must match its targets.
 name: check
 on:

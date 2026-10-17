@@ -84,3 +84,16 @@ Verdict: three rounds are used. No fourth review was run on the final fixes; the
 re-run of the workflow tests passes. The 17 slips were not all re-tested individually.
 Remaining known gap: tests are string/line-level (spec Known limitations). Treat the
 verdict as NOT READY pending the owner's review of the workflow PR.
+
+## Post-round-3 review (coordinator's independent Opus review of 2b4a92f): CLEAR, 4 medium, 11 low
+
+Runtime scenarios behaved correctly. 48 fresh mutants: 21 killed, 27 survived, 10 real gaps. Fixed in
+the next commits: F1/F2/F3/F5/F6/F9 by `testdata/release.golden.json` (the whole workflow,
+comments dropped, pinned; refresh with `UPDATE_RELEASE_GOLDEN=1`), plus a runtime
+`git rev-parse HEAD` = verified commit assertion in build and smoke and an exact-env check;
+F4/F14 by rewriting docs, spec and AGENTS.md (default `v0.1.1`, retag of `v0.1.0` discouraged
+with the effects stated as fact, standing approval marked an open owner confirmation); F7/F8 by
+script tests (failing `check`, extra archive member, sorted member order); F10/F12 documented;
+F11 by also requiring `github.actor` to be the owner; F13 by the check.yml wording; F15 by the
+harness error text "HARNESS ERROR, NOT A KILL". Limitation: the golden makes any workflow edit
+a deliberate, reviewed change; it does not judge whether an edit is safe.

@@ -62,16 +62,17 @@ Sibling repository policies do not govern this repository.
   `main` would activate the workflow and needs separate human approval.
 - Feature 019 is authorized (owner, Werner Stein, chat 2026-10-17: "017/018 in v0.1.0, ...
   tag v0.1.0 => CI based release workflow, update CI pipeline"): a tag-triggered release
-  workflow (`.github/workflows/release.yml`, `specs/019-release-workflow`). An owner-pushed
-  tag matching `v[0-9]+.[0-9]+.[0-9]+` is the publication approval for that tag's GitHub
-  release (three archives and `SHA256SUMS`); the spec reads the quote as a standing rule for
-  later matching tags, which the owner may narrow. This authorizes the spec, tests, scripts,
-  workflow, docs, a topic push and a draft PR. Merging the workflow PR, creating, moving or
-  deleting any tag (including the retag of `v0.1.0`, owner only), running the workflow (dry
-  runs are owner-started `workflow_dispatch` only), creating a release, adding secrets,
-  variables or environment protection rules, signing, attestations, and any other
-  distribution channel remain separate human approvals. Whether to re-create `v0.1.0` or tag
-  `v0.1.1` given the Go module proxy's cached `v0.1.0` is the owner's open decision.
+  workflow (`.github/workflows/release.yml`, `specs/019-release-workflow`). The quote covers
+  a CI release workflow in which an owner-pushed tag publishes. Whether that approval applies
+  to every later `vX.Y.Z` tag the owner pushes is an OPEN owner confirmation (pending, not
+  granted); until confirmed, treat each release as needing the owner's explicit tag push for
+  that version. This authorizes the spec, tests, scripts, workflow, docs, a topic push and a
+  draft PR. Merging the workflow PR, creating, moving or deleting any tag (including any
+  retag of `v0.1.0`, owner only), running the workflow (dry runs are owner-started
+  `workflow_dispatch` only), creating a release, adding secrets, variables or environment
+  protection rules, signing, attestations and any other distribution channel remain separate
+  human approvals. Re-creating `v0.1.0` is discouraged (the Go module proxy and checksum
+  database hold the old `v0.1.0`); the default is a new version such as `v0.1.1`.
 - Use `codex/` feature branches and Conventional Commits. Topic pushes and draft
   PRs belong to an authorized implementation handoff; otherwise ask before publishing.
 - Merge, tag, release, deploy, distribution builds, PDF generation, artifact
