@@ -24,7 +24,10 @@ and deployment, the same sheets are also published in the
 Nothing in a source sheet is executed.
 
 The CLI executable is `smill`. Go **1.27.2** is the pinned development toolchain.
-There are no published binaries or install packages yet.
+Release binaries (linux amd64/arm64, macOS arm64) with `SHA256SUMS` are built and
+published by CI when the owner pushes a version tag; see [releasing](docs/releasing.md).
+Until the first release exists, or for other platforms, build from source. There are no
+install packages.
 
 ```text
 smill version
@@ -93,7 +96,7 @@ make test-browser-studio
 ```
 
 Targets do not install dependencies or regenerate goldens. Tests compile temporary
-test executables; no distribution binary is produced. There is no `make build`
+test executables; distribution binaries are produced only by the tag-triggered release workflow. There is no `make build`
 or deployment target in this increment.
 [Local Hugo generation](docs/hugo.md) describes the explicit export/build workflow.
 The CLI uses Cobra **v1.10.2**. Goldmark supplies GFM parsing and the YAML organization supplies YAML decoding;

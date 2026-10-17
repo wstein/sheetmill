@@ -12,7 +12,9 @@ built from the example sheets in the repository.
 
 ## Install {#install}
 ### Build from source {.col-span-2 #build}
-There are no published binaries yet. Build with Go 1.27.2:
+Release archives for linux amd64/arm64 and macOS arm64 (with `SHA256SUMS`, unsigned) are
+published on the [releases page](https://github.com/wstein/sheetmill/releases) once the owner
+tags a version; until then, or for other platforms, build with Go 1.27.2:
 
 ```sh
 git clone https://github.com/wstein/sheetmill
