@@ -40,6 +40,7 @@ type job struct {
 		}
 	}
 	Outputs map[string]string
+	Env     map[string]any
 	Steps   []step
 }
 
@@ -454,11 +455,113 @@ func violations(w workflow, raw string) []string {
 			add("verify", "verify needs full history to check ancestry")
 		}
 	}
-	if g := goldenDiff(raw); g != "" {
-		add("golden", "%s", g)
-	}
+	semantic(w, add)
 	sort.Strings(v)
 	return v
+}
+
+var (
+	urlRe = regexp.MustCompile(`https?://[^\s"']*`)
+	// Variables a step may assign at most once, and only from a command substitution.
+	computedVars = map[string]int{"n": 1, "remote": 1, "existing": 1, "commit": 1}
+	// Variables that carry a trust decision and must never be assigned inside a script.
+	protectedVars = []string{"ACTOR", "OWNER", "PUSHER", "COMMIT", "TAG", "REPO", "VERSION", "GITHUB_SHA", "EVENT_NAME", "REF_TYPE", "REF_NAME", "INPUT_VERSION", "OS", "ARCH", "DRAFT"}
+	badCmdRe      = regexp.MustCompile(`(^|[\s;&|(])(eval|export|declare|typeset|unset|alias|source|\.)\s`)
+	allowedWith   = map[string][]string{
+		"actions/checkout":          {"fetch-depth", "persist-credentials"},
+		"actions/setup-go":          {"go-version-file", "check-latest", "cache"},
+		"actions/upload-artifact":   {"name", "path", "retention-days", "if-no-files-found"},
+		"actions/download-artifact": {"name", "path", "pattern", "merge-multiple"},
+	}
+)
+
+// semantic holds rules about what the scripts and steps mean, independent of the golden file.
+func semantic(w workflow, add func(code, format string, a ...any)) {
+	for name, j := range w.Jobs {
+		if j.Env != nil {
+			add("env", "job %s must not set env", name)
+		}
+		for _, s := range j.Steps {
+			label := name + "/" + s.Name + s.Run
+			if s.Uses != "" {
+				base := s.Uses[:strings.Index(s.Uses, "@")]
+				allowed := map[string]bool{}
+				for _, k := range allowedWith[base] {
+					allowed[k] = true
+				}
+				for k := range s.With {
+					if !allowed[k] {
+						add("with", "job %s: %s may not set %q", name, base, k)
+					}
+				}
+				if s.Env != nil {
+					add("env", "job %s: %s may not set env", name, base)
+				}
+				if base == "actions/setup-go" && (s.With["go-version-file"] != ".go-version" || s.With["check-latest"] != false) {
+					add("with", "job %s: setup-go must read .go-version with check-latest: false", name)
+				}
+				continue
+			}
+			// A bare gate (make or a repository script) carries no env.
+			if (strings.HasPrefix(s.Run, "make ") || strings.HasPrefix(s.Run, "sh .github/scripts/")) && !strings.Contains(s.Run, "\n") && s.Env != nil {
+				add("env", "gate %q must not set env: %v", s.Run, s.Env)
+			}
+			for _, u := range urlRe.FindAllString(s.Run, -1) {
+				if u != "https://github.com/$REPO" {
+					add("url", "%s fetches %q; only https://github.com/$REPO is allowed", label, u)
+				}
+			}
+			if badCmdRe.MatchString(s.Run) {
+				add("assign", "%s uses eval, export, source or a similar command", label)
+			}
+			for _, p := range protectedVars {
+				if regexp.MustCompile(`(^|[\s;&(|])` + p + `=`).MatchString(s.Run) {
+					add("assign", "%s assigns %s inside a script", label, p)
+				}
+			}
+			for v := range computedVars {
+				re := regexp.MustCompile(`(^|[\s;&(|])` + v + `=`)
+				n := len(re.FindAllString(s.Run, -1))
+				sub := len(regexp.MustCompile(`(^|[\s;&(|])`+v+`=\$\(`).FindAllString(s.Run, -1))
+				if n > 1 || n != sub {
+					add("assign", "%s assigns %s more than once or not from a command substitution", label, v)
+				}
+			}
+			for _, banned := range []string{"\ncp ", "\nmv ", "\nln ", "\ndd ", "\ntouch "} {
+				if name == "build" && strings.Contains("\n"+s.Run, banned) {
+					add("reproducibility", "build must not copy or move binaries between the builds (%q)", strings.TrimSpace(banned))
+				}
+			}
+		}
+	}
+	// Exact lines that carry the decisions.
+	need := func(job, prefix string, lines ...string) {
+		st, i := stepNamed(w.Jobs[job], prefix)
+		if i < 0 {
+			add("semantic", "job %s lacks step %q", job, prefix)
+			return
+		}
+		var have []string
+		for _, l := range strings.Split(st.Run, "\n") {
+			have = append(have, strings.TrimSpace(l))
+		}
+		for _, l := range lines {
+			if !strings.Contains("\n"+strings.Join(have, "\n")+"\n", "\n"+l+"\n") {
+				add("semantic", "job %s step %q lacks the exact line %q", job, prefix, l)
+			}
+		}
+	}
+	need("verify", "Require the repository owner",
+		`test "$ACTOR" = "$OWNER" || { echo "run started by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }`,
+		`test "$PUSHER" = "$OWNER" || { echo "run originally started by $PUSHER, not by the repository owner $OWNER" >&2; exit 1; }`)
+	need("publish", "Create the release",
+		`test "$ACTOR" = "$OWNER" || { echo "run triggered by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }`,
+		`test "$PUSHER" = "$OWNER" || { echo "run originally started by $PUSHER, not by the repository owner $OWNER" >&2; exit 1; }`,
+		`test "$(wc -l < SHA256SUMS)" -eq 3`,
+		"cat -- *.tar.gz.sha256 | LC_ALL=C sort -k2 > SHA256SUMS")
+	need("verify", "Resolve the version", `echo "commit=$GITHUB_SHA"`)
+	need("verify", "Require a green check run", `test "$n" -ge 1 || { echo "no successful check run on push for $GITHUB_SHA; re-run check for that commit first" >&2; exit 1; }`)
+	need("build", "Build smill", `GOCACHE="$RUNNER_TEMP/gocache-second" go build -trimpath `+ldflags+` -o "$RUNNER_TEMP/bin/smill-second" ./cmd/smill`)
 }
 
 // canonical renders the whole workflow (comments dropped) as indented JSON with sorted keys.
@@ -509,11 +612,6 @@ func goldenDiff(raw string) string {
 		return "workflow does not parse: " + err.Error()
 	}
 	path := filepath.Join("testdata", "release.golden.json")
-	if os.Getenv("UPDATE_RELEASE_GOLDEN") == "1" && raw == liveRaw {
-		if err := os.WriteFile(path, []byte(got), 0o644); err != nil {
-			return err.Error()
-		}
-	}
 	want, err := os.ReadFile(path)
 	if err != nil {
 		return "golden file missing: " + err.Error()
@@ -530,11 +628,33 @@ func goldenDiff(raw string) string {
 	return ""
 }
 
-var liveRaw string
+// The golden file is a CHANGE DETECTOR: it makes every edit of the workflow a reviewed
+// diff. It is not a safety proof, and anyone can regenerate it, so the semantic rules in
+// violations() are what the mutation tests rely on. To accept an intended change run the
+// tests with UPDATE_RELEASE_GOLDEN=1; the run writes the file and then always fails, and it
+// refuses to write when CI is set, so a pass never follows an update.
+func TestReleaseWorkflowMatchesGolden(t *testing.T) {
+	raw := readFile(t, ".github/workflows/release.yml")
+	if os.Getenv("UPDATE_RELEASE_GOLDEN") == "1" {
+		if os.Getenv("CI") != "" {
+			t.Fatal("refusing to update the golden file in CI")
+		}
+		got, err := canonical(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join("testdata", "release.golden.json"), []byte(got), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		t.Fatal("golden file updated; read its diff, then re-run without UPDATE_RELEASE_GOLDEN")
+	}
+	if g := goldenDiff(raw); g != "" {
+		t.Fatal(g)
+	}
+}
 
 func TestReleaseWorkflowHasNoViolations(t *testing.T) {
 	raw := readFile(t, ".github/workflows/release.yml")
-	liveRaw = raw
 	if v := violations(parse(t, raw), raw); len(v) != 0 {
 		t.Fatalf("release.yml breaks its own rules:\n%s", strings.Join(v, "\n"))
 	}
@@ -621,20 +741,26 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"release-exists accepts any error", `*) echo "cannot tell whether a release exists: $out" >&2; exit 1 ;;`, `*) echo "cannot tell" ;;`, "verify", false},
 		{"head check removed", `          test "$(git rev-parse HEAD)" = "$COMMIT"` + "\n", "", "publish", false},
 		{"publish checks out main", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          ref: main\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "publish", false},
-		{"owner check reassigned (F1)", "          test \"$ACTOR\" = \"$OWNER\" || { echo \"run started", "          ACTOR=$OWNER\n          test \"$ACTOR\" = \"$OWNER\" || { echo \"run started", "golden", false},
-		{"publish owner check reassigned (F1)", "          test \"$ACTOR\" = \"$OWNER\" || { echo \"run triggered", "          OWNER=$ACTOR\n          test \"$ACTOR\" = \"$OWNER\" || { echo \"run triggered", "golden", false},
-		{"original pusher check removed (F11)", "\n          test \"$PUSHER\" = \"$OWNER\" || { echo \"run originally started by $PUSHER, not by the repository owner $OWNER\" >&2; exit 1; }\n      - name: Require an annotated tag", "\n      - name: Require an annotated tag", "golden", false},
-		{"check-run count overwritten (F2)", `          test "$n" -ge 1 ||`, "          n=1\n          test \"$n\" -ge 1 ||", "golden", false},
-		{"env on a gate step (F2)", "      - run: make check\n", "      - env:\n          GOFLAGS: -run=^$\n        run: make check\n", "golden", false},
-		{"env on the verify job (F2)", "    timeout-minutes: 15\n    permissions:\n      contents: read\n      actions: read\n", "    timeout-minutes: 15\n    env:\n      GOFLAGS: -run=^$\n    permissions:\n      contents: read\n      actions: read\n", "golden", false},
-		{"build checkout from main (F3)", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          persist-credentials: false\n      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          ref: main\n          persist-credentials: false\n      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "golden", false},
-		{"smoke downloads from another run (F3)", "          name: release-${{ matrix.os }}-${{ matrix.arch }}\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "          name: release-${{ matrix.os }}-${{ matrix.arch }}\n          run-id: 1\n          github-token: ${{ github.token }}\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "golden", false},
+		{"owner check reassigned (F1)", "          test \"$ACTOR\" = \"$OWNER\" || { echo \"run started", "          ACTOR=$OWNER\n          test \"$ACTOR\" = \"$OWNER\" || { echo \"run started", "assign", false},
+		{"publish owner check reassigned (F1)", "          test \"$ACTOR\" = \"$OWNER\" || { echo \"run triggered", "          OWNER=$ACTOR\n          test \"$ACTOR\" = \"$OWNER\" || { echo \"run triggered", "assign", false},
+		{"original pusher check removed (F11)", "\n          test \"$PUSHER\" = \"$OWNER\" || { echo \"run originally started by $PUSHER, not by the repository owner $OWNER\" >&2; exit 1; }\n      - name: Require an annotated tag", "\n      - name: Require an annotated tag", "semantic", false},
+		{"check-run count overwritten (F2)", `          test "$n" -ge 1 ||`, "          n=1\n          test \"$n\" -ge 1 ||", "assign", false},
+		{"env on a gate step (F2)", "      - run: make check\n", "      - env:\n          GOFLAGS: -run=^$\n        run: make check\n", "env", false},
+		{"env on the verify job (F2)", "    timeout-minutes: 15\n    permissions:\n      contents: read\n      actions: read\n", "    timeout-minutes: 15\n    env:\n      GOFLAGS: -run=^$\n    permissions:\n      contents: read\n      actions: read\n", "env", false},
+		{"build checkout from main (F3)", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          persist-credentials: false\n      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          ref: main\n          persist-credentials: false\n      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "with", false},
+		{"smoke downloads from another run (F3)", "          name: release-${{ matrix.os }}-${{ matrix.arch }}\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "          name: release-${{ matrix.os }}-${{ matrix.arch }}\n          run-id: 1\n          github-token: ${{ github.token }}\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "with", false},
 		{"build commit check removed (F3)", "          test \"$(git rev-parse HEAD)\" = \"$COMMIT\" || { echo \"checkout is not the verified commit $COMMIT\" >&2; exit 1; }\n          mkdir", "          mkdir", "build", false},
 		{"smoke commit check removed (F3)", "          test \"$(git rev-parse HEAD)\" = \"$COMMIT\" || { echo \"checkout is not the verified commit $COMMIT\" >&2; exit 1; }\n          plain", "          plain", "smoke", false},
-		{"setup-go may float (F5)", "          go-version-file: .go-version\n          check-latest: false\n      - name: Resolve", "          go-version-file: .go-version\n          check-latest: true\n      - name: Resolve", "golden", false},
-		{"command between builds (F6)", "          cmp \"$RUNNER_TEMP/bin/smill\" \"$RUNNER_TEMP/bin/smill-second\"", "          cp \"$RUNNER_TEMP/bin/smill\" \"$RUNNER_TEMP/bin/smill-second\"\n          cmp \"$RUNNER_TEMP/bin/smill\" \"$RUNNER_TEMP/bin/smill-second\"", "golden", false},
-		{"second build shares the cache (F6)", `GOCACHE="$RUNNER_TEMP/gocache-second" go build`, `go build`, "golden", false},
-		{"checksum list unsorted (F9)", "LC_ALL=C sort -k2 > SHA256SUMS", "cat > SHA256SUMS", "golden", false},
+		{"setup-go may float (F5)", "          go-version-file: .go-version\n          check-latest: false\n      - name: Resolve", "          go-version-file: .go-version\n          check-latest: true\n      - name: Resolve", "with", false},
+		{"command between builds (F6)", "          cmp \"$RUNNER_TEMP/bin/smill\" \"$RUNNER_TEMP/bin/smill-second\"", "          cp \"$RUNNER_TEMP/bin/smill\" \"$RUNNER_TEMP/bin/smill-second\"\n          cmp \"$RUNNER_TEMP/bin/smill\" \"$RUNNER_TEMP/bin/smill-second\"", "reproducibility", false},
+		{"second build shares the cache (F6)", `GOCACHE="$RUNNER_TEMP/gocache-second" go build`, `go build`, "semantic", false},
+		{"checksum list unsorted (F9)", "LC_ALL=C sort -k2 > SHA256SUMS", "cat > SHA256SUMS", "semantic", false},
+		{"main fetch from another repo", `git fetch --force --no-tags "https://github.com/$REPO" '+refs/heads/main`, `git fetch --force --no-tags "https://github.com/evil/sheetmill" '+refs/heads/main`, "url", false},
+		{"commit output from the branch", `echo "commit=$GITHUB_SHA"`, `echo "commit=$(git rev-parse origin/main)"`, "semantic", false},
+		{"asset count check removed (F1)", `          test "$(wc -l < SHA256SUMS)" -eq 3` + "\n", "", "semantic", false},
+		{"smoke commit reassigned (F1)", "          test \"$(git rev-parse HEAD)\" = \"$COMMIT\" || { echo \"checkout is not the verified commit $COMMIT\" >&2; exit 1; }\n          plain", "          COMMIT=$(git rev-parse HEAD)\n          test \"$(git rev-parse HEAD)\" = \"$COMMIT\" || { echo \"checkout is not the verified commit $COMMIT\" >&2; exit 1; }\n          plain", "assign", false},
+		{"eval in a script", "          mkdir -p \"$RUNNER_TEMP/bin\"", "          eval \"true\"\n          mkdir -p \"$RUNNER_TEMP/bin\"", "assign", false},
+		{"unknown with key", "          path: ${{ runner.temp }}/dist/*\n", "          path: ${{ runner.temp }}/dist/*\n          overwrite: true\n", "with", false},
 		{"pusher check swallowed", "exit 1; }\n      - name: Require an annotated tag", "exit 1; } || true\n      - name: Require an annotated tag", "swallow", false},
 		{"owner check made conditional", "      - name: Require the repository owner to have started the run\n", "      - name: Require the repository owner to have started the run\n        if: steps.resolve.outputs.dry_run == 'false'\n", "verify", false},
 		{"smoke step conditional", "      - name: Smoke-test the shipped archive natively\n", "      - name: Smoke-test the shipped archive natively\n        if: github.event_name == 'none'\n", "step-if", false},
@@ -671,6 +797,13 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 			var w workflow
 			if err := yaml.Unmarshal([]byte(mutated), &w); err != nil {
 				t.Fatalf("mutation does not parse: %v", err)
+			}
+			if c.code == "golden" {
+				// A change detector, not a semantic rule: the case documents what it flags.
+				if goldenDiff(mutated) == "" {
+					t.Errorf("the golden file did not flag %q", c.name)
+				}
+				return
 			}
 			got := violations(w, mutated)
 			for _, line := range got {
