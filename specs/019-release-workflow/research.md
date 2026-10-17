@@ -51,8 +51,8 @@ on macOS, no extra assurance for CGO-free Go).
 | --- | --- |
 | Reusable `workflow_call` of `release.yml` from a `check.yml` job | Rejected: a called workflow may not request more permission than its caller grants; `publish` asks for `contents: write`, which the validator rejects even for a skipped job (unverified, known to fail at startup) |
 | New job in `check.yml` duplicating the build/smoke steps | Rejected: two copies drift |
-| **`pull_request` + `paths` trigger on `release.yml` itself, dry run** | Chosen: one copy, runs only when release inputs change, cannot publish |
-| Run the dry run on every PR | Rejected: three more runner jobs including macOS on every docs PR |
+| `pull_request` + `paths` trigger on `release.yml`, dry run | Rejected in review round 1: the draft PR itself would build and upload three binaries, a distribution build needing separate approval (AGENTS.md) |
+| **`workflow_dispatch` dry run only, started by the owner** | Chosen: one copy, cannot publish, no unapproved build; open decision 7 keeps the PR trigger as an option |
 
 `check.yml` keeps names and behavior; its `build` matrix is the cheap compile guard on
 every push. A parity test ties the two matrices together so they cannot diverge.
@@ -93,7 +93,7 @@ The release notes and docs say plainly that nothing is signed.
 
 | Option | Result |
 | --- | --- |
-| **Publish directly; `release` environment is the manual gate** | Chosen: the owner asked for a CI release; the environment (required reviewer) gives the pause before anything is public |
+| **Publish directly; the owner's tag is the approval, a protected `release` environment is an optional extra pause** | Chosen: the owner asked for a CI release. A missing environment is created unprotected by GitHub, so the workflow does not rely on protection (publish re-checks the actor) |
 | Draft first | Adds a second manual step for the same decision; draft releases do not appear to users but a tag already exists; useful only when the owner wants to edit notes |
 | Both via switch | **Also provided**: repository variable `SHEETMILL_RELEASE_DRAFT=true` adds `--draft`; no workflow edit, no secret |
 
@@ -106,7 +106,7 @@ Checked: `git ls-remote --tags origin` shows annotated `v0.1.0` (`603279a`) peel
 `05eba4d`, which is an ancestor of `origin/main` (`86fc231`) with 59 later commits including
 017 and 018 changes. Checked: `https://proxy.golang.org/github.com/wstein/sheetmill/@v/list`
 returns `v0.1.0` and `.info` reports Hash `05eba4d`, time 2026-10-16T15:58:27Z. The proxy
-and the checksum database keep the first content for a version permanently; deleting and
+and the checksum database (not queried: a lookup would record the version) keep the first content for a version permanently; deleting and
 re-creating the tag does not change what `go install github.com/wstein/sheetmill/cmd/smill@v0.1.0`
 resolves. Consequences: release binaries (this feature) carry the new tree; `@v0.1.0`
 module consumers get the old tree; if a consumer's `go.sum` records the proxy hash, a
