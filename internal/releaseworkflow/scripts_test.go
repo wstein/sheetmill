@@ -225,6 +225,8 @@ build)
   echo content > "$out/index.txt"
 `
 	switch mode {
+	case "helpfail":
+		body = strings.Replace(body, `--help) echo "smill help" ;;`, `--help) exit 1 ;;`, 1)
 	case "checkfail":
 		body = strings.Replace(body, `check) test -d "$2" ;;`, `check) exit 1 ;;`, 1)
 	case "random":
@@ -310,7 +312,17 @@ func TestPackageLayoutAndDeterminism(t *testing.T) {
 		t.Errorf("sidecar = %q", sidecar)
 	}
 
-	// Same inputs at another time and umask give the same bytes.
+	// Every member carries SOURCE_DATE_EPOCH (1700000000 = 2023-11-14 22:13 UTC), not the file times.
+	dates := run(t, "", []string{"TZ=UTC"}, "tar", "-tvzf", archive)
+	if n := strings.Count(dates.stdout, " 2023-11-14 22:13 "); n != 4 {
+		t.Errorf("want all 4 members dated from SOURCE_DATE_EPOCH, got %d:\n%s", n, dates.stdout)
+	}
+	// Same inputs with other file times and another umask give the same bytes.
+	for _, f := range []string{"LICENSE", "README.md"} {
+		if err := os.Chtimes(filepath.Join(tree, f), time.Unix(1600000000, 0), time.Unix(1600000000, 0)); err != nil {
+			t.Fatal(err)
+		}
+	}
 	// Members are stored in sorted name order, whatever order the files were created in.
 	raw := run(t, "", nil, "tar", "-tzf", archive)
 	wantOrder := "smill_0.1.0_linux_amd64/\nsmill_0.1.0_linux_amd64/LICENSE\nsmill_0.1.0_linux_amd64/README.md\nsmill_0.1.0_linux_amd64/smill\n"
@@ -320,7 +332,8 @@ func TestPackageLayoutAndDeterminism(t *testing.T) {
 	if err := os.Chtimes(bin, time.Unix(1500000000, 0), time.Unix(1500000000, 0)); err != nil {
 		t.Fatal(err)
 	}
-	if r := pack(t, tree, "v0.1.0", bin, out2); r.code != 0 {
+	gnuTar(t)
+	if r := run(t, tree, []string{"SOURCE_DATE_EPOCH=1700000000"}, "sh", "-c", "umask 077; exec sh \"$0\" v0.1.0 linux amd64 \"$1\" \"$2\"", script(t, "release-package.sh"), bin, out2); r.code != 0 {
 		t.Fatalf("second package failed: %+v", r)
 	}
 	a, _ := os.ReadFile(archive)
@@ -424,6 +437,30 @@ func TestSmokeAcceptsAGoodArchiveAndRejectsBadOnes(t *testing.T) {
 		t.Errorf("failing smill check accepted or unexplained: %+v", r)
 	}
 
+	if r := smoke(t, "v1.2.3", build("v1.2.3", "helpfail"), tree); r.code == 0 || !strings.Contains(r.stderr, "--help") {
+		t.Errorf("failing --help accepted or unexplained: %+v", r)
+	}
+
+	// A binary without the executable bit, with a matching checksum.
+	noexec := build("v1.2.3", "good")
+	ndir := filepath.Dir(noexec)
+	if r := run(t, ndir, nil, "tar", "-xzf", noexec); r.code != 0 {
+		t.Fatal(r.stderr)
+	}
+	if err := os.Chmod(filepath.Join(ndir, "smill_1.2.3_linux_amd64", "smill"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if r := run(t, ndir, nil, "tar", "-czf", noexec, "smill_1.2.3_linux_amd64"); r.code != 0 {
+		t.Fatal(r.stderr)
+	}
+	nsum := run(t, ndir, nil, "sha256sum", filepath.Base(noexec))
+	if err := os.WriteFile(noexec+".sha256", []byte(nsum.stdout), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if r := smoke(t, "v1.2.3", noexec, tree); r.code == 0 || !strings.Contains(r.stderr, "executable") {
+		t.Errorf("non-executable smill accepted or unexplained: %+v", r)
+	}
+
 	// An archive with an extra member, even with a matching checksum.
 	extra := build("v1.2.3", "good")
 	dir := filepath.Dir(extra)
@@ -493,18 +530,19 @@ func TestSmokeWithTheRealBinary(t *testing.T) {
 func TestNotes(t *testing.T) {
 	dir := newRepo(t, "feat: first", "fix: second")
 	git(t, dir, "tag", "-a", "-m", "r", "v0.1.0")
+	git(t, dir, "tag", "-a", "-m", "r", "v0.0.9", "HEAD~1") // an older stable tag: not the baseline
 	if err := os.WriteFile(filepath.Join(dir, "n"), []byte("n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	git(t, dir, "add", "n")
 	git(t, dir, "commit", "-q", "-m", "feat: third")
+	git(t, dir, "tag", "-a", "-m", "r", "v0.1.5-rc1") // a newer pre-release: never the baseline
 	if err := os.WriteFile(filepath.Join(dir, "m"), []byte("m"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	git(t, dir, "add", "m")
 	git(t, dir, "commit", "-q", "-m", "fix: fourth")
 	git(t, dir, "tag", "-a", "-m", "r", "v0.2.0")
-	git(t, dir, "tag", "-a", "-m", "r", "v0.3.0-rc1") // never the baseline
 	head := git(t, dir, "rev-parse", "HEAD")
 
 	r := sh(t, dir, nil, "release-notes.sh", "v0.2.0", head, "1.27.2")
@@ -517,7 +555,7 @@ func TestNotes(t *testing.T) {
 			t.Errorf("notes lack %q:\n%s", want, r.stdout)
 		}
 	}
-	for _, unwanted := range []string{"- fix: second", "First release", "v0.3.0-rc1"} {
+	for _, unwanted := range []string{"- fix: second", "First release", "v0.1.5-rc1", "Changes since v0.0.9"} {
 		if strings.Contains(r.stdout, unwanted) {
 			t.Errorf("notes must not contain %q:\n%s", unwanted, r.stdout)
 		}
