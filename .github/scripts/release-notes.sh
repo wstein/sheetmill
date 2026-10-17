@@ -20,8 +20,11 @@ commit=$2
 gover=$3
 plain=${tag#v}
 
-prev=$(git tag --merged "$commit^" --list 'v*' --sort=-version:refname |
+prev=
+if git rev-parse -q --verify "$commit^" >/dev/null; then
+	prev=$(git tag --merged "$commit^" --list 'v*' --sort=-version:refname |
 	grep -E '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' | grep -vx "$tag" | head -n 1 || true)
+fi
 
 cat <<TEXT
 SheetMill $tag

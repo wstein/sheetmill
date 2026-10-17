@@ -10,7 +10,7 @@ Pushing an annotated tag `vMAJOR.MINOR.PATCH` (for example `v0.1.0`; pre-release
 such as `-rc1` start nothing) runs `.github/workflows/release.yml`:
 
 1. **verify**: the tag is annotated, names the commit being built, is an ancestor of `main`
-   and was pushed by the repository owner; the `check` workflow succeeded for that commit; no
+   and was pushed by the repository owner (the same check guards manual dry runs); the `check` workflow succeeded for that commit; no
    release exists for the tag; `.go-version` equals `go.mod`; `make check`, `make mod-verify`
    and `make test-assets` pass.
 2. **build**: `linux/amd64`, `linux/arm64` and `darwin/arm64` with `CGO_ENABLED=0`,
@@ -96,5 +96,6 @@ binary (clear it with `xattr -d com.apple.quarantine <file>` only if you trust t
   next release notes, and publish a fixed higher version rather than moving the tag again.
   This assumes GitHub immutable releases are off; with them on, a published release and its
   tag cannot be changed or reused, so always fix forward.
-- **Dry run**: Actions, release, Run workflow, on a branch. It builds and smoke-tests with the
-  label `v0.0.0-dryrun` and never publishes; artifacts are deleted after one day.
+- **Dry run**: Actions, release, Run workflow, on a branch (owner only). It builds and
+  smoke-tests with the label `v0.0.0-dryrun` (any `vX.Y.Z-label` is accepted) and never
+  publishes; artifacts are deleted after one day. Run one before the first real tag.

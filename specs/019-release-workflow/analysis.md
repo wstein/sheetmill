@@ -44,3 +44,24 @@ combine each test with its implementation so every commit keeps `go test ./...` 
 | 11 | low | Standing-approval reading | Open decision 6; AGENTS.md states the reading |
 | 12 | low | Implementation before READY | Order note above |
 | 13 | low | Tag fetch | Forced `+refs/tags/$TAG:refs/tags/$TAG`, `--no-tags` |
+
+## Round 2 (reviewer on a76b95c, Opus, read-only; ran tests, shellcheck, actionlint v1.7.7): NOT READY
+
+| # | Sev | Finding | Resolution |
+| --- | --- | --- | --- |
+| 1 | high | Default dry-run label `v0.0.0-dryrun` rejected by `release-package.sh`, so the dry run could not work | Package script accepts `vX.Y.Z[-label]`; `TestDryRunLabelPackagesAndSmokes` packages, smokes and checks the dispatch default |
+| 2 | med | Mutation tests were substring checks; 11 weakenings undetected | New rules: `set -euo pipefail` first in multi-line scripts, `|| true`/`|| :` forbidden, `if` forbidden on all steps except the three tag-only checks, exact `cmp`, refspec, `-ge 1`, smoke artifact name and call; 14 added mutations. Still string-level, not shell-AST: stated limitation |
+| 3 | low | Dispatch not owner-only; `v0.1.0` accepted as a dry label | Actor check runs on every run kind; dry label requires a suffix |
+| 4 | low | Package script accepted a newline in the version | Newline rejected, test added |
+| 5 | low | Stale status, unchecked tasks, FR-2 order | Status, checkboxes, FR-2 order aligned |
+| 6 | low | Notes script error on a parentless commit | Guarded with `git rev-parse -q --verify`; `@user` escaping not done (subjects are the owner's own commits) |
+| 7 | low | Dead loop in test | Removed |
+| 8 | low | Tag could move between `ls-remote` and `gh release create` | Accepted (owner-only, documented) |
+
+## T008 local verification (author, at the round 3 candidate)
+
+Run: `gofmt -l`, `go vet ./...`, `go test ./...`, `go test -race ./internal/releaseworkflow`,
+`make check`, `SHEETMILL_HUGO=/opt/bundledock/toolbox/bin/hugo make test-hugo`; `bash -n` on every
+extracted `run:` block. All passed. Not run: any workflow, `make test-browser*` (Node is not
+installed), actionlint (not installed; the round 2 reviewer ran v1.7.7 clean), macOS/arm64
+execution of the scripts, the GitHub-side tag path.

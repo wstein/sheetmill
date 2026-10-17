@@ -5,7 +5,8 @@
 #
 # Usage:
 #   sh release-verify.sh version VERSION    VERSION is a strict release version
-#   sh release-verify.sh dryversion VERSION VERSION may be a dry-run label
+#   sh release-verify.sh dryversion VERSION VERSION is a dry-run label: a version with a
+#                                           mandatory suffix, never a release version
 #   sh release-verify.sh tag TAG MAIN_REF   annotated tag on a commit reachable from MAIN_REF;
 #                                           prints the tagged commit
 #   sh release-verify.sh go                 .go-version equals the go line of go.mod
@@ -27,7 +28,7 @@ usage() {
 NL='
 '
 release_re='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
-dry_re='^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'
+dry_re='^v[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z.]+$'
 
 # match RE VALUE: whole-value match; a newline never matches (grep works per line).
 match() {
