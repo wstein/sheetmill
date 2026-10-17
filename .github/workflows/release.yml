@@ -1,0 +1,268 @@
+# SPDX-License-Identifier: EUPL-1.2
+# Authorized 2026-10-17 (AGENTS.md, specs/019-release-workflow): the owner decided
+# "tag v0.1.0 => CI based release workflow". An owner-pushed tag vMAJOR.MINOR.PATCH is
+# the publication approval for that tag's release; a manual run is a dry run that
+# never publishes. Nothing is signed or notarized.
+name: release
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Dry-run version label (a dispatch never publishes)
+        required: false
+        default: v0.0.0-dryrun
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      dry_run: ${{ steps.resolve.outputs.dry_run }}
+      commit: ${{ steps.resolve.outputs.commit }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: .go-version
+          check-latest: false
+      - name: Resolve the version and the run kind
+        id: resolve
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = push ] && [ "$REF_TYPE" = tag ]; then
+            sh .github/scripts/release-verify.sh version "$REF_NAME"
+            version=$REF_NAME
+            dry_run=false
+          else
+            version=${INPUT_VERSION:-v0.0.0-dryrun}
+            sh .github/scripts/release-verify.sh dryversion "$version"
+            dry_run=true
+          fi
+          {
+            echo "version=$version"
+            echo "dry_run=$dry_run"
+            echo "commit=$GITHUB_SHA"
+          } >> "$GITHUB_OUTPUT"
+      - name: Require the repository owner to have pushed the tag
+        if: steps.resolve.outputs.dry_run == 'false'
+        shell: bash
+        env:
+          ACTOR: ${{ github.triggering_actor }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          test "$ACTOR" = "$OWNER" || { echo "tag pushed by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }
+      - name: Require an annotated tag on a commit of main
+        if: steps.resolve.outputs.dry_run == 'false'
+        shell: bash
+        env:
+          TAG: ${{ steps.resolve.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Fetch the tag object itself so a lightweight tag is not mistaken for an annotated one.
+          git fetch --force --no-tags "https://github.com/$REPO" "+refs/tags/$TAG:refs/tags/$TAG"
+          git fetch --force --no-tags "https://github.com/$REPO" '+refs/heads/main:refs/remotes/origin/main'
+          commit=$(sh .github/scripts/release-verify.sh tag "$TAG" refs/remotes/origin/main)
+          test "$commit" = "$GITHUB_SHA" || { echo "tag $TAG names $commit but the run is for $GITHUB_SHA" >&2; exit 1; }
+      - name: Require a green check run for the tagged commit
+        if: steps.resolve.outputs.dry_run == 'false'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          n=$(gh api "repos/$REPO/actions/workflows/check.yml/runs?head_sha=$GITHUB_SHA&event=push&status=success" --jq '.workflow_runs | map(select(.conclusion == "success")) | length')
+          test "$n" -ge 1 || { echo "no successful check run on push for $GITHUB_SHA; re-run check for that commit first" >&2; exit 1; }
+      - name: Require that no release exists for the tag
+        if: steps.resolve.outputs.dry_run == 'false'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ steps.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          if out=$(gh api "repos/$REPO/releases/tags/$TAG" 2>&1); then
+            echo "a release for $TAG already exists" >&2
+            exit 1
+          fi
+          case "$out" in
+            *"HTTP 404"*) echo "no release for $TAG yet" ;;
+            *) echo "cannot tell whether a release exists: $out" >&2; exit 1 ;;
+          esac
+      - run: sh .github/scripts/release-verify.sh go
+      - run: make check
+      - run: make mod-verify
+      - run: make test-assets
+
+  build:
+    name: build (${{ matrix.os }}/${{ matrix.arch }})
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          - os: darwin
+            arch: arm64
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: .go-version
+          check-latest: false
+          cache: false
+      - name: Build smill twice and compare
+        shell: bash
+        env:
+          CGO_ENABLED: '0'
+          GOTOOLCHAIN: local
+          GOFLAGS: -mod=readonly
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bin"
+          go build -trimpath -ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=$VERSION" -o "$RUNNER_TEMP/bin/smill" ./cmd/smill
+          # A second build with an empty build cache must give the same bytes.
+          GOCACHE="$RUNNER_TEMP/gocache-second" go build -trimpath -ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=$VERSION" -o "$RUNNER_TEMP/bin/smill-second" ./cmd/smill
+          cmp "$RUNNER_TEMP/bin/smill" "$RUNNER_TEMP/bin/smill-second"
+      - name: Package the archive
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          OS: ${{ matrix.os }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct) sh .github/scripts/release-package.sh "$VERSION" "$OS" "$ARCH" "$RUNNER_TEMP/bin/smill" "$RUNNER_TEMP/dist"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-${{ matrix.os }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/dist/*
+          retention-days: 1
+          if-no-files-found: error
+
+  smoke:
+    name: smoke (${{ matrix.os }}/${{ matrix.arch }})
+    needs: [verify, build]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            runner: ubuntu-24.04
+          - os: linux
+            arch: arm64
+            runner: ubuntu-24.04-arm
+          - os: darwin
+            arch: arm64
+            runner: macos-15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-${{ matrix.os }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/dist
+      - name: Smoke-test the shipped archive natively
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          OS: ${{ matrix.os }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          plain=${VERSION#v}
+          sh .github/scripts/release-smoke.sh "$VERSION" "$RUNNER_TEMP/dist/smill_${plain}_${OS}_${ARCH}.tar.gz" "$GITHUB_WORKSPACE"
+
+  publish:
+    name: publish
+    needs: [verify, build, smoke]
+    if: needs.verify.outputs.dry_run == 'false' && github.event_name == 'push' && github.ref_type == 'tag'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    environment: release
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/dist
+      - name: Create the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ needs.verify.outputs.version }}
+          COMMIT: ${{ needs.verify.outputs.commit }}
+          DRAFT: ${{ vars.SHEETMILL_RELEASE_DRAFT }}
+          ACTOR: ${{ github.triggering_actor }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          # A re-run by someone else must not publish on the owner's earlier approval.
+          test "$ACTOR" = "$OWNER" || { echo "run triggered by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }
+          # Drafts are invisible to the verify job's read token; refuse any release, draft or not, for the tag.
+          existing=$(gh api "repos/$REPO/releases" --paginate --jq ".[] | select(.tag_name == \"$TAG\") | .id")
+          test -z "$existing" || { echo "a release (possibly a draft) for $TAG already exists: $existing" >&2; exit 1; }
+          # The tag must still name the verified commit; the owner may have moved it during the run.
+          remote=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG^{}" | cut -f1)
+          test "$remote" = "$COMMIT" || { echo "tag $TAG now names '$remote', not the verified $COMMIT" >&2; exit 1; }
+          test "$(git rev-parse HEAD)" = "$COMMIT"
+          cd "$RUNNER_TEMP/dist"
+          test "$(ls -1 -- *.tar.gz | wc -l)" -eq 3
+          cat -- *.tar.gz.sha256 | LC_ALL=C sort -k2 > SHA256SUMS
+          test "$(wc -l < SHA256SUMS)" -eq 3
+          sha256sum --check SHA256SUMS
+          cd "$GITHUB_WORKSPACE"
+          sh .github/scripts/release-notes.sh "$TAG" "$COMMIT" "$(cat .go-version)" > "$RUNNER_TEMP/notes.md"
+          flags=()
+          if [ "$DRAFT" = true ]; then flags+=(--draft); fi
+          gh release create "$TAG" --repo "$REPO" --verify-tag --title "SheetMill $TAG" --notes-file "$RUNNER_TEMP/notes.md" ${flags[@]+"${flags[@]}"} \
+            "$RUNNER_TEMP"/dist/smill_*.tar.gz "$RUNNER_TEMP/dist/SHA256SUMS"
