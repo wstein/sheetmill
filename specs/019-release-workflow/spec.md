@@ -32,8 +32,7 @@ the owner (open decision 1).
 
 1. **Owner releases.** *Given* the workflow is on `main`, *when* the owner pushes the
    annotated tag `v0.1.0` on a green `main` commit, *then* the workflow verifies the tag,
-   builds three binaries, smoke-tests each natively, waits for the `release` environment
-   gate if the owner configured one, and creates a GitHub release with three archives and `SHA256SUMS` (FR-1..FR-6).
+   builds three binaries, smoke-tests each natively, and creates a GitHub release with three archives and `SHA256SUMS` (FR-1..FR-6).
 2. **Wrong tag is refused.** *Given* a lightweight tag, a tag on a commit that is not on
    `main`, a tag whose commit has no green `check` run, a tag pushed by someone other than
    the repository owner, or a tag whose release already exists, *then* the verify job fails
@@ -173,9 +172,12 @@ Owner-only; agents never touch tags. The old tag is already known to the Go modu
 Procedure (details in `docs/releasing.md`): merge the workflow PR; pick the `main` commit
 (it must contain 017, 018 and the workflow, and have a green `check` run); delete the tag
 locally and on origin; create an annotated tag on that commit; push it; approve the
-`release` environment if protected; verify.
+verify. The `release` environment has no reviewer rule (owner decision 2026-10-17).
 
 ## Known limitations (accepted)
+
+- No reviewer gate: the `release` environment is unprotected, so an owner tag push publishes
+  as soon as verify, build and smoke pass.
 
 - The workflow tests are string- and line-level rules plus mutations, not a shell AST. A
   determined edit can still disarm a check; they catch accidental or casual weakening, and
@@ -215,8 +217,9 @@ changelog files, Hugo in the smoke test, running the workflow, tagging and mergi
    `<version>`/`v0.1.1` as the default and the `v0.1.0` retag as a documented, discouraged
    alternative; the choice is the owner's and the workflow serves either.
 3. Add build provenance attestations later: recommended after the first release.
-4. Protect the `release` environment with the owner as required reviewer, and restrict
-   deployment tags to `v*`: recommended.
+4. Decided (owner, 2026-10-17): no required-reviewer rule on the `release` environment. The
+   job keeps `environment: release` (GitHub creates it unprotected). Without a reviewer rule any
+   owner tag push that passes the checks publishes immediately (Known limitations).
 5. Make a `v*` tag ruleset (block deletion/update after release): recommended.
 6. Confirm (pending, not granted) that the 2026-10-17 quote is a standing approval for every later `vX.Y.Z` tag
    pushed by the owner (this spec's reading), not for v0.1.0 only. If v0.1.0 only, change
