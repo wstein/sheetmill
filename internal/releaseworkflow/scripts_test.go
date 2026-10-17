@@ -225,6 +225,8 @@ build)
   echo content > "$out/index.txt"
 `
 	switch mode {
+	case "checkfail":
+		body = strings.Replace(body, `check) test -d "$2" ;;`, `check) exit 1 ;;`, 1)
 	case "random":
 		body += "  echo $$ > \"$out/pid.txt\"\n"
 	case "empty":
@@ -309,6 +311,12 @@ func TestPackageLayoutAndDeterminism(t *testing.T) {
 	}
 
 	// Same inputs at another time and umask give the same bytes.
+	// Members are stored in sorted name order, whatever order the files were created in.
+	raw := run(t, "", nil, "tar", "-tzf", archive)
+	wantOrder := "smill_0.1.0_linux_amd64/\nsmill_0.1.0_linux_amd64/LICENSE\nsmill_0.1.0_linux_amd64/README.md\nsmill_0.1.0_linux_amd64/smill\n"
+	if raw.stdout != wantOrder {
+		t.Errorf("members are not stored in sorted order:\n%s", raw.stdout)
+	}
 	if err := os.Chtimes(bin, time.Unix(1500000000, 0), time.Unix(1500000000, 0)); err != nil {
 		t.Fatal(err)
 	}
@@ -409,6 +417,31 @@ func TestSmokeAcceptsAGoodArchiveAndRejectsBadOnes(t *testing.T) {
 	_ = f.Close()
 	if r := smoke(t, "v1.2.3", tampered, tree); r.code == 0 || !strings.Contains(r.stderr, "checksum") {
 		t.Errorf("tampered archive accepted or unexplained: %+v", r)
+	}
+
+	// A check failure of the shipped binary.
+	if r := smoke(t, "v1.2.3", build("v1.2.3", "checkfail"), tree); r.code == 0 || !strings.Contains(r.stderr, "check") {
+		t.Errorf("failing smill check accepted or unexplained: %+v", r)
+	}
+
+	// An archive with an extra member, even with a matching checksum.
+	extra := build("v1.2.3", "good")
+	dir := filepath.Dir(extra)
+	if r := run(t, dir, nil, "tar", "-xzf", extra); r.code != 0 {
+		t.Fatal(r.stderr)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "smill_1.2.3_linux_amd64", "extra"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if r := run(t, dir, nil, "tar", "-czf", extra, "smill_1.2.3_linux_amd64"); r.code != 0 {
+		t.Fatal(r.stderr)
+	}
+	sum := run(t, dir, nil, "sha256sum", filepath.Base(extra))
+	if err := os.WriteFile(extra+".sha256", []byte(sum.stdout), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if r := smoke(t, "v1.2.3", extra, tree); r.code == 0 || !strings.Contains(r.stderr, "members") {
+		t.Errorf("archive with an extra member accepted or unexplained: %+v", r)
 	}
 
 	// Missing sidecar.
