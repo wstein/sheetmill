@@ -180,6 +180,12 @@ locally and on origin; create an annotated tag on that commit; push it; approve 
 - The workflow tests are string- and line-level rules plus mutations, not a shell AST. A
   determined edit can still disarm a check; they catch accidental or casual weakening, and
   the independent review plus the owner's review of the workflow PR remain the real gate.
+  `testdata/release.golden.json` pins the whole parsed workflow as a **change detector**: it
+  can be regenerated (`UPDATE_RELEASE_GOLDEN=1`, refused in CI, the run then fails on purpose),
+  so it proves nothing about safety; the semantic rules do. Mutation rows match raw text, so
+  action bumps and reformatting need test updates (docs/releasing.md).
+- Every owner check compares with `github.repository_owner`; if the repository becomes
+  organization-owned or is transferred, the checks fail closed until they are rewritten.
 
 - No signing, notarization or attestation. On macOS a browser download may be quarantined
   by Gatekeeper; `curl`/`tar` downloads are not.

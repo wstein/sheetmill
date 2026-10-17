@@ -6,7 +6,7 @@ contributors never create, move or delete tags and never start the workflow.
 
 ## What a tag does
 
-Pushing an annotated tag `vMAJOR.MINOR.PATCH` (for example `v0.1.0`; pre-release suffixes
+Pushing an annotated tag `vMAJOR.MINOR.PATCH` (for example `v0.1.1`; pre-release suffixes
 such as `-rc1` start nothing) runs `.github/workflows/release.yml`:
 
 1. **verify**: the tag is annotated, names the commit being built, is an ancestor of `main`
@@ -32,7 +32,7 @@ download, not a malicious release. Reproducibility is checked on one runner only
 - Settings, Environments, `release`: add yourself as required reviewer so publish waits for
   your approval; allow deployment from tags matching `v*`. Without this the environment is
   created unprotected and the pushed tag alone releases.
-- Rulesets: protect `v*` tags against deletion and updates **after** the retag below.
+- Rulesets: protect `v*` tags against deletion and updates once the release exists.
 - Repository variable `SHEETMILL_RELEASE_DRAFT=true` makes the next release a draft that you
   publish by hand (default: published immediately).
 
@@ -95,11 +95,25 @@ On the Apple silicon Mac mini, download `smill_<number>_darwin_arm64.tar.gz` and
 or `gh` are not quarantined; a browser download is, and Gatekeeper may refuse the unsigned
 binary (clear it with `xattr -d com.apple.quarantine <file>` only if you trust the checksum).
 
+## Maintaining the workflow
+
+`internal/releaseworkflow/testdata/release.golden.json` pins the whole parsed workflow. It is
+a change detector, not a safety proof: running the tests with `UPDATE_RELEASE_GOLDEN=1`
+regenerates it (the run then fails on purpose and is refused when `CI` is set), so read the
+diff. The real checks are the semantic rules and the mutation table in `workflow_test.go`.
+An action bump needs the golden, the action pin and allow-list in the test, and a few mutation
+rows; mutation rows match raw workflow text, so harmless reformatting of `release.yml` makes
+them fail with "HARNESS ERROR, NOT A KILL" until the rows are updated.
+
 ## When something goes wrong
 
-- **A job fails before publish**: nothing is public. Fix the cause, then either re-run the failed
-  jobs (same tag, same commit) or, if the tagged commit must change, delete and re-create the
-  tag as above. Check `gh release list` first: a release or draft for the tag blocks publish.
+- **A job fails before publish**: nothing is public. If the cause is transient, re-run the
+  failed jobs with the same tag and commit; if the build artifacts have expired (one day),
+  use Re-run all jobs. Check `gh release list` first: a release or draft for the tag blocks
+  publish. If the tagged commit itself must change, do **not** delete and re-create the tag:
+  the module proxy fetches any tag on demand (for example through `@latest`) and keeps the
+  first content permanently, which is the same hazard as retagging `v0.1.0`. Tag the next
+  patch version on the fixed commit instead.
 - **Publish fails midway**: run `gh release view <version>`. If a release or draft exists with
   missing assets, delete it with `gh release delete <version> --yes` (the tag stays) and re-run
   the workflow. Do not edit assets by hand.

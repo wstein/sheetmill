@@ -87,9 +87,9 @@ verdict as NOT READY pending the owner's review of the workflow PR.
 
 ## Post-round-3 review (coordinator's independent Opus review of 2b4a92f): CLEAR, 4 medium, 11 low
 
-Runtime scenarios behaved correctly. 48 fresh mutants: 21 killed, 27 survived, 10 real gaps. Fixed in
-the next commits: F1/F2/F3/F5/F6/F9 by `testdata/release.golden.json` (the whole workflow,
-comments dropped, pinned; refresh with `UPDATE_RELEASE_GOLDEN=1`), plus a runtime
+Runtime scenarios behaved correctly. 48 fresh mutants: 21 killed, 27 survived, 10 real gaps. Addressed
+in the next commits: F1/F2/F3/F5/F6/F9 first by `testdata/release.golden.json` (the whole workflow,
+comments dropped; a change detector only), plus a runtime
 `git rev-parse HEAD` = verified commit assertion in build and smoke and an exact-env check;
 F4/F14 by rewriting docs, spec and AGENTS.md (default `v0.1.1`, retag of `v0.1.0` discouraged
 with the effects stated as fact, standing approval marked an open owner confirmation); F7/F8 by
@@ -97,3 +97,29 @@ script tests (failing `check`, extra archive member, sorted member order); F10/F
 F11 by also requiring `github.actor` to be the owner; F13 by the check.yml wording; F15 by the
 harness error text "HARNESS ERROR, NOT A KILL". Limitation: the golden makes any workflow edit
 a deliberate, reviewed change; it does not judge whether an edit is safe.
+
+## Confirmation review of 7b63e85 (coordinator, PR #49): CLEAR, 2 medium, 8 low
+
+The golden alone left 9 mutants alive once regenerated, so those items were only *detected as a
+change*, not prevented. Now also covered by semantic rules independent of the golden
+(`semantic()` in `workflow_test.go`): no assignment to ACTOR/OWNER/PUSHER/COMMIT/TAG/REPO and
+friends in any script, `n`/`remote`/`existing`/`commit` assigned once from a command
+substitution, no eval/export/source, only `https://github.com/$REPO` URLs, exact owner,
+pusher, `-eq 3`, sorted-checksum, `commit=$GITHUB_SHA`, check-run and second-build lines, no
+job env, no env on gates, per-action `with` allow-lists, no `cp`/`mv` between builds.
+The golden is no longer part of `violations()`; it is its own test, and updating it always fails
+the run and is refused in CI. Script tests added: dates from SOURCE_DATE_EPOCH, other umask and
+file times, failing `--help`, non-executable binary, baseline-tag choice (older stable tag,
+newer pre-release). Docs: retag hazard applies to any re-created tag (re-run or use the next
+patch), expired artifacts, golden churn, org-owner limitation. Known survivor: a change of the
+package call arguments (`"${VERSION}x"`) is caught only by the golden.
+
+## F11 studio flake (outside 019)
+
+`go test ./internal/studio -run TestInPlaceWritesNeverAcceptMixedSnapshot -count=150 -cpu 1,2`
+failed reproducibly before the fix ("accepted torn in-place read"). Cause: the test's writer can
+be descheduled mid-write, leaving a file that is torn at rest; two identical torn reads are then
+correct behavior of the stability check and no reader can tell them from a stable file. The
+test now counts writer progress and asserts only for reads during which the writer progressed.
+`-count=300 -cpu 1,2` passes after the change. Not verified: that the reworked test still fails
+when the stability check is removed (the attempted mutation did not compile).
