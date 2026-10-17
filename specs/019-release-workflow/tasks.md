@@ -10,7 +10,7 @@ one commit. No task runs a workflow, creates a tag or opens a PR.
 - [x] T005 Add `.github/workflows/release.yml` until T004 passes. Do not run it.
 - [x] T006 [FR-9] `check.yml` header comment; parity test (release matrix == check matrix) in `internal/releaseworkflow`.
 - [x] T007 [FR-10] Docs: `docs/releasing.md` (add it to nothing in `docs/manual-pages.txt` unless the review asks), README, `docs/getting-started.md`, `docs/cli.md`, `llms.txt`, `specs/README.md` row.
-- [ ] T008 Local checks: gofmt, vet, test, `make check`, `make test-hugo` (`SHEETMILL_HUGO=/opt/bundledock/toolbox/bin/hugo`); a local dry run of the scripts against a locally built binary; record in analysis.md. Node is not installed, so `make test-browser*` is not run.
-- [ ] T009 Independent review rounds recorded in `analysis.md`; push the topic branch; no PR, no workflow run.
+- [x] T008 Local checks: gofmt, vet, test, `make check`, `make test-hugo` (`SHEETMILL_HUGO=/opt/bundledock/toolbox/bin/hugo`); a local dry run of the scripts against a locally built binary; record in analysis.md. Node is not installed, so `make test-browser*` is not run.
+- [ ] T009 Independent review rounds recorded in `analysis.md`; push the topic branch; the coordinator may open a draft PR (the workflow has no PR trigger, so none runs); no workflow run.
 
 Dependencies: T001 first; T002 -> T003; T004 + T005 together; T006 after T005; T007 after T005.
