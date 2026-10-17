@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync/atomic"
 	"testing"
 )
 
@@ -131,6 +132,10 @@ func TestInPlaceWritesNeverAcceptMixedSnapshot(t *testing.T) {
 	defer f.Close()
 	stop := make(chan struct{})
 	done := make(chan struct{})
+	// gen counts started and finished writes. A writer that is descheduled in the middle of
+	// a write leaves a file that is torn at rest; no reader can tell that from a stable file,
+	// so only reads during which the writer made progress (gen changed) can prove a bug.
+	var gen atomic.Int64
 	go func() {
 		defer close(done)
 		for {
@@ -138,16 +143,24 @@ func TestInPlaceWritesNeverAcceptMixedSnapshot(t *testing.T) {
 			case <-stop:
 				return
 			default:
+				gen.Add(1)
 				f.WriteAt(a, 0)
+				gen.Add(1)
+				gen.Add(1)
 				f.WriteAt(b, 0)
+				gen.Add(1)
 			}
 		}
 	}()
 	defer func() { close(stop); <-done }()
 	for i := 0; i < 20; i++ {
+		before := gen.Load()
 		entry := s.Read().Entries[0]
+		if gen.Load() == before {
+			continue // writer idle or stalled mid-write: a torn file at rest is indistinguishable
+		}
 		if entry.Error == "" && !bytes.Equal(entry.Bytes, a) && !bytes.Equal(entry.Bytes, b) {
-			t.Fatal("accepted torn in-place read")
+			t.Fatal("accepted torn in-place read while the writer was making progress")
 		}
 	}
 }
