@@ -4,6 +4,12 @@ Releases are made by CI from a version tag. This page is the owner procedure; th
 in [specs/019-release-workflow](../specs/019-release-workflow/spec.md). Agents and
 contributors never create, move or delete tags and never start the workflow.
 
+## Approval
+
+There is no standing approval. Every tag and release, including later ones, needs Werner
+Stein's explicit approval each time; an approval for one tag (for example `v0.1.1`) covers only
+that tag. Agents and contributors never create or push tags on that basis.
+
 ## What a tag does
 
 Pushing an annotated tag `vMAJOR.MINOR.PATCH` (for example `v0.1.1`; pre-release suffixes
