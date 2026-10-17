@@ -9,7 +9,7 @@
   bundled example sheets; nothing in a sheet executes; no Hugo run.
 - 5 Focused Go design: PASS with the 018 exception. POSIX shell scripts and one YAML
   workflow carry the release steps; the tests are Go in a test-only package using the
-  already pinned `go.yaml.in/yaml/v3` and `mvdan.cc/sh/v3`. No new dependency, no new CLI
+  already pinned `go.yaml.in/yaml/v3` (no shell parser). No new dependency, no new CLI
   surface, no non-test Go code.
 - 6 Independent product: PASS.
 - 7 Human publication control: PASS conditionally. The owner's 2026-10-17 decision is the
@@ -51,14 +51,14 @@ verify --> build (3 targets) --> smoke (3 native runners) --> publish (tag push 
 ## Script contracts
 
 - `release-verify.sh version <v>`: exit 0 iff `v` matches the strict release regex.
+  `release-verify.sh dryversion <v>`: a version with a mandatory suffix (dry-run label).
   `release-verify.sh tag <tag> <main-ref>`: strict regex; `git cat-file -t refs/tags/<tag>`
   is `tag`; `git rev-parse <tag>^{commit}` is an ancestor of `<main-ref>`. `release-verify.sh
   go`: `.go-version` equals the `go` line of `go.mod`. Each failure prints one line to stderr.
 - `release-package.sh <version> <os> <arch> <binary> <outdir>`: reads `LICENSE`, `README.md`
   from the working directory, `SOURCE_DATE_EPOCH` from the environment (required), writes
   the archive and `<archive>.sha256` into `<outdir>`.
-- `release-smoke.sh <version> <archive> <repo-root>`: verifies the sidecar checksum if
-  present, extracts into a private temp dir, runs the FR-4 commands.
+- `release-smoke.sh <version> <archive> <repo-root>`: verifies the sidecar checksum (the sidecar is required), extracts into a private temp dir, runs the FR-4 commands.
 - `release-notes.sh <tag> <commit> <go-version>`: stdout only.
 
 ## Order (TDD)

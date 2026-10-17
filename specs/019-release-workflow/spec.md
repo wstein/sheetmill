@@ -144,8 +144,8 @@ that commit only, and publishes them with checksums. Nothing is signed or notari
   only in `build`, `download-artifact` only in `smoke` and `publish`. `check.yml` stays
   `contents: read`.
 - **FR-8 Tests.** A test-only Go package `internal/releaseworkflow` parses `release.yml`
-  (YAML, and `run:` blocks with `mvdan.cc/sh/v3` where structure matters) and runs the
-  scripts in temporary git repositories. A single `violations(workflow)` function returns
+  (YAML; `run:` blocks are checked by exact line and regular-expression rules, not a shell
+  parser) and runs the scripts in temporary git repositories. A single `violations(workflow)` function returns
   every broken rule; mutation tests apply one weakening each to the real file text and
   require the matching violation: trigger widened or narrowed, pre-release pattern added,
   `contents: write` moved to another job, a tag-mutable action ref, missing
@@ -177,6 +177,10 @@ locally and on origin; create an annotated tag on that commit; push it; approve 
 `release` environment if protected; verify.
 
 ## Known limitations (accepted)
+
+- The workflow tests are string- and line-level rules plus mutations, not a shell AST. A
+  determined edit can still disarm a check; they catch accidental or casual weakening, and
+  the independent review plus the owner's review of the workflow PR remain the real gate.
 
 - No signing, notarization or attestation. On macOS a browser download may be quarantined
   by Gatekeeper; `curl`/`tar` downloads are not.

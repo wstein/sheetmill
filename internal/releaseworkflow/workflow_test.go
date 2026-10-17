@@ -65,6 +65,8 @@ const (
 var (
 	allowedUses = map[string]bool{checkoutPin: true, setupGoPin: true, uploadPin: true, downloadPin: true}
 	swallowRe   = regexp.MustCompile(`\|\|\s*(true|:)(\s|;|$)`)
+	assertRe    = regexp.MustCompile(`^test .* \|\| \{ echo .* >&2; exit 1; \}$`)
+	disarmRe    = regexp.MustCompile(`exit 0|set \+e|\|\| echo|\|\| exit`)
 	pinRe       = regexp.MustCompile(`^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+@[0-9a-f]{40}$`)
 	platforms   = []string{"darwin/arm64", "linux/amd64", "linux/arm64"}
 )
@@ -224,6 +226,15 @@ func violations(w workflow, raw string) []string {
 			if strings.Contains(s.Run, "\n") && !strings.HasPrefix(s.Run, "set -euo pipefail\n") {
 				add("strict", "job %s multi-line script must start with set -euo pipefail", name)
 			}
+			for _, line := range strings.Split(s.Run, "\n") {
+				line = strings.TrimSpace(line)
+				if strings.HasPrefix(line, "test ") && strings.Contains(line, " || ") && !assertRe.MatchString(line) {
+					add("swallow", "job %s assertion does not fail the step: %q", name, line)
+				}
+			}
+			if disarmRe.MatchString(s.Run) {
+				add("swallow", "job %s script can succeed past a failure (exit 0, set +e, || echo)", name)
+			}
 			if swallowRe.MatchString(s.Run) {
 				add("swallow", "job %s script ignores a failure with || true or || :", name)
 			}
@@ -265,8 +276,9 @@ func violations(w workflow, raw string) []string {
 			}
 		}
 	}
-	if s, i := stepNamed(verify, "Require the repository owner"); i >= 0 && !strings.Contains(s.Run, `"$ACTOR" = "$OWNER"`) {
-		add("verify", "the pusher check is missing")
+	wantActor := map[string]any{"ACTOR": "${{ github.triggering_actor }}", "OWNER": "${{ github.repository_owner }}"}
+	if s, i := stepNamed(verify, "Require the repository owner"); i >= 0 && (!strings.Contains(s.Run, `test "$ACTOR" = "$OWNER" ||`) || !reflect.DeepEqual(s.Env, wantActor)) {
+		add("verify", "the verify owner check is missing or its ACTOR/OWNER env changed: %v", s.Env)
 	}
 	if s, i := stepNamed(verify, "Require an annotated tag"); i >= 0 {
 		for _, want := range []string{"git fetch --force --no-tags", `'+refs/heads/main:refs/remotes/origin/main'`, `release-verify.sh tag "$TAG" refs/remotes/origin/main`, `test "$commit" = "$GITHUB_SHA"`, `+refs/tags/$TAG:refs/tags/$TAG`} {
@@ -283,7 +295,7 @@ func violations(w workflow, raw string) []string {
 		}
 	}
 	if s, i := stepNamed(verify, "Require that no release exists"); i >= 0 {
-		for _, want := range []string{"releases/tags/$TAG", "HTTP 404", "exit 1"} {
+		for _, want := range []string{"releases/tags/$TAG", "if out=$(gh api", "already exists\" >&2\n  exit 1\nfi", `*"HTTP 404"*) echo`, `*) echo "cannot tell whether a release exists: $out" >&2; exit 1 ;;`} {
 			if !strings.Contains(s.Run, want) {
 				add("verify", "release existence step lacks %q", want)
 			}
@@ -396,7 +408,8 @@ func violations(w workflow, raw string) []string {
 			`"$RUNNER_TEMP"/dist/smill_*.tar.gz "$RUNNER_TEMP/dist/SHA256SUMS"`,
 			`git ls-remote "https://github.com/$REPO" "refs/tags/$TAG^{}"`,
 			"| cut -f1)\ntest \"$remote\" = \"$COMMIT\" ||",
-			`test "$ACTOR" = "$OWNER"`,
+			`test "$ACTOR" = "$OWNER" ||`,
+			`test "$(git rev-parse HEAD)" = "$COMMIT"`,
 			`select(.tag_name ==`,
 			`test -z "$existing"`,
 			"sha256sum --check SHA256SUMS",
@@ -413,13 +426,16 @@ func violations(w workflow, raw string) []string {
 		if s.Env["DRAFT"] != "${{ vars.SHEETMILL_RELEASE_DRAFT }}" {
 			add("draft", "the draft switch must be the SHEETMILL_RELEASE_DRAFT variable, got %v", s.Env["DRAFT"])
 		}
+		if s.Env["ACTOR"] != "${{ github.triggering_actor }}" || s.Env["OWNER"] != "${{ github.repository_owner }}" || s.Env["COMMIT"] != "${{ needs.verify.outputs.commit }}" || s.Env["TAG"] != "${{ needs.verify.outputs.version }}" {
+			add("publish", "publish ACTOR/OWNER/COMMIT/TAG env changed: %v", s.Env)
+		}
 		if s.Env["GH_TOKEN"] != "${{ github.token }}" {
 			add("secrets", "publish must use github.token")
 		}
 	}
 	for _, s := range publish.Steps {
-		if strings.HasPrefix(s.Uses, "actions/checkout@") && s.With["fetch-depth"] != 0 {
-			add("publish", "publish needs full history for the release notes")
+		if strings.HasPrefix(s.Uses, "actions/checkout@") && (s.With["fetch-depth"] != 0 || s.With["ref"] != nil) {
+			add("publish", "publish needs full history for the release notes and must check out the tag ref (no ref override)")
 		}
 		if strings.HasPrefix(s.Uses, "actions/download-artifact@") && (s.With["pattern"] != "release-*" || s.With["merge-multiple"] != true) {
 			add("publish", "publish must download exactly the release-* artifacts merged: %v", s.With)
@@ -514,6 +530,14 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"expression in a script", `sh .github/scripts/release-verify.sh version "$REF_NAME"`, `sh .github/scripts/release-verify.sh version "${{ github.ref_name }}"`, "injection", false},
 		{"tool download", "      - run: make test-assets\n", "      - run: make test-assets\n      - run: curl -sSL https://example.test/x | sh\n", "download", false},
 		{"pusher check removed", `test "$ACTOR" = "$OWNER" || { echo "run started`, `true || { echo "run started`, "verify", false},
+		{"owner env always true", "ACTOR: ${{ github.triggering_actor }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          # A re-run", "ACTOR: ${{ github.repository_owner }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          # A re-run", "publish", false},
+		{"verify owner env always true", "ACTOR: ${{ github.triggering_actor }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          test", "ACTOR: ${{ github.repository_owner }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          test", "verify", false},
+		{"exit 1 became exit 0", `run started by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }`, `run started by $ACTOR, not by the repository owner $OWNER" >&2; exit 0; }`, "swallow", false},
+		{"set +e", "          # The tag must still name", "          set +e\n          # The tag must still name", "swallow", false},
+		{"echo instead of failing", `test "$n" -ge 1 || { echo`, `test "$n" -ge 1 || echo "x"; { echo`, "swallow", false},
+		{"release-exists accepts any error", `*) echo "cannot tell whether a release exists: $out" >&2; exit 1 ;;`, `*) echo "cannot tell" ;;`, "verify", false},
+		{"head check removed", `          test "$(git rev-parse HEAD)" = "$COMMIT"` + "\n", "", "publish", false},
+		{"publish checks out main", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          ref: main\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "publish", false},
 		{"pusher check swallowed", "exit 1; }\n      - name: Require an annotated tag", "exit 1; } || true\n      - name: Require an annotated tag", "swallow", false},
 		{"owner check made conditional", "      - name: Require the repository owner to have started the run\n", "      - name: Require the repository owner to have started the run\n        if: steps.resolve.outputs.dry_run == 'false'\n", "verify", false},
 		{"smoke step conditional", "      - name: Smoke-test the shipped archive natively\n", "      - name: Smoke-test the shipped archive natively\n        if: github.event_name == 'none'\n", "step-if", false},

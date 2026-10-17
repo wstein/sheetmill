@@ -65,3 +65,22 @@ Run: `gofmt -l`, `go vet ./...`, `go test ./...`, `go test -race ./internal/rele
 extracted `run:` block. All passed. Not run: any workflow, `make test-browser*` (Node is not
 installed), actionlint (not installed; the round 2 reviewer ran v1.7.7 clean), macOS/arm64
 execution of the scripts, the GitHub-side tag path.
+
+## Round 3 (reviewer on b0c604a, Opus, read-only; ran tests, actionlint 1.7.7, a manual dry run through packaging and smoke): NOT READY
+
+The reviewer found no high findings and confirmed rounds 1 and 2 resolutions, the dry run by
+hand, and the authorization wording. 33 new mutations: 6 caught, 10 harmless, 17 slipped.
+
+| # | Sev | Finding | Resolution |
+| --- | --- | --- | --- |
+| 1 | med | Gates disarmable by `exit 0`, `\|\| echo`, `set +e`; release-exists `case` loose | Assertion lines must match `test ... \|\| { echo ... >&2; exit 1; }`; `exit 0`, `set +e`, `\|\| echo`, `\|\| exit` forbidden in scripts; release-exists branches pinned; 6 mutations added |
+| 2 | med | ACTOR/OWNER env could be made always equal | Exact env of both owner checks pinned; mutations added |
+| 3 | low | Spec/plan claimed a shell parser | Claim removed; limitation listed in the spec |
+| 4 | low | tasks/plan drift | Aligned |
+| 5 | low | Standing approval is the spec's reading | Open decision 6 (owner confirms before the second release) |
+| 6 | low | HEAD check and publish checkout ref untested | Pinned, mutations added |
+
+Verdict: three rounds are used. No fourth review was run on the final fixes; the author's
+re-run of the workflow tests passes. The 17 slips were not all re-tested individually.
+Remaining known gap: tests are string/line-level (spec Known limitations). Treat the
+verdict as NOT READY pending the owner's review of the workflow PR.
