@@ -64,6 +64,7 @@ const (
 
 var (
 	allowedUses = map[string]bool{checkoutPin: true, setupGoPin: true, uploadPin: true, downloadPin: true}
+	swallowRe   = regexp.MustCompile(`\|\|\s*(true|:)(\s|;|$)`)
 	pinRe       = regexp.MustCompile(`^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+@[0-9a-f]{40}$`)
 	platforms   = []string{"darwin/arm64", "linux/amd64", "linux/arm64"}
 )
@@ -217,6 +218,15 @@ func violations(w workflow, raw string) []string {
 					add("artifact", "only smoke and publish may download artifacts, job %s does", name)
 				}
 			}
+			if s.If != nil && !(name == "verify" && strings.HasPrefix(s.Name, "Require ") && !strings.HasPrefix(s.Name, "Require the repository owner")) {
+				add("step-if", "job %s step %q must not be conditional (if: %v)", name, s.Name+s.Run, s.If)
+			}
+			if strings.Contains(s.Run, "\n") && !strings.HasPrefix(s.Run, "set -euo pipefail\n") {
+				add("strict", "job %s multi-line script must start with set -euo pipefail", name)
+			}
+			if swallowRe.MatchString(s.Run) {
+				add("swallow", "job %s script ignores a failure with || true or || :", name)
+			}
 			if strings.Contains(s.Run, "${{") {
 				add("injection", "job %s interpolates an expression inside a run script; pass it through env", name)
 			}
@@ -226,9 +236,6 @@ func violations(w workflow, raw string) []string {
 				}
 			}
 		}
-	}
-	for _, pin := range []string{"actions/", "uses: softprops", "attest"} {
-		_ = pin
 	}
 	if regexp.MustCompile(`(?m)^\s*(?:- )?uses:\s*\S+@(?:v\d|main|master)\b`).MatchString(raw) {
 		add("pin", "a uses: line names a mutable ref")
@@ -251,7 +258,9 @@ func violations(w workflow, raw string) []string {
 			add("verify", "step %q is out of order", prefix)
 		default:
 			last = i
-			if prefix != order[0] && s.If != "${{ "+dryGuard+" }}" && s.If != dryGuard {
+			if prefix == order[1] && s.If != nil {
+				add("verify", "the owner check must run on every run kind, it has if: %v", s.If)
+			} else if prefix != order[0] && prefix != order[1] && s.If != "${{ "+dryGuard+" }}" && s.If != dryGuard {
 				add("verify", "step %q must run exactly on real tag runs (if: %s), got %v", prefix, dryGuard, s.If)
 			}
 		}
@@ -260,14 +269,14 @@ func violations(w workflow, raw string) []string {
 		add("verify", "the pusher check is missing")
 	}
 	if s, i := stepNamed(verify, "Require an annotated tag"); i >= 0 {
-		for _, want := range []string{"git fetch --force --no-tags", "release-verify.sh tag", "$GITHUB_SHA"} {
+		for _, want := range []string{"git fetch --force --no-tags", `'+refs/heads/main:refs/remotes/origin/main'`, `release-verify.sh tag "$TAG" refs/remotes/origin/main`, `test "$commit" = "$GITHUB_SHA"`, `+refs/tags/$TAG:refs/tags/$TAG`} {
 			if !strings.Contains(s.Run, want) {
 				add("verify", "annotated tag step lacks %q", want)
 			}
 		}
 	}
 	if s, i := stepNamed(verify, "Require a green check run"); i >= 0 {
-		for _, want := range []string{"workflows/check.yml/runs", "head_sha=$GITHUB_SHA", "event=push", `.conclusion == "success"`} {
+		for _, want := range []string{"workflows/check.yml/runs", "head_sha=$GITHUB_SHA", "event=push", `.conclusion == "success"`, `test "$n" -ge 1`} {
 			if !strings.Contains(s.Run, want) {
 				add("verify", "check run step lacks %q", want)
 			}
@@ -327,7 +336,7 @@ func violations(w workflow, raw string) []string {
 				add("build", "env %s = %v, want %q", k, s.Env[k], want)
 			}
 		}
-		if !strings.Contains(s.Run, "GOCACHE=") || !strings.Contains(s.Run, "cmp ") {
+		if !strings.Contains(s.Run, "GOCACHE=") || !strings.Contains(s.Run, `cmp "$RUNNER_TEMP/bin/smill" "$RUNNER_TEMP/bin/smill-second"`) {
 			add("reproducibility", "the second build with a fresh cache and the cmp are missing")
 		}
 	}
@@ -360,7 +369,12 @@ func violations(w workflow, raw string) []string {
 	if !reflect.DeepEqual(needsOf(smoke.Needs), []string{"build", "verify"}) {
 		add("needs", "smoke must need verify and build, got %v", needsOf(smoke.Needs))
 	}
-	if s, i := stepNamed(smoke, "Smoke-test"); i < 0 || !strings.Contains(s.Run, `release-smoke.sh "$VERSION" "$RUNNER_TEMP/dist/smill_${plain}_${OS}_${ARCH}.tar.gz" "$GITHUB_WORKSPACE"`) {
+	for _, s := range smoke.Steps {
+		if strings.HasPrefix(s.Uses, "actions/download-artifact@") && (s.With["name"] != "release-${{ matrix.os }}-${{ matrix.arch }}" || s.With["path"] != "${{ runner.temp }}/dist") {
+			add("artifact", "smoke must download its own target's artifact: %v", s.With)
+		}
+	}
+	if s, i := stepNamed(smoke, "Smoke-test"); i < 0 || !strings.Contains(s.Run, "sh .github/scripts/release-smoke.sh ") || !strings.Contains(s.Run, `release-smoke.sh "$VERSION" "$RUNNER_TEMP/dist/smill_${plain}_${OS}_${ARCH}.tar.gz" "$GITHUB_WORKSPACE"`) {
 		add("archive", "the smoke step must run release-smoke.sh on the archive named smill_<version>_<os>_<arch>.tar.gz")
 	}
 
@@ -381,7 +395,7 @@ func violations(w workflow, raw string) []string {
 			`gh release create "$TAG" --repo "$REPO" --verify-tag --title "SheetMill $TAG" --notes-file "$RUNNER_TEMP/notes.md"`,
 			`"$RUNNER_TEMP"/dist/smill_*.tar.gz "$RUNNER_TEMP/dist/SHA256SUMS"`,
 			`git ls-remote "https://github.com/$REPO" "refs/tags/$TAG^{}"`,
-			`test "$remote" = "$COMMIT"`,
+			"| cut -f1)\ntest \"$remote\" = \"$COMMIT\" ||",
 			`test "$ACTOR" = "$OWNER"`,
 			`select(.tag_name ==`,
 			`test -z "$existing"`,
@@ -499,7 +513,19 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"secret used", "GH_TOKEN: ${{ github.token }}\n          REPO: ${{ github.repository }}\n          TAG: ${{ needs.verify.outputs.version }}", "GH_TOKEN: ${{ secrets.RELEASE_PAT }}\n          REPO: ${{ github.repository }}\n          TAG: ${{ needs.verify.outputs.version }}", "secrets", false},
 		{"expression in a script", `sh .github/scripts/release-verify.sh version "$REF_NAME"`, `sh .github/scripts/release-verify.sh version "${{ github.ref_name }}"`, "injection", false},
 		{"tool download", "      - run: make test-assets\n", "      - run: make test-assets\n      - run: curl -sSL https://example.test/x | sh\n", "download", false},
-		{"pusher check removed", `test "$ACTOR" = "$OWNER"`, "true", "verify", false},
+		{"pusher check removed", `test "$ACTOR" = "$OWNER" || { echo "run started`, `true || { echo "run started`, "verify", false},
+		{"pusher check swallowed", "exit 1; }\n      - name: Require an annotated tag", "exit 1; } || true\n      - name: Require an annotated tag", "swallow", false},
+		{"owner check made conditional", "      - name: Require the repository owner to have started the run\n", "      - name: Require the repository owner to have started the run\n        if: steps.resolve.outputs.dry_run == 'false'\n", "verify", false},
+		{"smoke step conditional", "      - name: Smoke-test the shipped archive natively\n", "      - name: Smoke-test the shipped archive natively\n        if: github.event_name == 'none'\n", "step-if", false},
+		{"cmp compares a file with itself", `cmp "$RUNNER_TEMP/bin/smill" "$RUNNER_TEMP/bin/smill-second"`, `cmp "$RUNNER_TEMP/bin/smill" "$RUNNER_TEMP/bin/smill"`, "reproducibility", false},
+		{"check-run count weakened", `test "$n" -ge 1`, `test "$n" -ge 0`, "verify", false},
+		{"ancestry against HEAD", `release-verify.sh tag "$TAG" refs/remotes/origin/main`, `release-verify.sh tag "$TAG" HEAD`, "verify", false},
+		{"main refspec wrong", `'+refs/heads/main:refs/remotes/origin/main'`, `'+refs/tags/main:refs/remotes/origin/main'`, "verify", false},
+		{"checksum check swallowed", "          sha256sum --check SHA256SUMS\n", "          sha256sum --check SHA256SUMS || true\n", "swallow", false},
+		{"tag race overwritten", `test "$remote" = "$COMMIT" ||`, `remote=$COMMIT; test "$remote" = "$COMMIT" ||`, "publish", false},
+		{"publish not strict", "          set -euo pipefail\n          # A re-run by someone else", "          # A re-run by someone else", "strict", false},
+		{"smoke runs true", `sh .github/scripts/release-smoke.sh `, `true `, "archive", false},
+		{"smoke downloads another target", "          name: release-${{ matrix.os }}-${{ matrix.arch }}\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "          name: release-linux-amd64\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "artifact", false},
 		{"annotated check removed", "release-verify.sh tag", "release-verify.sh version", "verify", false},
 		{"check run query removed", "head_sha=$GITHUB_SHA", "head_sha=0", "verify", false},
 		{"404 handling removed", "*\"HTTP 404\"*)", "*)", "verify", false},

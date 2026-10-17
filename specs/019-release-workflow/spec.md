@@ -1,7 +1,7 @@
 # Feature 019: tag-driven release workflow
 
-**Status**: Specification, awaiting independent review. Implementation on the topic
-branch `codex/019-release-workflow` follows review READY (see [analysis.md](analysis.md)).
+**Status**: Specified and implemented on the topic branch `codex/019-release-workflow`; independent
+review rounds are in [analysis.md](analysis.md). Nothing has been run on GitHub.
 **Authorization** (recorded in `AGENTS.md`, T001): the owner, Werner Stein, decided in
 chat on 2026-10-17: "017/018 in v0.1.0, ... tag v0.1.0 => CI based release workflow,
 update CI pipeline". This feature reads that as three decisions:
@@ -76,13 +76,15 @@ that commit only, and publishes them with checksums. Nothing is signed or notari
   `smoke`, and `publish` is skipped. Dry-run workflow artifacts live one day. No branch
   `push` and no `pull_request` trigger (a PR trigger would build binaries on the draft PR
   without the owner's approval of a distribution build).
-- **FR-2 Verify job** (`contents: read`, `actions: read`). On a tag push, in order:
+- **FR-2 Verify job** (`contents: read`, `actions: read`). In every run kind first: the version is
+  resolved and `github.triggering_actor` must equal `github.repository_owner` (so a dispatch
+  is owner-only too). On a tag push, then in order:
   (a) the tag name matches the strict pattern `^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`;
   (b) the tag object is an annotated tag (`git cat-file -t refs/tags/<tag>` is `tag`), after
   fetching the tag explicitly;
   (c) the tagged commit equals `GITHUB_SHA` and is an ancestor of `origin/main` (full
   history, `fetch-depth: 0`);
-  (d) `github.triggering_actor` equals `github.repository_owner`;
+  (d) (the actor check above, kept as a separate earlier step);
   (e) a run of the workflow file `check.yml` (queried by file, not by display name) for that
   commit with `event=push` has conclusion `success` (`gh api`, read-only); a run in
   progress, cancelled or failed fails the job with an instruction to wait for or re-run `check`;
@@ -92,7 +94,8 @@ that commit only, and publishes them with checksums. Nothing is signed or notari
   In every run (dry or not): `.go-version` equals the `go` line of `go.mod`; `make check`,
   `make mod-verify` and `make test-assets` pass. The version is the tag name; for a dry run
   it is the `version` input or the default, checked against
-  `^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$`. Inputs reach shell only through `env:`.
+  `^v[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z.]+$` (a suffix is mandatory, so a dry run can never
+  carry a release version; the packaging script accepts both forms). Inputs reach shell only through `env:`.
   The job outputs `version`, `dry_run` and `commit`.
 - **FR-3 Build job** (`needs: verify`, `contents: read`). Matrix exactly the `check.yml`
   `build` targets: `linux/amd64`, `linux/arm64`, `darwin/arm64`. On `ubuntu-24.04`, with

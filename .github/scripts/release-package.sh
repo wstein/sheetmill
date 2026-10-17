@@ -28,8 +28,13 @@ arch=$3
 binary=$4
 out=$5
 
-printf '%s\n' "$version" | grep -Eq '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' ||
-	fail "version must look like v1.2.3: $version"
+# A release version (v1.2.3) or a dry-run label (v1.2.3-dryrun); a newline never matches.
+case $version$os$arch in
+*'
+'*) fail "newline in an argument" ;;
+esac
+printf '%s\n' "$version" | grep -Eq '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.]+)?$' ||
+	fail "version must look like v1.2.3 or v1.2.3-dryrun: $version"
 printf '%s_%s\n' "$os" "$arch" | grep -Eq '^[a-z0-9]+_[a-z0-9]+$' || fail "bad os or arch: $os $arch"
 : "${SOURCE_DATE_EPOCH:?release-package: SOURCE_DATE_EPOCH is required}"
 printf '%s\n' "$SOURCE_DATE_EPOCH" | grep -Eq '^[0-9]+$' || fail "SOURCE_DATE_EPOCH must be digits"

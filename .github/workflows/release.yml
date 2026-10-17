@@ -64,15 +64,14 @@ jobs:
             echo "dry_run=$dry_run"
             echo "commit=$GITHUB_SHA"
           } >> "$GITHUB_OUTPUT"
-      - name: Require the repository owner to have pushed the tag
-        if: steps.resolve.outputs.dry_run == 'false'
+      - name: Require the repository owner to have started the run
         shell: bash
         env:
           ACTOR: ${{ github.triggering_actor }}
           OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
-          test "$ACTOR" = "$OWNER" || { echo "tag pushed by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }
+          test "$ACTOR" = "$OWNER" || { echo "run started by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }
       - name: Require an annotated tag on a commit of main
         if: steps.resolve.outputs.dry_run == 'false'
         shell: bash

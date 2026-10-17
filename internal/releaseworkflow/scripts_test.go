@@ -132,12 +132,12 @@ func TestVerifyVersion(t *testing.T) {
 }
 
 func TestVerifyDryRunVersion(t *testing.T) {
-	for _, v := range []string{"v0.0.0-dryrun", "v1.2.3", "v1.2.3-rc.1"} {
+	for _, v := range []string{"v0.0.0-dryrun", "v1.2.3-rc.1"} {
 		if r := sh(t, repoRoot(t), nil, "release-verify.sh", "dryversion", v); r.code != 0 {
 			t.Errorf("dry version %q rejected: %s", v, r.stderr)
 		}
 	}
-	for _, v := range []string{"", "1.2.3", "v1.2", "v1.2.3-", "v1.2.3-$(id)", "v1.2.3;x", "v1.2.3 x", "v1.2.3\nv1.2.4", "v1.2.3-a/b"} {
+	for _, v := range []string{"", "v1.2.3", "1.2.3", "v1.2", "v1.2.3-", "v1.2.3-$(id)", "v1.2.3;x", "v1.2.3 x", "v1.2.3\nv1.2.4", "v1.2.3-a/b"} {
 		if r := sh(t, repoRoot(t), nil, "release-verify.sh", "dryversion", v); r.code == 0 {
 			t.Errorf("dry version %q accepted", v)
 		}
@@ -329,6 +329,9 @@ func TestPackageRefusals(t *testing.T) {
 	if r := pack(t, tree, "0.1.0", bin, out); r.code == 0 {
 		t.Error("version without v accepted")
 	}
+	if r := pack(t, tree, "v0.1.0\nzz", bin, out); r.code == 0 {
+		t.Error("version with a newline accepted")
+	}
 	if r := pack(t, tree, "v0.1.0", filepath.Join(tree, "missing"), out); r.code == 0 {
 		t.Error("missing binary accepted")
 	}
@@ -346,6 +349,29 @@ func TestPackageRefusals(t *testing.T) {
 func smoke(t *testing.T, version, archive, root string) result {
 	t.Helper()
 	return sh(t, t.TempDir(), nil, "release-smoke.sh", version, archive, root)
+}
+
+// The default dispatch label must survive packaging and the native smoke test, or the
+// dry run could never work.
+func TestDryRunLabelPackagesAndSmokes(t *testing.T) {
+	tree := workTree(t)
+	out := filepath.Join(t.TempDir(), "o")
+	bin := fakeBinary(t, t.TempDir(), "v0.0.0-dryrun", "good")
+	if r := pack(t, tree, "v0.0.0-dryrun", bin, out); r.code != 0 {
+		t.Fatalf("dry-run label not packaged: %+v", r)
+	}
+	if r := smoke(t, "v0.0.0-dryrun", filepath.Join(out, "smill_0.0.0-dryrun_linux_amd64.tar.gz"), tree); r.code != 0 {
+		t.Fatalf("dry-run archive not smoke-tested: %+v", r)
+	}
+	raw := readFile(t, ".github/workflows/release.yml")
+	w := parse(t, raw)
+	in := w.On["workflow_dispatch"].(map[string]any)["inputs"].(map[string]any)["version"].(map[string]any)
+	if r := sh(t, repoRoot(t), nil, "release-verify.sh", "dryversion", in["default"].(string)); r.code != 0 {
+		t.Errorf("the dispatch default is not a valid dry-run label: %+v", r)
+	}
+	if r := sh(t, repoRoot(t), nil, "release-verify.sh", "version", in["default"].(string)); r.code == 0 {
+		t.Error("the dispatch default must not be a release version")
+	}
 }
 
 func TestSmokeAcceptsAGoodArchiveAndRejectsBadOnes(t *testing.T) {
