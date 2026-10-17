@@ -15,8 +15,9 @@ update CI pipeline". This feature reads that as three decisions:
 
 The decision replaces the `AGENTS.md` rule "do not publish artifacts from CI" **for this
 workflow only**. An owner-pushed tag matching `v[0-9]+.[0-9]+.[0-9]+` is the publication
-approval for that tag's release assets; the workflow pattern is general, but whether the quote also approves every future tag is an open owner confirmation
-(open decision 6), recorded in `AGENTS.md` as pending. It authorizes, on the topic branch, the spec,
+approval for that tag's release assets. The owner decided that there is no standing approval:
+every tag and release needs his explicit approval each time, and an approval covers only the
+tag it names (decision 6). The workflow pattern is general; the approval is per tag. It authorizes, on the topic branch, the spec,
 tests, scripts, `release.yml`, the `check.yml` comment, docs, a topic push and a
 coordinator-opened draft PR. It does **not** authorize: merging the workflow PR,
 creating, moving or deleting any tag, running the workflow (a dry run is started only by the owner through `workflow_dispatch`;
@@ -221,8 +222,7 @@ changelog files, Hugo in the smoke test, running the workflow, tagging and mergi
    job keeps `environment: release` (GitHub creates it unprotected). Without a reviewer rule any
    owner tag push that passes the checks publishes immediately (Known limitations).
 5. Make a `v*` tag ruleset (block deletion/update after release): recommended.
-6. Confirm (pending, not granted) that the 2026-10-17 quote is a standing approval for every later `vX.Y.Z` tag
-   pushed by the owner (this spec's reading), not for v0.1.0 only. If v0.1.0 only, change
-   the `AGENTS.md` line; each later release then needs a new approval.
+6. Decided (owner): no standing approval. Every tag and release, including later ones, needs
+   the owner's explicit approval each time; an approval for `v0.1.1` covers only `v0.1.1`.
 7. Pull request dry runs: a `pull_request` trigger would exercise the pipeline on every change
    to it but builds binaries on the PR; add it only if the owner approves that.

@@ -63,10 +63,10 @@ Sibling repository policies do not govern this repository.
 - Feature 019 is authorized (owner, Werner Stein, chat 2026-10-17: "017/018 in v0.1.0, ...
   tag v0.1.0 => CI based release workflow, update CI pipeline"): a tag-triggered release
   workflow (`.github/workflows/release.yml`, `specs/019-release-workflow`). The quote covers
-  a CI release workflow in which an owner-pushed tag publishes. Whether that approval applies
-  to every later `vX.Y.Z` tag the owner pushes is an OPEN owner confirmation (pending, not
-  granted); until confirmed, treat each release as needing the owner's explicit tag push for
-  that version. This authorizes the spec, tests, scripts, workflow, docs, a topic push and a
+  a CI release workflow in which an owner-pushed tag publishes. There is no standing approval
+  (owner decision): every tag and release, including later ones, needs the owner's explicit
+  approval each time, and an approval for one tag (for example `v0.1.1`) covers only that tag.
+  This authorizes the spec, tests, scripts, workflow, docs, a topic push and a
   draft PR. Merging the workflow PR, creating, moving or deleting any tag (including any
   retag of `v0.1.0`, owner only), running the workflow (dry runs are owner-started
   `workflow_dispatch` only), creating a release, adding secrets, variables or environment
