@@ -60,6 +60,18 @@ Sibling repository policies do not govern this repository.
   user confirmed the two new paths on 2026-10-16 (answer "1j"); that covers the paths,
   not their activation. No merge, deployment or workflow run is authorized; merging to
   `main` would activate the workflow and needs separate human approval.
+- Feature 019 is authorized (owner, Werner Stein, chat 2026-10-17: "017/018 in v0.1.0, ...
+  tag v0.1.0 => CI based release workflow, update CI pipeline"): a tag-triggered release
+  workflow (`.github/workflows/release.yml`, `specs/019-release-workflow`). An owner-pushed
+  tag matching `v[0-9]+.[0-9]+.[0-9]+` is the publication approval for that tag's GitHub
+  release (three archives and `SHA256SUMS`); the spec reads the quote as a standing rule for
+  later matching tags, which the owner may narrow. This authorizes the spec, tests, scripts,
+  workflow, docs, a topic push and a draft PR. Merging the workflow PR, creating, moving or
+  deleting any tag (including the retag of `v0.1.0`, owner only), running the workflow (dry
+  runs are owner-started `workflow_dispatch` only), creating a release, adding secrets,
+  variables or environment protection rules, signing, attestations, and any other
+  distribution channel remain separate human approvals. Whether to re-create `v0.1.0` or tag
+  `v0.1.1` given the Go module proxy's cached `v0.1.0` is the owner's open decision.
 - Use `codex/` feature branches and Conventional Commits. Topic pushes and draft
   PRs belong to an authorized implementation handoff; otherwise ask before publishing.
 - Merge, tag, release, deploy, distribution builds, PDF generation, artifact
@@ -67,7 +79,7 @@ Sibling repository policies do not govern this repository.
   Local Hugo site generation and the approved brand exports are authorized.
 - Do not execute source snippets, fetch source-linked resources, weaken branch
   protections, add automatic merges or publish artifacts from CI, except the
-  authorized Pages deployment above.
+  authorized Pages deployment and the feature 019 tag-triggered release workflow above.
 - Unknown source metadata must be preserved or diagnosed, never silently dropped.
 
 ## Implementation and verification
