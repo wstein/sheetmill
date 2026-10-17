@@ -23,7 +23,7 @@
 
 | File | Purpose |
 | --- | --- |
-| `.github/workflows/release.yml` | jobs `verify`, `build`, `smoke`, `publish` |
+| `.github/workflows/release.yml` | jobs `verify`, `build`, `smoke`, `publish`; triggers tag push and `workflow_dispatch` only |
 | `.github/scripts/release-verify.sh` | subcommands `version`, `tag`, `go` (git checks; no network) |
 | `.github/scripts/release-package.sh` | deterministic archive + `.sha256` sidecar |
 | `.github/scripts/release-smoke.sh` | extract and exercise a shipped archive |

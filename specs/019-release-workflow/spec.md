@@ -15,10 +15,13 @@ update CI pipeline". This feature reads that as three decisions:
 
 The decision replaces the `AGENTS.md` rule "do not publish artifacts from CI" **for this
 workflow only**. An owner-pushed tag matching `v[0-9]+.[0-9]+.[0-9]+` is the publication
-approval for that tag's release assets. It authorizes, on the topic branch, the spec,
+approval for that tag's release assets; this spec reads the quote as that standing rule for
+future matching tags too, and `AGENTS.md` records the reading so the owner can correct it
+(open decision 6). It authorizes, on the topic branch, the spec,
 tests, scripts, `release.yml`, the `check.yml` comment, docs, a topic push and a
 coordinator-opened draft PR. It does **not** authorize: merging the workflow PR,
-creating, moving or deleting any tag, running the workflow (including a dry run),
+creating, moving or deleting any tag, running the workflow (a dry run is started only by the owner through `workflow_dispatch`;
+the workflow has no `pull_request` trigger, so the draft PR starts no run),
 creating a release, adding secrets, variables or environment protection rules, or
 publishing to any channel except GitHub Releases of `wstein/sheetmill`. Constitution 7
 text ("a spec or automated check grants none") is respected: the grant is the owner's
@@ -31,14 +34,14 @@ the owner (open decision 1).
 1. **Owner releases.** *Given* the workflow is on `main`, *when* the owner pushes the
    annotated tag `v0.1.0` on a green `main` commit, *then* the workflow verifies the tag,
    builds three binaries, smoke-tests each natively, waits for the `release` environment
-   gate, and creates a GitHub release with three archives and `SHA256SUMS` (FR-1..FR-6).
+   gate if the owner configured one, and creates a GitHub release with three archives and `SHA256SUMS` (FR-1..FR-6).
 2. **Wrong tag is refused.** *Given* a lightweight tag, a tag on a commit that is not on
    `main`, a tag whose commit has no green `check` run, a tag pushed by someone other than
    the repository owner, or a tag whose release already exists, *then* the verify job fails
    and nothing is built or published (FR-2).
-3. **Maintainer changes the pipeline safely.** *Given* a pull request that touches the
-   release workflow, scripts or build inputs, *then* the same gates, builds and smoke tests
-   run as a dry run that cannot publish (FR-1, FR-7).
+3. **Maintainer exercises the pipeline safely.** *Given* the owner starts the workflow by hand
+   (`workflow_dispatch`), *then* the same gates, builds and smoke tests run as a dry run that
+   cannot publish (FR-1, FR-7). No pull request or branch push starts it.
 4. **Downloader verifies.** *Given* a release, *when* a user downloads an archive and
    `SHA256SUMS`, *then* `sha256sum --check` passes and `smill version` prints
    `smill v0.1.0` (FR-5).
@@ -68,11 +71,11 @@ that commit only, and publishes them with checksums. Nothing is signed or notari
 - **FR-1 Triggers.** `release.yml` runs on:
   - `push` of tags matching exactly `v[0-9]+.[0-9]+.[0-9]+` (GitHub glob; the whole ref
     name must match, so `v1.2.3-rc1` triggers nothing; pre-releases are out of scope);
-  - `workflow_dispatch` with one string input `version` (default `v0.0.0-dryrun`);
-  - `pull_request` limited by `paths` to the release workflow, `.github/scripts/release-*.sh`,
-    `Makefile`, `.go-version`, `go.mod`, `go.sum`, `LICENSE` and `examples/sheets/**`.
-  Dispatch and pull request runs are **dry runs**: they run `verify` (tag-specific checks
-  skipped), `build` and `smoke`, and `publish` is skipped. No branch `push` trigger.
+  - `workflow_dispatch` with one string input `version` (default `v0.0.0-dryrun`).
+  A dispatch is a **dry run**: it runs `verify` (tag-specific checks skipped), `build` and
+  `smoke`, and `publish` is skipped. Dry-run workflow artifacts live one day. No branch
+  `push` and no `pull_request` trigger (a PR trigger would build binaries on the draft PR
+  without the owner's approval of a distribution build).
 - **FR-2 Verify job** (`contents: read`, `actions: read`). On a tag push, in order:
   (a) the tag name matches the strict pattern `^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`;
   (b) the tag object is an annotated tag (`git cat-file -t refs/tags/<tag>` is `tag`), after
@@ -80,10 +83,12 @@ that commit only, and publishes them with checksums. Nothing is signed or notari
   (c) the tagged commit equals `GITHUB_SHA` and is an ancestor of `origin/main` (full
   history, `fetch-depth: 0`);
   (d) `github.triggering_actor` equals `github.repository_owner`;
-  (e) a `check` workflow run for that commit, `event=push`, has conclusion `success`
-  (`gh api`, read-only; fails with an instruction to re-run `check` otherwise);
-  (f) no release exists for the tag (`gh api repos/.../releases/tags/<tag>` returns 404;
-  any other error fails closed).
+  (e) a run of the workflow file `check.yml` (queried by file, not by display name) for that
+  commit with `event=push` has conclusion `success` (`gh api`, read-only); a run in
+  progress, cancelled or failed fails the job with an instruction to wait for or re-run `check`;
+  (f) no published release exists for the tag (`gh api repos/.../releases/tags/<tag>` returns
+  404; any other error fails closed). Drafts are invisible to this read-only token and are
+  caught by the publish job's own check (FR-6).
   In every run (dry or not): `.go-version` equals the `go` line of `go.mod`; `make check`,
   `make mod-verify` and `make test-assets` pass. The version is the tag name; for a dry run
   it is the `version` input or the default, checked against
@@ -95,7 +100,8 @@ that commit only, and publishes them with checksums. Nothing is signed or notari
   "-X github.com/wstein/sheetmill/internal/cli.Version=<version>" ./cmd/smill`. Each target
   is built twice, the second time with an empty `GOCACHE`, and the two binaries must be
   byte-identical (`cmp`). The only network access is the Go module proxy, whose content
-  `go.sum` and `go mod verify` check. No tool is downloaded. darwin/amd64 (end of life) and
+  `go.sum` and `go mod verify` check, plus the Go toolchain `actions/setup-go` installs from
+  the pinned `.go-version` (`GOTOOLCHAIN=local` forbids any other toolchain download). No other tool is downloaded. darwin/amd64 (end of life) and
   Windows are not built.
 - **FR-4 Smoke job** (`needs: [verify, build]`, `contents: read`). One job per target on a
   native runner: `ubuntu-24.04` (linux/amd64), `ubuntu-24.04-arm` (linux/arm64), `macos-15`
@@ -113,7 +119,10 @@ that commit only, and publishes them with checksums. Nothing is signed or notari
   `sha256sum --check` on it. Release assets are exactly the three archives and `SHA256SUMS`.
 - **FR-6 Publish job** (`needs: [verify, build, smoke]`; runs only when the event is a tag
   `push` and `dry_run` is `false`; `permissions: contents: write`; `environment: release`).
-  Steps: checkout (full history, no persisted credentials); download the artifacts;
+  Steps: checkout (full history, no persisted credentials); download the artifacts; require
+  `github.triggering_actor` to be the repository owner again (a re-run by someone else must
+  not reuse the owner's earlier approval); list all releases (drafts included) and fail on any
+  with the tag name;
   confirm the remote tag still peels to the verified commit (`git ls-remote`); build
   `SHA256SUMS`; generate `notes.md` with `.github/scripts/release-notes.sh`; run
   `gh release create <tag> --verify-tag --title "SheetMill <tag>" --notes-file notes.md
@@ -139,8 +148,12 @@ that commit only, and publishes them with checksums. Nothing is signed or notari
   `contents: write` moved to another job, a tag-mutable action ref, missing
   `persist-credentials`, `continue-on-error` or `if: false` on a gate, matrix gaining or losing
   a platform, `publish` losing a `needs` entry or the `release` environment, `ldflags`
-  removed, an extra `upload-artifact`, `--verify-tag` removed, draft default changed, and
-  a `secrets.` reference. `cmd/smill` keeps its `check.yml` build-job tests; a new test
+  removed, an extra `upload-artifact`, `--verify-tag` removed, draft default changed, a
+  `secrets.` reference, each verify condition (a)-(f) removed or left unguarded, a `${{`
+  expression inside a `run:` script, `publish` made unconditional (`always()`, no event or ref
+  test), the publish actor, draft-duplicate, tag-race (`ls-remote`) and `sha256sum --check`
+  steps removed, the `cmp` reproducibility check removed, a missing `timeout-minutes`, and
+  `cancel-in-progress: true`. `cmd/smill` keeps its `check.yml` build-job tests; a new test
   asserts the `check.yml` and `release.yml` platform sets are equal.
 - **FR-9 Pipeline update.** `check.yml` keeps its job names (they may be required checks),
   permissions, the compile-only `build` matrix and the `v0.0.0-ci` stamp. It gains a header
@@ -182,10 +195,20 @@ changelog files, Hugo in the smoke test, running the workflow, tagging and mergi
 ## Open decisions (recommendations)
 
 1. Amend constitution 7 to name this workflow beside Pages: recommended, owner's change.
-2. The proxy already serves `v0.1.0` from `05eba4d`. Recommendation: accept (the binaries
-   are the distribution; `go install ...@v0.1.0` keeps the old tree) or tag `v0.1.1`. The
-   owner decides; the workflow works for either.
+2. **Blocking, decide before the retag.** The proxy already serves `v0.1.0` from `05eba4d`, and
+   the checksum database (not queried by the author: a lookup records the version) very likely
+   holds that hash. Re-creating the tag at a new commit then leaves `go install ...@v0.1.0`
+   resolving the old tree, and a build that fetches the new tag directly (for example
+   `GOPROXY=direct`) fails with a checksum mismatch. Release binaries are unaffected (they stamp
+   the version themselves). Recommendation: tag `v0.1.1` and leave `v0.1.0` alone, which departs
+   from the literal "v0.1.0" in the quote; keeping v0.1.0 is the owner's call and the workflow
+   serves either.
 3. Add build provenance attestations later: recommended after the first release.
 4. Protect the `release` environment with the owner as required reviewer, and restrict
    deployment tags to `v*`: recommended.
 5. Make a `v*` tag ruleset (block deletion/update after release): recommended.
+6. Confirm that the 2026-10-17 quote is a standing approval for every later `vX.Y.Z` tag
+   pushed by the owner (this spec's reading), not for v0.1.0 only. If v0.1.0 only, change
+   the `AGENTS.md` line; each later release then needs a new approval.
+7. Pull request dry runs: a `pull_request` trigger would exercise the pipeline on every change
+   to it but builds binaries on the PR; add it only if the owner approves that.
