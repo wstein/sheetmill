@@ -36,7 +36,7 @@ SheetMill does not infer legal permission from that identifier.
 
 - Cobra v1.10.2: [official release](https://github.com/spf13/cobra/releases/tag/v1.10.2),
   Apache-2.0; explicitly selected by the user for CLI command/help/flag parsing.
-  Transitive pflag v1.0.9 uses BSD-3-Clause and mousetrap v1.1.0 uses Apache-2.0;
+  Transitive pflag v1.0.10 uses BSD-3-Clause and mousetrap v1.1.0 uses Apache-2.0;
   module checksums and original notices remain in their modules.
 - Hugo 0.167.0: explicit local development tool, not invoked/downloaded by smill.
   The theme is original SheetMill source, with no upstream theme or Reference CSS.
