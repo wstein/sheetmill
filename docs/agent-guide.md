@@ -111,7 +111,8 @@ structure, a build prints no warnings, and every fact in it is accurate.
 ## Boundaries
 
 - Never execute commands from a sheet to "test" them unless the human asks.
-- Do not publish, deploy, push or open pull requests without the human's
-  approval. Inside this repository, [AGENTS.md](../AGENTS.md) governs scope.
+- Outside the SheetMill repository do not publish, deploy, push or open pull
+  requests without the human's approval; inside it [AGENTS.md](../AGENTS.md)
+  governs push and PR scope, and publish and deploy still need the human's approval.
 - Exit status: 0 success, 1 invalid source, 2 usage or IO error. Diagnostics go
   to stderr; requested data goes to stdout. All codes: [CLI](cli.md).
