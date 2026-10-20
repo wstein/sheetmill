@@ -168,3 +168,172 @@ func TestUnusedParamWithSourceStaysNAV104(t *testing.T) {
 		t.Fatalf("errors=%v files=%d warnings=%v", errs, len(p.Files), p.Warnings)
 	}
 }
+
+// checkEntries asserts the line invariants of the data model on .cheat text:
+// no blank line inside an entry, every `$` name appears once per card and is
+// referenced in the card's command, and every referenced name with a `$` line
+// is declared exactly once.
+func checkEntries(t *testing.T, text string) {
+	t.Helper()
+	var entries [][]string
+	for _, block := range strings.Split(text, "\n\n") {
+		var lines []string
+		for _, l := range strings.Split(strings.TrimSuffix(block, "\n"), "\n") {
+			if l == "" {
+				t.Errorf("blank line inside an entry:\n%s", block)
+			}
+			lines = append(lines, l)
+		}
+		if strings.HasPrefix(lines[0], "; card:") {
+			entries = append(entries, lines)
+		}
+	}
+	for _, lines := range entries {
+		var command []string
+		seen := map[string]bool{}
+		sawVariable := false
+		for _, l := range lines {
+			switch {
+			case strings.HasPrefix(l, "$"):
+				sawVariable = true
+				v, ok := parseVariableLine(l)
+				if !ok || seen[v.name] {
+					t.Errorf("unparsable or repeated variable line %q in %v", l, lines)
+				}
+				seen[v.name] = true
+			case strings.HasPrefix(l, "%"), strings.HasPrefix(l, "#"), strings.HasPrefix(l, ";"):
+			case sawVariable:
+				t.Errorf("command text after a variable line in %v", lines)
+			default:
+				command = append(command, l)
+			}
+		}
+		joined := strings.Join(command, "\n")
+		for name := range seen {
+			if !strings.Contains(joined, "<"+name+">") {
+				t.Errorf("variable %q is not referenced in %q", name, joined)
+			}
+		}
+	}
+}
+
+func TestEveryDollarLineIsReferencedAndEntryHasNoBlankLine(t *testing.T) {
+	for _, shell := range ProfileNames() {
+		checkEntries(t, readGolden(t, shell))
+	}
+	// A deterministic corpus: value shapes x parameter counts x profiles.
+	values := []string{"main", "it's", `a\b`, `a"b`, "$HOME", "%s", "`x`", "-n", "süd", "a--b", "<", "x y", "[1]", "~", "#c", ";", "@t"}
+	for _, shell := range ProfileNames() {
+		for n := 1; n <= 3; n++ {
+			var params, command []string
+			for i := 0; i < n; i++ {
+				name := string(rune('a' + i))
+				var items []string
+				for _, v := range values[i*3 : i*3+6] {
+					items = append(items, `"`+strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(v)+`"`)
+				}
+				params = append(params, name+": {type: string, choices: ["+strings.Join(items, ", ")+"]}")
+				command = append(command, "<"+name+">")
+			}
+			// Use the parameters in reverse order, repeated, across two lines.
+			for i, j := 0, len(command)-1; i < j; i, j = i+1, j-1 {
+				command[i], command[j] = command[j], command[i]
+			}
+			p := mustRender(t, shell, strings.Join(params, "\n"), "run "+strings.Join(command, " ")+"\nrun "+command[0])
+			checkEntries(t, string(p.Files["demo.cheat"]))
+			if got := variableLinesOf(t, p); len(got) != n {
+				t.Fatalf("%s n=%d: %d variable lines", shell, n, len(got))
+			}
+		}
+	}
+}
+
+func TestSourceAndChoicesBothSetErrorsAtomically(t *testing.T) {
+	good := sheet(t, card("bash", "echo <sheet>"))
+	good.ID, good.SourceName, good.Path = "good", "good.md", "good.md"
+	// The source path rejects the pair earlier; direct IR reaches the renderer.
+	bad := sheet(t, varSource("bash", "a: {type: string, source: ls}", "run <a>"))
+	a := bad.Document.Metadata["cheatsheet"].(map[string]any)["cards"].(map[string]any)["c"].(map[string]any)["params"].(map[string]any)["a"].(map[string]any)
+	a["choices"] = []any{"x"}
+	bad.ID, bad.SourceName, bad.Path = "bad", "bad.md", "bad.md"
+	p, errs := Render([]Sheet{good, bad}, Options{})
+	if len(errs) == 0 || errs[0].Code != "CMD001" || len(p.Files) != 0 || p.SheetCount != 0 || len(p.Warnings) != 0 {
+		t.Fatalf("errors=%v files=%d", errs, len(p.Files))
+	}
+}
+
+// legacyVariableSheet states the same parameters as the contract sheet in the
+// legacy cheatsheet.navi.cards namespace with the .navi marker.
+func legacyVariableSheet(t *testing.T, source string) Sheet {
+	t.Helper()
+	s := sheet(t, source)
+	cs := s.Document.Metadata["cheatsheet"].(map[string]any)
+	cs["navi"] = map[string]any{"cards": cs["cards"]}
+	delete(cs, "cards")
+	for i := range s.Document.Sections {
+		for j := range s.Document.Sections[i].Cards {
+			s.Document.Sections[i].Cards[j].Classes = []string{"navi"}
+		}
+	}
+	s.ID, s.SourceName, s.Path = "git", "git.md", "sheets/git.md"
+	return s
+}
+
+func TestLegacyNamespaceAcceptsVariableSources(t *testing.T) {
+	for _, shell := range ProfileNames() {
+		t.Run(shell, func(t *testing.T) {
+			p, errs := Render([]Sheet{legacyVariableSheet(t, strings.ReplaceAll(variableSheetSource, "LANG", shell))}, Options{Shell: shell})
+			if len(errs) > 0 || len(p.Warnings) > 0 {
+				t.Fatalf("errors=%v warnings=%v", errs, p.Warnings)
+			}
+			if got, want := string(p.Files["git.cheat"]), readGolden(t, shell); got != want {
+				t.Fatalf("legacy namespace differs from the shared one:\n%s", got)
+			}
+		})
+	}
+	for name, fields := range map[string]map[string]any{
+		"both":          {"type": "string", "source": "ls", "choices": []any{"x"}},
+		"empty choices": {"type": "string", "choices": []any{}},
+		"lone options":  {"type": "string", "options": map[string]any{"multi": true}},
+		"unknown":       {"type": "string", "source": "ls", "options": map[string]any{"map": "x"}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := legacyVariableSheet(t, strings.ReplaceAll(variableSheetSource, "LANG", "bash"))
+			cs := s.Document.Metadata["cheatsheet"].(map[string]any)
+			cs["navi"].(map[string]any)["cards"].(map[string]any)["fetch-branch"] = map[string]any{"params": map[string]any{"remote": fields, "branch": map[string]any{"type": "string"}}}
+			p, errs := Render([]Sheet{s}, Options{})
+			if len(errs) == 0 || errs[0].Code != "NAV006" || len(p.Files) != 0 {
+				t.Fatalf("errors=%v files=%d", errs, len(p.Files))
+			}
+		})
+	}
+}
+
+func TestConflictingVariableDeclarationsAcrossNamespaces(t *testing.T) {
+	build := func(shared, legacy string) ([]Issue, Project) {
+		src := "---\ntitle: T\nlicense: x\ncheatsheet:\n  cards:\n    c: {params: {a: " + shared + "}}\n  navi:\n    cards:\n      c: {params: {a: " + legacy + "}}\n---\n## S\n\n### C {.command .navi #c}\n\n```bash\nrun <a>\n```\n"
+		p, errs := Render([]Sheet{sheet(t, src)}, Options{})
+		return errs, p
+	}
+	same := "{type: string, source: ls, options: {column: 2}}"
+	if errs, p := build(same, same); len(errs) > 0 || len(variableLinesOf(t, p)) != 1 {
+		t.Fatalf("equal declarations: %v", errs)
+	}
+	// Absent and empty options are the same declaration.
+	if errs, _ := build("{type: string, source: ls}", "{type: string, source: ls, options: {}}"); len(errs) > 0 {
+		t.Fatalf("empty options: %v", errs)
+	}
+	for name, legacy := range map[string]string{
+		"source":  "{type: string, source: ls -a, options: {column: 2}}",
+		"option":  "{type: string, source: ls, options: {column: 3}}",
+		"choices": "{type: string, choices: [x]}",
+		"none":    "{type: string}",
+	} {
+		t.Run(name, func(t *testing.T) {
+			errs, p := build(same, legacy)
+			if len(errs) == 0 || errs[0].Code != "NAV006" || !strings.Contains(errs[0].Message, "conflicts") || len(p.Files) != 0 {
+				t.Fatalf("errors=%v files=%d", errs, len(p.Files))
+			}
+		})
+	}
+}
