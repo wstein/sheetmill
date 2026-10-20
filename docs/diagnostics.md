@@ -67,9 +67,11 @@ warnings end with `(warning)` and do not change the exit status unless you use `
 | --- | --- |
 | `NAV000` | `smill build navi --strict` found warnings and wrote nothing. Fix them or drop `--strict`. |
 | `NAV001` | Unsupported `--shell` profile. Use `bash`, `zsh`, `fish` or `nu`. |
-| `NAV006` | Invalid or unknown `cheatsheet.navi` metadata, a reference to a missing/unmarked card or generated ID, a wrong `shell`, conflicting complete old/new parameter declarations, or an unusable tag. |
+| `NAV006` | Invalid or unknown `cheatsheet.navi` metadata, a reference to a missing/unmarked card or generated ID, a wrong `shell`, conflicting complete old/new parameter declarations, invalid `choices`, `source` or `options` (the `CMD001` rules, applied to the legacy namespace), or an unusable tag. |
 | `NAV008` | Two exported entries share a pinned navi identity hash; navi would silently drop one. |
 | `NAV101`–`NAV106` | Warnings: a marked card was skipped (shape, command text, placeholder, declarations), the license is unstated, or a sheet exported nothing. `NAV007` is retired (parameters are card-local); `NAV107` is retired (frontmatter is preserved in the `.navi.json` companion). See [navi export](format/navi-profile.md). |
+| `NAV108` | Warning: a card was skipped because a parameter's `source` or an option string cannot be written as one valid `$` line: `---` in a source, a navi `<name>` token in a source, a trailing backslash, an unterminated quote (not checked for `nu`), or `---` or `'` in an option string. The message names the parameter; `--strict` turns it into `NAV000`. |
+| `NAV109` | Warning: a card was skipped because a parameter's choice contains `---` or a navi `<name>` token, which navi's line grammar cannot carry. |
 
 ## Input and output {#io}
 ### Files and streams {#io-codes}
@@ -122,7 +124,7 @@ Pin third-party actions to full commit SHAs in production workflows.
 
 | Code | Meaning |
 | --- | --- |
-| `CMD001` | Invalid shared `cheatsheet.cards` mapping, card settings, parameter name/type/description or unknown key. |
+| `CMD001` | Invalid shared `cheatsheet.cards` mapping, card settings, parameter name/type/description or unknown key; invalid `choices`, `source` or `options`; `source` together with `choices`; `options` without `source` or `choices`. |
 | `CMD002` | A `.command` card lacks an explicit ID, or shared metadata refers to a missing, unmarked or automatically identified card. |
 
 Source diagnostics point to the key/card; direct IR without key positions falls
