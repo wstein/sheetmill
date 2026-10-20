@@ -382,8 +382,9 @@ func TestEntryHashesUnchangedBySources(t *testing.T) {
 			}
 		})
 	}
-	// NAV008 still rejects equal identities when the cards carry sources.
-	a, b := variableSheet(t, "bash"), variableSheet(t, "bash")
+	// NAV008 still rejects equal identities when only one of the cards carries
+	// sources: the lines are not part of the identity.
+	a, b := variableSheet(t, "bash"), withoutSources(t, "bash")
 	a.ID, b.ID = "a", "b"
 	if p, errs := Render([]Sheet{a, b}, Options{}); len(errs) == 0 || errs[0].Code != "NAV008" || len(p.Files) != 0 {
 		t.Fatalf("errors=%v files=%d", errs, len(p.Files))
