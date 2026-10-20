@@ -66,9 +66,36 @@
                       "minLength": 1,
                       "pattern": "^\\S(?:[^\\x00-\\x1F\\x7F\\u2028\\u2029]*\\S)?$",
                       "$comment": "Source validation additionally rejects every Unicode control and format character, and surrounding Unicode whitespace."
+                    },
+                    "choices": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 64,
+                      "uniqueItems": true,
+                      "items": {"type": "string", "minLength": 1, "maxLength": 128},
+                      "$comment": "Fixed list of suggestions, exclusive with source. Items are never coerced."
+                    },
+                    "source": {
+                      "type": "string",
+                      "minLength": 1,
+                      "$comment": "Shell command line that prints suggestions, exclusive with choices."
+                    },
+                    "options": {
+                      "type": "object",
+                      "properties": {
+                        "column": {"type": "integer", "minimum": 1, "maximum": 255},
+                        "delimiter": {"type": "string", "minLength": 1},
+                        "header_lines": {"type": "integer", "minimum": 0, "maximum": 255},
+                        "multi": {"type": "boolean"},
+                        "prevent_extra": {"type": "boolean"}
+                      },
+                      "additionalProperties": false,
+                      "$comment": "Argument options for the suggestions; requires source or choices."
                     }
                   },
-                  "additionalProperties": false
+                  "additionalProperties": false,
+                  "not": {"required": ["choices", "source"]},
+                  "$comment": "Source validation (CMD001) additionally checks: characters, meaning choices, source and delimiter are single lines without surrounding whitespace, controls, format characters, U+2028, U+2029 or U+2800; int choices, meaning each choice of a type int parameter is a decimal integer string; dependencies, meaning options require source or choices and column, delimiter and header_lines require source; multi and prevent_extra are not both true; floats, meaning option integers must be YAML integers, so 2.0 is rejected although JSON Schema counts it as an integer."
                 }
               }
             },
