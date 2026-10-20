@@ -73,6 +73,12 @@ Sibling repository policies do not govern this repository.
   protection rules, signing, attestations and any other distribution channel remain separate
   human approvals. Re-creating `v0.1.0` is discouraged (the Go module proxy and checksum
   database hold the old `v0.1.0`); the default is a new version such as `v0.1.1`.
+- Feature 020 is authorized (owner, Werner Stein, chat 2026-10-20: "ja, Spec 020 entwerfen,
+  freigegeben", after the decisions that the Markdown sheet stays the single source and
+  that `choices` and `source` are exported as navi `$` lines): `specs/020-navi-variable-sources`.
+  The grant covers the specification. Implementation (tests, code, schema, docs, a topic
+  push and a draft PR) starts after the owner has merged the specification. Never run
+  navi, a shell or an exported command. PDF, merge and deployment are excluded.
 - Use `codex/` feature branches and Conventional Commits. Topic pushes and PRs for
   reviewed work within an authorized request or feature scope follow "Pull requests
   and history" below; a local-only assignment authorizes neither.
