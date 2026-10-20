@@ -2,6 +2,9 @@
 package navi
 
 import (
+	"bytes"
+	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -335,5 +338,81 @@ func TestConflictingVariableDeclarationsAcrossNamespaces(t *testing.T) {
 				t.Fatalf("errors=%v files=%d", errs, len(p.Files))
 			}
 		})
+	}
+}
+
+// withoutSources removes the variable fields of the contract sheet's parameters.
+func withoutSources(t *testing.T, shell string) Sheet {
+	t.Helper()
+	s := variableSheet(t, shell)
+	cards := s.Document.Metadata["cheatsheet"].(map[string]any)["cards"].(map[string]any)
+	for _, card := range cards {
+		for _, fields := range card.(map[string]any)["params"].(map[string]any) {
+			for _, key := range []string{"choices", "source", "options"} {
+				delete(fields.(map[string]any), key)
+			}
+		}
+	}
+	return s
+}
+
+func TestEntryHashesUnchangedBySources(t *testing.T) {
+	for _, shell := range ProfileNames() {
+		t.Run(shell, func(t *testing.T) {
+			with, errs := Render([]Sheet{variableSheet(t, shell)}, Options{Shell: shell})
+			plain, perrs := Render([]Sheet{withoutSources(t, shell)}, Options{Shell: shell})
+			if len(errs) > 0 || len(perrs) > 0 {
+				t.Fatal(errs, perrs)
+			}
+			a, b := parseCheat(with.Files["git.cheat"]), parseCheat(plain.Files["git.cheat"])
+			if len(a.cards) != 2 || len(b.cards) != 2 || a.dropped != 0 {
+				t.Fatalf("entries: %+v %+v", a, b)
+			}
+			for i := range a.cards {
+				if a.cards[i].tags != b.cards[i].tags || a.cards[i].desc != b.cards[i].desc || itemHash(a.cards[i].tags+a.cards[i].desc) != itemHash(b.cards[i].tags+b.cards[i].desc) {
+					t.Errorf("identity of card %d changed: %+v vs %+v", i, a.cards[i], b.cards[i])
+				}
+				if a.cards[i].command != b.cards[i].command {
+					t.Errorf("command of card %d changed: %q vs %q", i, a.cards[i].command, b.cards[i].command)
+				}
+			}
+			var wa, wb sidecar
+			if json.Unmarshal(with.Files["git.navi.json"], &wa) != nil || json.Unmarshal(plain.Files["git.navi.json"], &wb) != nil || !reflect.DeepEqual(wa.Cards, wb.Cards) {
+				t.Fatalf("card identities in the companion changed: %+v vs %+v", wa.Cards, wb.Cards)
+			}
+		})
+	}
+	// NAV008 still rejects equal identities when the cards carry sources.
+	a, b := variableSheet(t, "bash"), variableSheet(t, "bash")
+	a.ID, b.ID = "a", "b"
+	if p, errs := Render([]Sheet{a, b}, Options{}); len(errs) == 0 || errs[0].Code != "NAV008" || len(p.Files) != 0 {
+		t.Fatalf("errors=%v files=%d", errs, len(p.Files))
+	}
+}
+
+func TestSidecarPreservesVariableSources(t *testing.T) {
+	for _, shell := range ProfileNames() {
+		s := variableSheet(t, shell)
+		p, errs := Render([]Sheet{s}, Options{Shell: shell})
+		if len(errs) > 0 {
+			t.Fatal(errs)
+		}
+		var got struct{ Metadata json.RawMessage }
+		if err := json.Unmarshal(p.Files["git.navi.json"], &got); err != nil {
+			t.Fatal(err)
+		}
+		var compact bytes.Buffer
+		if err := json.Compact(&compact, got.Metadata); err != nil {
+			t.Fatal(err)
+		}
+		want, _ := json.Marshal(s.Document.Metadata)
+		if !bytes.Equal(compact.Bytes(), want) {
+			t.Fatalf("%s: companion metadata differs from the authored metadata", shell)
+		}
+		for _, text := range []string{`"source":"git remote"`, `"choices":["main","it's","süd"]`, `"options":{"column":1}`, `"options":{"multi":true}`} {
+			if !strings.Contains(compact.String(), text) {
+				t.Errorf("%s: companion lacks %s", shell, text)
+			}
+		}
 	}
 }
