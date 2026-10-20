@@ -57,22 +57,62 @@ type step struct {
 }
 
 const (
-	checkoutPin = "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09"
-	setupGoPin  = "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16"
-	uploadPin   = "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"
-	downloadPin = "actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333"
-	ldflags     = `-ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=$VERSION"`
-	dryGuard    = "steps.resolve.outputs.dry_run == 'false'"
+	ldflags  = `-ldflags "-X github.com/wstein/sheetmill/internal/cli.Version=$VERSION"`
+	dryGuard = "steps.resolve.outputs.dry_run == 'false'"
 )
 
 var (
-	allowedUses = map[string]bool{checkoutPin: true, setupGoPin: true, uploadPin: true, downloadPin: true}
-	swallowRe   = regexp.MustCompile(`\|\|\s*(true|:)(\s|;|$)`)
-	assertRe    = regexp.MustCompile(`^test .* \|\| \{ echo .* >&2; exit 1; \}$`)
-	disarmRe    = regexp.MustCompile(`exit 0|set \+e|\|\| echo|\|\| exit`)
-	pinRe       = regexp.MustCompile(`^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+@[0-9a-f]{40}$`)
-	platforms   = []string{"darwin/arm64", "linux/amd64", "linux/arm64"}
+	// The actions release.yml may use. Their pins (commit SHA and version comment) are not
+	// listed here: a routine Dependabot bump changes them, so the tests read them from the
+	// workflow (see derivePins) and check format and consistency instead.
+	allowedActions = map[string]bool{"actions/checkout": true, "actions/setup-go": true, "actions/upload-artifact": true, "actions/download-artifact": true}
+	usesLineRe     = regexp.MustCompile(`(?m)^\s*(?:- )?uses:\s*([A-Za-z0-9._-]+/[A-Za-z0-9._-]+)@([0-9a-f]{40})[ \t]+#[ \t]*(\S.*?)\s*$`)
+	// The golden file records which action each step uses, not its pin: bumps are not reviewed there.
+	shaRefRe  = regexp.MustCompile(`@[0-9a-f]{40}$`)
+	sha40Re   = regexp.MustCompile(`^[0-9a-f]{40}$`)
+	swallowRe = regexp.MustCompile(`\|\|\s*(true|:)(\s|;|$)`)
+	assertRe  = regexp.MustCompile(`^test .* \|\| \{ echo .* >&2; exit 1; \}$`)
+	disarmRe  = regexp.MustCompile(`exit 0|set \+e|\|\| echo|\|\| exit`)
+	pinRe     = regexp.MustCompile(`^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+@[0-9a-f]{40}$`)
+	platforms = []string{"darwin/arm64", "linux/amd64", "linux/arm64"}
 )
+
+// actionPin is the commit SHA and version comment of one `uses: <action>@<sha> # <version>` line.
+type actionPin struct{ sha, version string }
+
+// derivePins reads the pin of every action from the workflow text itself, so the tests follow a
+// routine version bump. The first line per action wins; violations() separately rejects
+// workflows whose uses of one action disagree.
+func derivePins(raw string) map[string]actionPin {
+	pins := map[string]actionPin{}
+	for _, m := range usesLineRe.FindAllStringSubmatch(raw, -1) {
+		if _, ok := pins[m[1]]; !ok {
+			pins[m[1]] = actionPin{sha: m[2], version: m[3]}
+		}
+	}
+	return pins
+}
+
+// pinReplacer expands the @@action@@ placeholders of the mutation table: @@name@@ is the full
+// `actions/name@sha # version` text, with a :pin (no comment), :sha or :short suffix for the
+// pin without comment, the bare SHA, and the 7-character SHA with its comment.
+func pinReplacer(t *testing.T, raw string) *strings.Replacer {
+	t.Helper()
+	var kv []string
+	for _, name := range []string{"checkout", "setup-go", "upload-artifact", "download-artifact"} {
+		p, ok := derivePins(raw)["actions/"+name]
+		if !ok {
+			t.Fatalf("release.yml has no pinned actions/%s line with a version comment", name)
+		}
+		pin := "actions/" + name + "@" + p.sha
+		kv = append(kv,
+			"@@"+name+"@@", pin+" # "+p.version,
+			"@@"+name+":pin@@", pin,
+			"@@"+name+":sha@@", p.sha,
+			"@@"+name+":short@@", "actions/"+name+"@"+p.sha[:7]+" # "+p.version)
+	}
+	return strings.NewReplacer(kv...)
+}
 
 func readFile(t *testing.T, rel string) string {
 	t.Helper()
@@ -134,6 +174,7 @@ func isFalse(v any) bool {
 func violations(w workflow, raw string) []string {
 	var v []string
 	add := func(code, format string, a ...any) { v = append(v, code+": "+fmt.Sprintf(format, a...)) }
+	firstUse := map[string]string{} // action -> first pinned uses value, for the consistency rule
 
 	// Triggers.
 	if len(w.On) != 2 {
@@ -210,8 +251,17 @@ func violations(w workflow, raw string) []string {
 				if !pinRe.MatchString(s.Uses) {
 					add("pin", "job %s uses an unpinned action %s", name, s.Uses)
 				}
-				if !allowedUses[s.Uses] {
+				action, ref, _ := strings.Cut(s.Uses, "@")
+				if !allowedActions[action] {
 					add("pin", "job %s uses an action outside the allowed list: %s", name, s.Uses)
+				}
+				if !sha40Re.MatchString(ref) {
+					add("pin", "job %s uses a mutable or short ref: %s", name, s.Uses)
+				}
+				if first, seen := firstUse[action]; !seen {
+					firstUse[action] = s.Uses
+				} else if first != s.Uses {
+					add("pin", "job %s pins %s differently from another job: %s vs %s", name, action, s.Uses, first)
 				}
 				if strings.HasPrefix(s.Uses, "actions/checkout@") && s.With["persist-credentials"] != false {
 					add("persist-credentials", "job %s checkout must set persist-credentials: false", name)
@@ -586,6 +636,9 @@ func normalize(v any) any {
 	case map[string]any:
 		m := map[string]any{}
 		for k, x := range v {
+			if u, ok := x.(string); ok && k == "uses" {
+				x = shaRefRe.ReplaceAllString(u, "@PINNED")
+			}
 			m[k] = normalize(x)
 		}
 		return m
@@ -697,16 +750,18 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"publish gains id-token", "    permissions:\n      contents: write\n", "    permissions:\n      contents: write\n      id-token: write\n", "permissions", false},
 		{"publish loses write", "    permissions:\n      contents: write\n", "    permissions:\n      contents: read\n", "permissions", false},
 		{"verify loses actions read", "      contents: read\n      actions: read\n", "      contents: read\n", "permissions", false},
-		{"mutable action ref", "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6", "actions/setup-go@v6", "pin", true},
-		{"missing version comment", "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2", "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9", "pin", false},
-		{"unlisted action", "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9", "actions/upload-artifact@0000000000000000000000000000000000000000", "pin", false},
+		{"mutable action ref", "@@setup-go@@", "actions/setup-go@v6", "pin", true},
+		{"missing version comment", "@@upload-artifact@@", "@@upload-artifact:pin@@", "pin", false},
+		{"unlisted action", "@@upload-artifact:pin@@", "actions/cache@@@upload-artifact:sha@@", "pin", false},
+		{"diverging pin of an allowed action", "@@checkout@@", "actions/checkout@0000000000000000000000000000000000000000 # v0.0.0", "pin", false},
+		{"short sha", "@@setup-go@@", "@@setup-go:short@@", "pin", true},
 		{"persisted credentials", "          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/setup-go", "          fetch-depth: 0\n      - uses: actions/setup-go", "persist-credentials", false},
 		{"gate continue-on-error", "      - run: make check\n", "      - run: make check\n        continue-on-error: true\n", "continue-on-error", false},
 		{"gate disabled", "      - run: make mod-verify\n", "      - if: false\n        run: make mod-verify\n", "if-false", false},
 		{"gate made conditional", "      - run: make test-assets\n", "      - if: github.event_name == 'push'\n        run: make test-assets\n", "gate", false},
 		{"gate removed", "      - run: make test-assets\n", "", "gate", false},
 		{"job continue-on-error", "  smoke:\n    name:", "  smoke:\n    continue-on-error: true\n    name:", "continue-on-error", false},
-		{"build gains a platform", "          - os: darwin\n            arch: arm64\n    steps:\n      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          persist-credentials: false\n      - uses: actions/setup-go", "          - os: darwin\n            arch: arm64\n          - os: windows\n            arch: amd64\n    steps:\n      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          persist-credentials: false\n      - uses: actions/setup-go", "matrix", false},
+		{"build gains a platform", "          - os: darwin\n            arch: arm64\n    steps:\n      - uses: @@checkout@@\n        with:\n          persist-credentials: false\n      - uses: actions/setup-go", "          - os: darwin\n            arch: arm64\n          - os: windows\n            arch: amd64\n    steps:\n      - uses: @@checkout@@\n        with:\n          persist-credentials: false\n      - uses: actions/setup-go", "matrix", false},
 		{"smoke loses the mac runner", "            runner: macos-15", "            runner: ubuntu-24.04", "matrix", false},
 		{"smoke floating runner", "            runner: ubuntu-24.04-arm", "            runner: ubuntu-latest", "matrix", false},
 		{"publish loses smoke", "    needs: [verify, build, smoke]\n", "    needs: [verify, build]\n", "needs", false},
@@ -722,7 +777,7 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"cgo enabled", "CGO_ENABLED: '0'", "CGO_ENABLED: '1'", "build", false},
 		{"toolchain download allowed", "GOTOOLCHAIN: local", "GOTOOLCHAIN: auto", "build", false},
 		{"reproducibility check removed", "          cmp \"$RUNNER_TEMP/bin/smill\" \"$RUNNER_TEMP/bin/smill-second\"\n", "", "reproducibility", false},
-		{"extra upload", "      - name: Smoke-test the shipped archive natively", "      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2\n        with:\n          path: x\n      - name: Smoke-test the shipped archive natively", "artifact", false},
+		{"extra upload", "      - name: Smoke-test the shipped archive natively", "      - uses: @@upload-artifact@@\n        with:\n          path: x\n      - name: Smoke-test the shipped archive natively", "artifact", false},
 		{"verify-tag removed", " --verify-tag", "", "publish", false},
 		{"draft by default", `if [ "$DRAFT" = true ]; then flags+=(--draft); fi`, `flags+=(--draft)`, "draft", false},
 		{"draft switch renamed", "vars.SHEETMILL_RELEASE_DRAFT", "vars.OTHER", "draft", false},
@@ -740,14 +795,14 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"echo instead of failing", `test "$n" -ge 1 || { echo`, `test "$n" -ge 1 || echo "x"; { echo`, "swallow", false},
 		{"release-exists accepts any error", `*) echo "cannot tell whether a release exists: $out" >&2; exit 1 ;;`, `*) echo "cannot tell" ;;`, "verify", false},
 		{"head check removed", `          test "$(git rev-parse HEAD)" = "$COMMIT"` + "\n", "", "publish", false},
-		{"publish checks out main", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          ref: main\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "publish", false},
+		{"publish checks out main", "      - uses: @@checkout@@\n        with:\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "      - uses: @@checkout@@\n        with:\n          ref: main\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "publish", false},
 		{"owner check reassigned (F1)", "          test \"$ACTOR\" = \"$OWNER\" || { echo \"run started", "          ACTOR=$OWNER\n          test \"$ACTOR\" = \"$OWNER\" || { echo \"run started", "assign", false},
 		{"publish owner check reassigned (F1)", "          test \"$ACTOR\" = \"$OWNER\" || { echo \"run triggered", "          OWNER=$ACTOR\n          test \"$ACTOR\" = \"$OWNER\" || { echo \"run triggered", "assign", false},
 		{"original pusher check removed (F11)", "\n          test \"$PUSHER\" = \"$OWNER\" || { echo \"run originally started by $PUSHER, not by the repository owner $OWNER\" >&2; exit 1; }\n      - name: Require an annotated tag", "\n      - name: Require an annotated tag", "semantic", false},
 		{"check-run count overwritten (F2)", `          test "$n" -ge 1 ||`, "          n=1\n          test \"$n\" -ge 1 ||", "assign", false},
 		{"env on a gate step (F2)", "      - run: make check\n", "      - env:\n          GOFLAGS: -run=^$\n        run: make check\n", "env", false},
 		{"env on the verify job (F2)", "    timeout-minutes: 15\n    permissions:\n      contents: read\n      actions: read\n", "    timeout-minutes: 15\n    env:\n      GOFLAGS: -run=^$\n    permissions:\n      contents: read\n      actions: read\n", "env", false},
-		{"build checkout from main (F3)", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          persist-credentials: false\n      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5\n        with:\n          ref: main\n          persist-credentials: false\n      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "with", false},
+		{"build checkout from main (F3)", "      - uses: @@checkout@@\n        with:\n          persist-credentials: false\n      - uses: @@setup-go@@\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "      - uses: @@checkout@@\n        with:\n          ref: main\n          persist-credentials: false\n      - uses: @@setup-go@@\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "with", false},
 		{"smoke downloads from another run (F3)", "          name: release-${{ matrix.os }}-${{ matrix.arch }}\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "          name: release-${{ matrix.os }}-${{ matrix.arch }}\n          run-id: 1\n          github-token: ${{ github.token }}\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "with", false},
 		{"build commit check removed (F3)", "          test \"$(git rev-parse HEAD)\" = \"$COMMIT\" || { echo \"checkout is not the verified commit $COMMIT\" >&2; exit 1; }\n          mkdir", "          mkdir", "build", false},
 		{"smoke commit check removed (F3)", "          test \"$(git rev-parse HEAD)\" = \"$COMMIT\" || { echo \"checkout is not the verified commit $COMMIT\" >&2; exit 1; }\n          plain", "          plain", "smoke", false},
@@ -777,14 +832,16 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"check run query removed", "head_sha=$GITHUB_SHA", "head_sha=0", "verify", false},
 		{"404 handling removed", "*\"HTTP 404\"*)", "*)", "verify", false},
 		{"tag step unguarded", "      - name: Require an annotated tag on a commit of main\n        if: steps.resolve.outputs.dry_run == 'false'\n", "      - name: Require an annotated tag on a commit of main\n", "verify", false},
-		{"verify shallow", "          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6\n        with:\n          go-version-file: .go-version\n          check-latest: false\n      - name: Resolve", "          persist-credentials: false\n      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6\n        with:\n          go-version-file: .go-version\n          check-latest: false\n      - name: Resolve", "verify", false},
+		{"verify shallow", "          fetch-depth: 0\n          persist-credentials: false\n      - uses: @@setup-go@@\n        with:\n          go-version-file: .go-version\n          check-latest: false\n      - name: Resolve", "          persist-credentials: false\n      - uses: @@setup-go@@\n        with:\n          go-version-file: .go-version\n          check-latest: false\n      - name: Resolve", "verify", false},
 		{"no timeout", "    timeout-minutes: 15\n    permissions:\n      contents: write", "    permissions:\n      contents: write", "timeout", false},
 		{"cancel in progress", "cancel-in-progress: false", "cancel-in-progress: true", "concurrency", false},
 		{"wrong archive name", `smill_${plain}_${OS}_${ARCH}.tar.gz`, `smill_${VERSION}_${OS}_${ARCH}.tar.gz`, "archive", false},
 		{"upload name", "name: release-${{ matrix.os }}-${{ matrix.arch }}\n          path: ${{ runner.temp }}/dist/*", "name: release\n          path: ${{ runner.temp }}/dist/*", "artifact", false},
 		{"publish downloads everything", "pattern: release-*", "pattern: '*'", "publish", false},
 	}
+	pins := pinReplacer(t, raw)
 	for _, c := range cases {
+		c.old, c.new = pins.Replace(c.old), pins.Replace(c.new)
 		t.Run(c.name, func(t *testing.T) {
 			n := 1
 			if c.all {
@@ -840,5 +897,53 @@ func TestCheckAndReleaseBuildTheSameTargets(t *testing.T) {
 	raw := readFile(t, ".github/workflows/check.yml")
 	if !strings.Contains(strings.SplitN(raw, "\njobs:", 2)[0], "release.yml") {
 		t.Error("check.yml header must point at release.yml")
+	}
+}
+
+// Format and consistency rules do not depend on which version is pinned: a bump passes, while a
+// mutable ref, a short SHA, a missing comment, an unlisted action or a diverging pin is rejected.
+func TestPinRulesFollowTheWorkflowNotLiterals(t *testing.T) {
+	raw := readFile(t, ".github/workflows/release.yml")
+	pins := derivePins(raw)
+	for name := range allowedActions {
+		if p, ok := pins[name]; !ok || !sha40Re.MatchString(p.sha) || p.version == "" {
+			t.Errorf("%s is not pinned to a 40-hex SHA with a version comment: %+v", name, p)
+		}
+	}
+	if len(pins) != len(allowedActions) {
+		t.Errorf("release.yml uses %d actions, want the %d allowed ones", len(pins), len(allowedActions))
+	}
+
+	// A bump of every pin (new SHA, new version) is not a violation.
+	bumped := raw
+	for name, p := range pins {
+		newSHA := strings.Repeat("a", 40)
+		bumped = strings.ReplaceAll(bumped, name+"@"+p.sha+" # "+p.version, name+"@"+newSHA+" # v99.0.0")
+	}
+	if bumped == raw {
+		t.Fatal("harness error: the bump changed nothing")
+	}
+	if v := violations(parse(t, bumped), bumped); len(v) != 0 {
+		t.Errorf("a routine bump of the action pins must not break the rules:\n%s", strings.Join(v, "\n"))
+	}
+
+	pr := pinReplacer(t, raw)
+	for _, c := range []struct{ name, from, to string }{
+		{"mutable ref", "@@checkout@@", "actions/checkout@v7"},
+		{"short sha", "@@checkout@@", "@@checkout:short@@"},
+		{"unlisted action", "@@checkout@@", "actions/cache@@@checkout:sha@@ # v1"},
+	} {
+		mutated := strings.ReplaceAll(raw, pr.Replace(c.from), pr.Replace(c.to))
+		if mutated == raw {
+			t.Fatalf("harness error: %s changed nothing", c.name)
+		}
+		v := violations(parse(t, mutated), mutated)
+		found := false
+		for _, line := range v {
+			found = found || strings.HasPrefix(line, "pin:")
+		}
+		if !found {
+			t.Errorf("%s was not rejected; got %v", c.name, v)
+		}
 	}
 }
