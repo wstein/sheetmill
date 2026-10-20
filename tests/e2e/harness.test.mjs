@@ -36,7 +36,7 @@ test('aborted operation does not start work', async () => {
   await assert.rejects(run(process.execPath, ['-e', 'process.exit(0)'], { signal: controller.signal }), /aborted/);
 });
 test('exact tool versions, standard and extended Hugo forms', () => {
-  const versions = { node: '24.21.0', playwright: '1.64.0', chromium: '156.0.8078.4', go: 'go version go1.27.2 darwin/arm64', hugo: 'hugo v0.167.0-abcdef linux/amd64' };
+  const versions = { node: '24.21.0', playwright: '1.64.1', chromium: '156.0.8078.4', go: 'go version go1.27.2 darwin/arm64', hugo: 'hugo v0.167.0-abcdef linux/amd64' };
   validateVersions(versions);
   validateVersions({ ...versions, hugo: 'hugo v0.167.0+extended darwin/arm64' });
   for (const [key,value] of Object.entries({ node:'26.11.1', playwright:'1.63.0', chromium:'155.0.0.0', go:'go version go1.27.20 linux/amd64', hugo:'hugo v0.167.01 linux/amd64' })) {

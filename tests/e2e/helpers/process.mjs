@@ -10,7 +10,7 @@ export function toolEnvironment(cache, base=process.env) {
 
 export function validateVersions(v) {
   const checks = {
-    node: v.node === '24.21.0', playwright: v.playwright === '1.64.0',
+    node: v.node === '24.21.0', playwright: v.playwright === '1.64.1',
     chromium: v.chromium === '156.0.8078.4',
     go: /^go version go1\.27\.2\s/.test(v.go || ''),
     hugo: /^hugo v0\.167\.0(?:[+\s-]|$)/.test(v.hugo || ''),

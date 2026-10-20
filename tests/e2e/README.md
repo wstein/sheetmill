@@ -1,6 +1,6 @@
 # Reference web E2E
 
-Development-only package: Node **24.21.0**, Playwright **1.64.0**, bundled Chromium
+Development-only package: Node **24.21.0**, Playwright **1.64.1**, bundled Chromium
 revision **1248** (156.0.8078.4), Go **1.27.2** and installed Hugo **0.167.0**.
 No sibling CLI, container or account is required. No production JavaScript compiler.
 
