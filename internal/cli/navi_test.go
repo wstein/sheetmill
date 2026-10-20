@@ -211,3 +211,85 @@ func TestStrictFailsOnVariableSourceWarnings(t *testing.T) {
 		})
 	}
 }
+
+// TestBuildNaviVariableSources runs the in-process CLI on the contract sheet for
+// every profile. The sheet template and golden bytes are the renderer's fixtures;
+// no navi, shell or exported command runs.
+func TestBuildNaviVariableSources(t *testing.T) {
+	fixtures := filepath.Join("..", "render", "navi", "testdata", "variable-sources")
+	template, err := os.ReadFile(filepath.Join(fixtures, "git.md.tmpl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func(args ...string) (int, string, string) {
+		var out, errout bytes.Buffer
+		code := Run(args, &out, &errout)
+		return code, out.String(), errout.String()
+	}
+	for _, shell := range []string{"bash", "zsh", "fish", "nu"} {
+		t.Run(shell, func(t *testing.T) {
+			root := tempDir(t)
+			if err := os.Mkdir(filepath.Join(root, "sheets"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			input := filepath.Join(root, "sheets", "git.md")
+			write := func(source string) {
+				if err := os.WriteFile(input, []byte(strings.ReplaceAll(source, "LANG", shell)), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			write(string(template))
+			destination := filepath.Join(root, "cheats")
+			code, out, e := run("build", "navi", input, "--root", root, "--shell", shell, "--strict", "--out", destination)
+			if code != 0 || e != "" || !strings.Contains(out, "Exported 1 sheets") || !strings.Contains(out, shell+" profile") {
+				t.Fatalf("code=%d stdout=%s stderr=%s", code, out, e)
+			}
+			want, err := os.ReadFile(filepath.Join(fixtures, shell+".cheat"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, _ := os.ReadFile(filepath.Join(destination, "git.cheat")); !bytes.Equal(got, want) {
+				t.Fatalf("golden bytes differ:\n%s", got)
+			}
+			companion, err := os.ReadFile(filepath.Join(destination, "git.navi.json"))
+			if err != nil || !strings.Contains(string(companion), `"source": "git remote"`) || !strings.Contains(string(companion), `"shell": "`+shell+`"`) {
+				t.Fatalf("companion: %v %s", err, companion)
+			}
+			// An existing destination is never overwritten.
+			if code, _, e := run("build", "navi", input, "--root", root, "--shell", shell, "--out", destination); code != 2 || !strings.Contains(e, "IO003") {
+				t.Fatalf("code=%d stderr=%s", code, e)
+			}
+			// Errors and strict warnings write no directory.
+			for name, tc := range map[string]struct {
+				source string
+				args   []string
+				code   int
+				diag   string
+			}{
+				"both fields": {strings.Replace(string(template), "          source: git remote\n", "          source: git remote\n          choices: [a]\n", 1), nil, 1, "CMD001"},
+				"bad option":  {strings.Replace(string(template), "{column: 1}", "{column: 0}", 1), nil, 1, "CMD001"},
+				"legacy":      {"---\ntitle: L\nlicense: x\ncheatsheet:\n  navi:\n    cards:\n      c: {params: {a: {type: string, choices: []}}}\n---\n## S\n\n### C {#c .navi}\n\n```LANG\nrun <a>\n```\n", nil, 1, "NAV006"},
+				"strict skip": {strings.Replace(string(template), "source: git remote", "source: git remote --- x", 1), []string{"--strict"}, 1, "NAV000"},
+			} {
+				write(tc.source)
+				failed := filepath.Join(root, "failed-"+strings.ReplaceAll(name, " ", "-"))
+				args := append([]string{"build", "navi", input, "--root", root, "--shell", shell, "--out", failed}, tc.args...)
+				if code, _, e := run(args...); code != tc.code || !strings.Contains(e, tc.diag) {
+					t.Errorf("%s: code=%d stderr=%s", name, code, e)
+				}
+				if _, err := os.Stat(failed); !os.IsNotExist(err) {
+					t.Errorf("%s created an output directory: %v", name, err)
+				}
+			}
+			// Without --strict the skipped card is a warning and the other card exports.
+			write(strings.Replace(string(template), "source: git remote", "source: git remote --- x", 1))
+			lenient := filepath.Join(root, "lenient")
+			if code, _, e := run("build", "navi", input, "--root", root, "--shell", shell, "--out", lenient); code != 0 || !strings.Contains(e, "NAV108") || !strings.Contains(e, "(warning)") {
+				t.Fatalf("code=%d stderr=%s", code, e)
+			}
+			if b, _ := os.ReadFile(filepath.Join(lenient, "git.cheat")); strings.Contains(string(b), "fetch-branch") || !strings.Contains(string(b), "$ branches:") {
+				t.Fatalf("lenient export:\n%s", b)
+			}
+		})
+	}
+}
