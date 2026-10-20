@@ -2,6 +2,8 @@
 package hugo
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/wstein/sheetmill/internal/markdown"
 	"strings"
 	"testing"
@@ -33,5 +35,32 @@ func TestSharedCommandRendersLiteralReference(t *testing.T) {
 	data := string(p.Files["data/sheets/commands.json"])
 	if !strings.Contains(data, `smill check`) || strings.Contains(data, `.command`) || !strings.Contains(data, `ref-check`) {
 		t.Fatal(data)
+	}
+}
+
+func TestHugoIgnoresVariableSources(t *testing.T) {
+	const body = "---\ntitle: Git\nlicense: x\ncheatsheet:\n  cards:\n    c:\n      params:\n        a: {type: string%s}\n        b: {type: string%s}\n---\n## S\n### C {#c .command}\n```bash\ngit fetch <a> <b>\n```\n"
+	render := func(a, b string) Project {
+		doc, ds := markdown.Parse([]byte(fmt.Sprintf(body, a, b)))
+		if len(ds) > 0 {
+			t.Fatal(ds)
+		}
+		p, issues := Render([]Sheet{{ID: "git", SourceName: "git.md", Document: doc}}, Options{})
+		if len(issues) > 0 {
+			t.Fatal(issues)
+		}
+		return p
+	}
+	plain := render("", "")
+	with := render(", source: git remote, options: {column: 1}", ", choices: [main, \"it's\"]")
+	if len(plain.Files) == 0 || len(plain.Files) != len(with.Files) {
+		t.Fatalf("file sets differ: %d vs %d", len(plain.Files), len(with.Files))
+	}
+	// The IR dump holds the authored metadata and source offsets, so it differs by
+	// design; every other file, the rendered site data included, must be unchanged.
+	for name, want := range plain.Files {
+		if name != "data/ir/git.json" && !bytes.Equal(with.Files[name], want) {
+			t.Errorf("%s changed by variable sources", name)
+		}
 	}
 }
