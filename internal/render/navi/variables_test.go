@@ -3,6 +3,8 @@ package navi
 
 import (
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -105,5 +107,123 @@ func TestQuoteChoicesRoundTrips(t *testing.T) {
 				t.Errorf("%s: recovered %q from %q", shell, got, list)
 			}
 		}
+	}
+}
+
+// modelVariable is what navi's parser.rs recovers from one variable line.
+type modelVariable struct {
+	name, command  string
+	words          []string // option words after shellwords splitting
+	column         int      // -1 when absent
+	headerLines    int      // -1 when absent
+	multi, prevent bool
+}
+
+var (
+	modelLine  = regexp.MustCompile(`^\$\s*([^:]+):(.*)`)
+	modelWords = regexp.MustCompile(`'([^']*)'|\\.?|[^\s'\\]+`)
+)
+
+// parseVariableLine is a pure-Go model of navi's variable-line grammar: the name
+// is everything up to the first colon, the remainder is split on every `---` and
+// only the first two parts count, options are shell words. A trailing backslash
+// continues the line in navi, so the model reports it as not a single line.
+func parseVariableLine(line string) (modelVariable, bool) {
+	if strings.HasSuffix(line, `\`) {
+		return modelVariable{}, false
+	}
+	m := modelLine.FindStringSubmatch(line)
+	if m == nil {
+		return modelVariable{}, false
+	}
+	parts := strings.Split(m[2], "---")
+	v := modelVariable{name: strings.TrimSpace(m[1]), command: strings.TrimSpace(parts[0]), column: -1, headerLines: -1}
+	if len(parts) < 2 {
+		return v, true
+	}
+	for _, w := range modelWords.FindAllStringSubmatch(parts[1], -1) {
+		word := w[0]
+		if strings.HasPrefix(word, "'") {
+			word = w[1]
+		}
+		v.words = append(v.words, word)
+	}
+	for i := 0; i < len(v.words); i++ {
+		flag := v.words[i]
+		switch flag {
+		case "--multi":
+			v.multi = true
+			continue
+		case "--prevent-extra":
+			v.prevent = true
+			continue
+		}
+		if i+1 >= len(v.words) {
+			break
+		}
+		i++
+		switch flag {
+		case "--column", "--header-lines":
+			n, err := strconv.ParseUint(v.words[i], 10, 8)
+			if err != nil {
+				return modelVariable{}, false
+			}
+			if flag == "--column" {
+				v.column = int(n)
+			} else {
+				v.headerLines = int(n)
+			}
+		}
+	}
+	return v, true
+}
+
+func TestVariableLineGrammarModel(t *testing.T) {
+	cases := []struct {
+		name string
+		line string
+		want modelVariable
+	}{
+		{"command only", variableLine("branch", "git branch", options{}), modelVariable{name: "branch", command: "git branch", column: -1, headerLines: -1}},
+		{"all options", variableLine("f", "ls -l", options{Column: 2, HeaderLines: 1, Delimiter: `\s\s+`, Multi: true, hasColumn: true, hasHeaderLines: true}),
+			modelVariable{name: "f", command: "ls -l", words: []string{"--column", "2", "--delimiter", `\s\s+`, "--header-lines", "1", "--multi"}, column: 2, headerLines: 1, multi: true}},
+		{"prevent extra", variableLine("f", "ls", options{PreventExtra: true}), modelVariable{name: "f", command: "ls", words: []string{"--prevent-extra"}, column: -1, headerLines: -1, prevent: true}},
+		{"header lines zero", variableLine("f", "ls", options{hasHeaderLines: true}), modelVariable{name: "f", command: "ls", words: []string{"--header-lines", "0"}, column: -1, headerLines: 0}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, ok := parseVariableLine(c.line)
+			if !ok || !reflect.DeepEqual(got, c.want) {
+				t.Fatalf("%q parsed as %+v (ok=%v), want %+v", c.line, got, ok, c.want)
+			}
+		})
+	}
+}
+
+func TestVariableLineModelRejectsTrailingBackslash(t *testing.T) {
+	if _, ok := parseVariableLine(variableLine("a", `echo x \`, options{})); ok {
+		t.Fatal("a trailing backslash continues the line in navi; the model must not accept it")
+	}
+}
+
+func TestParseCardReadsVariableFields(t *testing.T) {
+	var problems []string
+	bad := func(m string) { problems = append(problems, m) }
+	meta := parseCard("c", map[string]any{"params": map[string]any{
+		"a": map[string]any{"type": "string", "choices": []any{"x", "y"}},
+		"b": map[string]any{"type": "string", "source": "ls", "options": map[string]any{"column": int64(2), "multi": true}},
+	}}, bad)
+	want := map[string]param{
+		"a": {Type: "string", Choices: []string{"x", "y"}},
+		"b": {Type: "string", Source: "ls", Options: options{Column: 2, hasColumn: true, Multi: true}},
+	}
+	if len(problems) > 0 || !reflect.DeepEqual(meta.params, want) {
+		t.Fatalf("problems=%v params=%+v", problems, meta.params)
+	}
+	// The legacy namespace applies the shared rules and reports them as NAV006 text.
+	problems = nil
+	parseCard("c", map[string]any{"params": map[string]any{"a": map[string]any{"type": "string", "choices": []any{}, "source": "ls"}}}, bad)
+	if len(problems) == 0 {
+		t.Fatal("invalid variable fields must be reported")
 	}
 }

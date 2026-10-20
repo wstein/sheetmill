@@ -55,6 +55,14 @@ func variableSources(p string, fields map[string]any, add func(key, msg string))
 	}
 }
 
+// VariableSourceProblems applies the shared rules to one parameter declaration
+// of another namespace (the legacy navi alias) and returns one message per problem.
+func VariableSourceProblems(path string, fields map[string]any) []string {
+	var problems []string
+	variableSources(path, fields, func(_, msg string) { problems = append(problems, msg) })
+	return problems
+}
+
 func variableChoices(p string, isInt bool, raw any, add func(key, msg string)) {
 	var items []any
 	switch v := raw.(type) {

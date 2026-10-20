@@ -72,7 +72,14 @@ type Project struct {
 	Warnings   []Issue
 }
 
-type param struct{ Type, Description string }
+// param is one declared parameter. Choices and Source are mutually exclusive;
+// Options only apply to one of them (validation has already enforced this).
+type param struct {
+	Type, Description string
+	Choices           []string
+	Source            string
+	Options           options
+}
 
 var (
 	paramName = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
@@ -368,14 +375,23 @@ func parseCard(id string, raw any, bad func(string)) *cardMeta {
 				case f == "type" && isString && (v == "string" || v == "int" || v == "path"):
 					pr.Type = v
 				case f == "type":
-					bad(where + ".type must be string, int or path (choice lists and dynamic suggestions are not supported yet)")
+					bad(where + ".type must be string, int or path")
 				case f == "description" && isString && oneLine(v) == v && v != "":
 					pr.Description = v
 				case f == "description":
 					bad(where + ".description must be a nonempty single-line string")
+				case f == "choices" || f == "source" || f == "options":
+					// Read below, after the shared rules accepted the whole declaration.
 				default:
 					bad(where + ": unknown field " + f)
 				}
+			}
+			if problems := validate.VariableSourceProblems(where, fields); len(problems) > 0 {
+				for _, msg := range problems {
+					bad(msg)
+				}
+			} else {
+				pr.Choices, pr.Source, pr.Options = variableFields(fields)
 			}
 			if pr.Type == "" {
 				bad(where + ".type is required")
