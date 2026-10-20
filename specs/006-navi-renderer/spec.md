@@ -50,9 +50,9 @@ navi has been run.
   `description`. Shared shape/type errors are `CMD001`, shared reference errors are `CMD002`.
   Legacy metadata errors and conflicting old/new declarations are `NAV006`.
   Parameters are card-local (`NAV007`, the sheet-wide conflict, is retired because
-  each card has its own context). Defaults, choice
-  lists, providers, previews, multi-selection and shared contexts are out of scope;
-  no `$` lines are emitted.
+  each card has its own context). Defaults, previews
+  and shared contexts are out of scope here; choice lists and suggestion commands
+  came later in [Spec 020](../020-navi-variable-sources/spec.md).
 - S6 Never execute: tests compare bytes and use a pure Go model of navi's line
   grammar and entry deduplication; a lint test forbids `os/exec`, `syscall`,
   `plugin` and network imports in the package.
@@ -111,7 +111,7 @@ types are not enforced. Generated headers and the format page state this.
 
 Stronger shell syntax validation
 (Bash/Zsh quote diagnostics use pinned `mvdan.cc/sh/v3/syntax` v3.14.1; Fish remains
-heuristic); choice lists and shared contexts, which need their own design; nushell raw-string
+heuristic); shared contexts, which need their own design (choice lists and suggestion commands: Spec 020); nushell raw-string
 analysis. A non-executing parse check against real navi, publication of generated
 cheats and distribution builds are separately gated.
 

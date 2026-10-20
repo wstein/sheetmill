@@ -23,7 +23,7 @@
 - [ ] T010 Stronger shell syntax checks. Bash/Zsh quote diagnostics now use only
   pinned `mvdan.cc/sh/v3/syntax` v3.14.1; full syntax validation and a suitable
   Fish parser remain pending.
-- [ ] T011 Later: choice lists, shared contexts, nushell raw strings.
+- [ ] T011 Later: shared contexts, nushell raw strings. Choice lists and suggestion commands moved to Spec 020.
 
 - [x] T012 Consume the separately authorized 015 shared command-card contract;
   implementation/verification is tracked by [015 tasks](../015-command-cards/tasks.md).

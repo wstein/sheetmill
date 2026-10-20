@@ -14,8 +14,8 @@ file selection and parsing with `smill build hugo` (`loadSelection`). The IR gai
    preserve all frontmatter and list actual exported cards.
 5. Later, each needing its own decision: stronger syntax
    validation and a suitable Fish parser (Bash/Zsh quote diagnostics use pinned
-   `mvdan.cc/sh/v3/syntax` v3.14.1), choice lists without silent executable providers,
-   shared-context inheritance, nushell raw strings.
+   `mvdan.cc/sh/v3/syntax` v3.14.1), shared-context inheritance, nushell raw strings (choice lists and suggestion
+   commands moved to Spec 020).
 
 No navi, finder, shell or source snippet runs in renderer tests or CI.
 
