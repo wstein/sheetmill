@@ -434,6 +434,7 @@ func renderCard(s Sheet, card model.Card, tagLine string, profile Profile, metas
 		declared = meta.params
 	}
 	used := map[string]bool{}
+	var firstUse []string
 	for _, m := range placeholder.FindAllStringSubmatch(command, -1) {
 		name := m[1]
 		if strings.HasPrefix(m[0], `\`) {
@@ -452,6 +453,9 @@ func renderCard(s Sheet, card model.Card, tagLine string, profile Profile, metas
 			}
 			return skip("NAV104", fmt.Sprintf("placeholder <%s> has no declaration under %s.%s.params", name, namespace, card.ID), block.Span)
 		}
+		if !used[name] {
+			firstUse = append(firstUse, name)
+		}
 		used[name] = true
 	}
 	for _, name := range sortedParams(declared) {
@@ -466,7 +470,17 @@ func renderCard(s Sheet, card model.Card, tagLine string, profile Profile, metas
 	if strings.ContainsRune(title, braille) {
 		return skip("NAV102", "the card title contains U+2800, navi's finder field separator", card.Span)
 	}
-	return "; card: " + card.ID + "\n% " + tagLine + "\n# " + title + "\n" + command + "\n", nil
+	text := "; card: " + card.ID + "\n% " + tagLine + "\n# " + title + "\n" + command + "\n"
+	for _, name := range firstUse {
+		pr := declared[name]
+		switch {
+		case len(pr.Choices) > 0:
+			text += variableLine(name, quoteChoices(profile, pr.Choices), pr.Options) + "\n"
+		case pr.Source != "":
+			text += variableLine(name, pr.Source, pr.Options) + "\n"
+		}
+	}
+	return text, nil
 }
 
 // checkCommand applies the verified navi marker rules (parser.rs read_lines reads

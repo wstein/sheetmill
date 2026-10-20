@@ -2,6 +2,8 @@
 package navi
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -225,5 +227,65 @@ func TestParseCardReadsVariableFields(t *testing.T) {
 	parseCard("c", map[string]any{"params": map[string]any{"a": map[string]any{"type": "string", "choices": []any{}, "source": "ls"}}}, bad)
 	if len(problems) == 0 {
 		t.Fatal("invalid variable fields must be reported")
+	}
+}
+
+// variableSheetSource is the contract's example sheet; only the fence language
+// differs between profiles.
+const variableSheetSource = "---\ntitle: Git\nlicense: EUPL-1.2\ntags: [vcs]\ncheatsheet:\n  tool: git\n  cards:\n    fetch-branch:\n      params:\n        remote:\n          type: string\n          description: Remote to fetch from\n          source: git remote\n          options: {column: 1}\n        branch:\n          type: string\n          description: Branch to fetch\n          choices: [main, \"it's\", süd]\n    delete-branches:\n      params:\n        branches:\n          type: string\n          source: git branch --format='%(refname:short)'\n          options: {multi: true}\n---\n## Branches\n\n### Fetch a branch {#fetch-branch .command}\n\n```LANG\ngit fetch <remote> <branch>\n```\n\n### Delete branches {#delete-branches .command}\n\n```LANG\ngit branch -d <branches>\n```\n"
+
+func variableSheet(t *testing.T, shell string) Sheet {
+	t.Helper()
+	s := sheet(t, strings.ReplaceAll(variableSheetSource, "LANG", shell))
+	s.ID, s.SourceName, s.Path = "git", "git.md", "sheets/git.md"
+	return s
+}
+
+func readGolden(t *testing.T, shell string) string {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join("testdata", "variable-sources", shell+".cheat"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
+}
+
+func TestVariableSourceGolden(t *testing.T) {
+	for _, shell := range ProfileNames() {
+		t.Run(shell, func(t *testing.T) {
+			p, errs := Render([]Sheet{variableSheet(t, shell)}, Options{Shell: shell})
+			if len(errs) > 0 || len(p.Warnings) > 0 {
+				t.Fatalf("errors=%v warnings=%v", errs, p.Warnings)
+			}
+			if got, want := string(p.Files["git.cheat"]), readGolden(t, shell); got != want {
+				t.Fatalf("got:\n%s\nwant:\n%s", got, want)
+			}
+		})
+	}
+}
+
+func TestChoicesLineInGolden(t *testing.T) {
+	for _, shell := range ProfileNames() {
+		t.Run(shell, func(t *testing.T) {
+			vars := map[string]modelVariable{}
+			for _, line := range strings.Split(readGolden(t, shell), "\n") {
+				if strings.HasPrefix(line, "$") {
+					v, ok := parseVariableLine(line)
+					if !ok {
+						t.Fatalf("model rejects %q", line)
+					}
+					vars[v.name] = v
+				}
+			}
+			if len(vars) != 3 {
+				t.Fatalf("model recovered %d variables, want 3", len(vars))
+			}
+			if got, want := unquoteChoices(t, shell, vars["branch"].command), []string{"main", "it's", "süd"}; !reflect.DeepEqual(got, want) {
+				t.Fatalf("choices recovered as %q", got)
+			}
+			if vars["remote"].column != 1 || vars["remote"].command != "git remote" || !vars["branches"].multi {
+				t.Fatalf("options not recovered: %+v %+v", vars["remote"], vars["branches"])
+			}
+		})
 	}
 }
