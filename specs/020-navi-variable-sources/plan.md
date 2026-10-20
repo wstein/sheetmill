@@ -41,8 +41,8 @@ documentation only; the Go parser version is read from `go.mod` where a test nee
 Two small PRs, the second stacked on the first:
 
 1. Core: shared validation, schema, import regression (T001-T005). Until PR 2 the
-   export ignores the validated fields and the format pages are unchanged; the two
-   PRs merge in order.
+   navi build rejects the validated fields with NAV006 and the format pages are
+   unchanged; the two PRs merge in order.
 2. Export: writer, quoting, diagnostics, goldens, CLI, all docs (T006-T016).
 
 Each PR needs checks green and an exact-head independent review before Ready;
