@@ -1,0 +1,38 @@
+---
+title: Git
+license: EUPL-1.2
+tags: [vcs]
+cheatsheet:
+  tool: git
+  cards:
+    fetch-branch:
+      params:
+        remote:
+          type: string
+          description: Remote to fetch from
+          source: git remote
+          options: {column: 1}
+        branch:
+          type: string
+          description: Branch to fetch
+          choices: [main, "it's", süd]
+    delete-branches:
+      params:
+        branches:
+          type: string
+          source: git branch --format='%(refname:short)'
+          options: {multi: true}
+---
+## Branches
+
+### Fetch a branch {#fetch-branch .command}
+
+```LANG
+git fetch <remote> <branch>
+```
+
+### Delete branches {#delete-branches .command}
+
+```LANG
+git branch -d <branches>
+```
