@@ -28,7 +28,7 @@ assuming current master behaves identically.
   over the string bytes plus a trailing `0xff`, which is Rust's `str` hash input)
   was derived from `hash.rs` and `item.rs` above, not by running navi.
 - Select explicit-card exports: one explicitly marked, identified card per entry,
-  card-local free-input hints and no executable providers.
+  card-local free-input hints (suggestion commands came later with Spec 020).
 - Treat parameter values as trusted raw shell text, not safely quoted arbitrary
   data. Record this limitation in generated headers and future user documentation.
 - Keep current generic metadata preservation and `.navi` behavior unchanged.
@@ -39,8 +39,8 @@ assuming current master behaves identically.
   upstream branches it covers; do not describe it as running upstream navi.
 - The IR exposes the explicit-ID fact as the additive card field `id_explicit`
   (omitted when false); the exporter never reparses Markdown or infers it from a slug.
-- Escaping literal placeholders, choice lists and provider capabilities require
-  subsequent scope/design approval.
+- Escaping literal placeholders requires subsequent scope/design approval; choice lists
+  and suggestion commands are specified in Spec 020.
 
 ## Quote parser refinement
 
