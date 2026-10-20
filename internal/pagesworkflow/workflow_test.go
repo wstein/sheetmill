@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -189,22 +190,32 @@ func TestPagesWorkflowStructure(t *testing.T) {
 		!reflect.DeepEqual(deploy.Permissions, map[string]string{"pages": "write", "id-token": "write"}) {
 		t.Errorf("deploy gating changed: %+v", deploy)
 	}
-	wantUses := []string{
-		"actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
-		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
-		"actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9",
-	}
+	// The actions and their order are fixed; each is pinned to a 40-hex commit SHA with a
+	// version comment. The SHA and version themselves are not compared with literals, so a
+	// routine Dependabot bump does not break this test.
+	wantActions := []string{"actions/checkout", "actions/setup-go", "actions/upload-pages-artifact"}
 	var gotUses []string
 	for _, s := range w.Jobs["build"].Steps {
 		if s.Uses != "" {
 			gotUses = append(gotUses, s.Uses)
 		}
 	}
-	if !reflect.DeepEqual(gotUses, wantUses) {
-		t.Errorf("action pins changed: %v", gotUses)
+	if len(deploy.Steps) == 0 {
+		t.Fatal("deploy job has no steps")
 	}
-	if deploy.Steps[0].Uses != "actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346" {
-		t.Errorf("deploy action changed: %s", deploy.Steps[0].Uses)
+	gotUses = append(gotUses, deploy.Steps[0].Uses)
+	wantActions = append(wantActions, "actions/deploy-pages")
+	if len(gotUses) != len(wantActions) {
+		t.Fatalf("action set changed: %v", gotUses)
+	}
+	for i, u := range gotUses {
+		action, ref, _ := strings.Cut(u, "@")
+		if action != wantActions[i] || !regexp.MustCompile(`^[0-9a-f]{40}$`).MatchString(ref) {
+			t.Errorf("want %s pinned to a 40-hex SHA, got %s", wantActions[i], u)
+		}
+	}
+	if n := len(regexp.MustCompile(`(?m)^\s*(?:- )?uses: \S+@[0-9a-f]{40}[ \t]+# \S+`).FindAllString(raw, -1)); n != len(gotUses) {
+		t.Errorf("%d of %d uses lines carry a version comment", n, len(gotUses))
 	}
 
 	// The header comment names the three published demo paths.
