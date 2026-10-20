@@ -2,6 +2,8 @@
 package markdown
 
 import (
+	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -53,5 +55,32 @@ func TestCommandCards(t *testing.T) {
 				t.Fatal("marker lost")
 			}
 		})
+	}
+}
+
+// TestGoldenCommandCardsUnchanged: the new parameter fields live in metadata only;
+// the parsed sections of a command sheet are identical with and without them.
+func TestGoldenCommandCardsUnchanged(t *testing.T) {
+	const body = "---\ntitle: Git\ncheatsheet:\n  tool: git\n  cards:\n    fetch:\n      params:\n        branch:\n          type: string\n%s---\n## Branches\n### Fetch {#fetch .command}\n```bash\ngit fetch <branch>\n```\n"
+	// The plain sheet carries a description of equal length so the spans match.
+	declared := "          choices: [main, \"it's\"]\n"
+	filler := "          description: " + strings.Repeat("x", len(declared)-len("          description: \n")) + "\n"
+	plain, ds := Parse([]byte(strings.Replace(body, "%s", filler, 1)))
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	sourced, ds := Parse([]byte(strings.Replace(body, "%s", declared, 1)))
+	if len(ds) > 0 {
+		t.Fatal(ds)
+	}
+	a, _ := json.Marshal(plain.Sections)
+	b, _ := json.Marshal(sourced.Sections)
+	if string(a) != string(b) {
+		t.Fatalf("sections differ:\n%s\n%s", a, b)
+	}
+	params := sourced.Metadata["cheatsheet"].(map[string]any)["cards"].(map[string]any)["fetch"].(map[string]any)["params"]
+	want := map[string]any{"branch": map[string]any{"type": "string", "choices": []any{"main", "it's"}}}
+	if !reflect.DeepEqual(params, want) {
+		t.Fatalf("metadata not preserved verbatim: %#v", params)
 	}
 }
