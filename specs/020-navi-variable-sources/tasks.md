@@ -13,14 +13,15 @@ task exceeds about 200 changed lines without a stated reason.
 
 ## PR 1 - core (T001-T005)
 
-PR 1 validates, schema-documents and preserves the fields. The navi export ignores
-them until PR 2 and the format pages stay unchanged (stated gap; the PRs merge in order).
+PR 1 validates, schema-documents and preserves the fields. Until PR 2 the navi
+build rejects these fields with NAV006 (its own parameter reader does not know them yet)
+and the format pages stay unchanged (stated gap; the PRs merge in order).
 
-- [ ] T001 Run the existing navi goldens, migration fixtures, sidecar goldens and parser goldens unchanged as the baseline; no new checksum file (the committed byte goldens are the baseline). Record the base SHA on the PR.
-- [ ] T002 Failing tests in `internal/validate/commands_test.go`: `TestCommandParamChoicesShape` (empty, duplicate, non-string, empty string, whitespace, controls, newline, U+2800, too long, too many), `TestCommandParamIntChoicesAreIntegerStrings`, `TestCommandParamSourceShape`, `TestCommandParamChoicesAndSourceExclusive`, `TestCommandParamOptionsShape` (types, ranges, unknown key including `map`, dependencies on `source`/`choices`, `multi` with `prevent_extra`), `TestCommandParamNewFieldsPositions` (nested key spans; `1:1` for direct IR).
-- [ ] T003 Implement the rules in `CommandMetadata` (`internal/validate/commands.go`) with `CMD001`; no IR change, no mutation of metadata.
-- [ ] T004 Failing then passing: `TestSchemaMatchesVariableSourceRules` in `internal/validate/variable_sources_schema_test.go` (modeled on `TestSchemaMatchesFreshnessTables`), then edit `schema/cheatsheet.schema.json` per the contract.
-- [ ] T005 Failing tests first: `TestFrontmatterAcceptsVariableSources` and `TestFrontmatterRejectsVariableSourceErrors` in `internal/frontmatter/commands_test.go` (source path through `Parse`). Characterization tests, expected to pass without code changes: `TestGoldenCommandCardsUnchanged` (parser goldens byte-identical) and `TestImportKeepsUpstreamVariableSourcesInert` in `internal/importer/reference/command_test.go` (upstream `choices` stays archived, IMP111); fix only if one fails.
+- [x] T001 Run the existing navi goldens, migration fixtures, sidecar goldens and parser goldens unchanged as the baseline; no new checksum file (the committed byte goldens are the baseline). Record the base SHA on the PR.
+- [x] T002 Failing tests in `internal/validate/commands_test.go`: `TestCommandParamChoicesShape` (empty, duplicate, non-string, empty string, whitespace, controls, newline, U+2800, too long, too many), `TestCommandParamIntChoicesAreIntegerStrings`, `TestCommandParamSourceShape`, `TestCommandParamChoicesAndSourceExclusive`, `TestCommandParamOptionsShape` (types, ranges, unknown key including `map`, dependencies on `source`/`choices`, `multi` with `prevent_extra`), `TestCommandParamNewFieldsPositions` (nested key spans; `1:1` for direct IR).
+- [x] T003 Implement the rules in `CommandMetadata` (`internal/validate/commands.go`) with `CMD001`; no IR change, no mutation of metadata.
+- [x] T004 Failing then passing: `TestSchemaMatchesVariableSourceRules` in `internal/validate/variable_sources_schema_test.go` (modeled on `TestSchemaMatchesFreshnessTables`), then edit `schema/cheatsheet.schema.json` per the contract.
+- [x] T005 Failing tests first: `TestFrontmatterAcceptsVariableSources` and `TestFrontmatterRejectsVariableSourceErrors` in `internal/frontmatter/commands_test.go` (source path through `Parse`). Characterization tests, expected to pass without code changes: `TestGoldenCommandCardsUnchanged` (parser goldens byte-identical) and `TestImportKeepsUpstreamVariableSourcesInert` in `internal/importer/reference/command_test.go` (upstream `choices` stays archived, IMP111); fix only if one fails.
 
 **Checkpoint PR 1**: `make check` green; independent review of the exact head.
 
