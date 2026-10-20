@@ -86,3 +86,35 @@ func TestUpstreamCommandMarkersAreInertAndLiteralCodeUntouched(t *testing.T) {
 		t.Fatal(result.Report.Findings)
 	}
 }
+
+func TestImportKeepsUpstreamVariableSourcesInert(t *testing.T) {
+	src := []byte("---\ntitle: T\ncheatsheet:\n  tool: smill\n  cards:\n    run:\n      params:\n        file:\n          type: string\n          choices: [a, b]\n          source: ls\n          options: {multi: true}\n---\n## Commands\n### Example {#run .navi}\n```bash\nprintf '%s' literal\n```\n")
+	decoded, ds := frontmatter.Decode(src)
+	if len(ds) != 0 {
+		t.Fatal(ds)
+	}
+	result, ds := Convert(src, provenance())
+	if len(ds) != 0 {
+		t.Fatal(ds)
+	}
+	doc, ds := markdown.Parse(result.Markdown)
+	if len(ds) != 0 {
+		t.Fatal(ds)
+	}
+	if _, active := doc.Metadata["cheatsheet"].(map[string]any)["cards"]; active {
+		t.Fatal("upstream variable sources became active")
+	}
+	archived := doc.Metadata["source"].(map[string]any)["original_metadata"].(map[string]any)["cheatsheet"].(map[string]any)["cards"]
+	if !reflect.DeepEqual(archived, decoded.Metadata["cheatsheet"].(map[string]any)["cards"]) {
+		t.Fatal("variable sources not archived exactly", archived)
+	}
+	var found bool
+	for _, finding := range result.Report.Findings {
+		if finding.Code == "IMP111" && strings.Contains(finding.Message, "cheatsheet.cards") && finding.Span.Start.Line == 5 {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("missing IMP111", result.Report.Findings)
+	}
+}
