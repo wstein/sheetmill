@@ -69,6 +69,7 @@ continue after errors. Exit status precedence is IO/usage (2), then invalid sour
 | `REN101`, `REN102`, `REN103` | Inert raw HTML; images retained as unfetched links; unresolved internal link (warnings) |
 | `NAV000`, `NAV001`, `NAV006`, `NAV008` | navi export errors: `--strict` with warnings; profile; metadata; navi identity collision (`NAV007` is retired) |
 | `NAV101`–`NAV106` | navi export warnings: card skipped (shape, command text, placeholder, declarations); license; empty sheet (`NAV107` retired: companions preserve frontmatter). See [navi export](format/navi-profile.md) |
+| `NAV108`, `NAV109` | navi export warnings: card skipped because a `source`, option string or choice cannot be written as one `$` line |
 | `IMP001`–`IMP112` | See [import diagnostic codes](imports.md) |
 
 Go package tests exercise the same `Run` entrypoint as the executable, without

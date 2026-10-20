@@ -1,6 +1,6 @@
 ---
 title: "navi export"
-description: "Explicit cards and free-input parameters exported as navi .cheat files."
+description: "Explicit cards, parameter choices and suggestion commands exported as navi .cheat files."
 category: reference
 ---
 `smill build navi <file-or-directory>... --out <new-dir> [--shell bash|zsh|fish|nu] [--root <dir>] [--strict]`
@@ -151,7 +151,7 @@ check. Stronger syntax checks remain planned.
 | `cheatsheet.navi` | Legacy mapping with optional `shell` and `cards` only |
 | `cheatsheet.updated`, `cheatsheet.tool_version` | Sheet freshness: never exported, never a navi tag, `.cheat` bytes and identities unchanged; the companion keeps them verbatim as ordinary metadata. Source files are validated while parsing, so invalid values fail with `VAL004` ([source format](gfm-plus.md#sheet-freshness)) |
 | `.cards.<id>` | Keyed by an explicit command-card ID; mapping with only `params` |
-| `.params.<name>` | `type` (`string`, `int` or `path`; required) and `description` (optional single-line string) |
+| `.params.<name>` | `type` (`string`, `int` or `path`; required), `description` (optional single-line string) and the optional variable source fields `choices`, `source` and `options` ([below](#variable-sources)) |
 
 Names match `[a-z][a-z0-9_]{0,31}` and are local to one card, which has its own
 navi context, so one name may be declared differently in different cards. Unknown
@@ -162,12 +162,98 @@ references are errors; a legacy marked
 card without metadata that lacks an explicit ID still follows the `NAV101`
 warning-and-skip rule.
 `type` and `description` are SheetMill metadata; **navi does not enforce them**.
-Defaults, choice lists, suggestion commands, previews, multi-selection and shared
-contexts are not generated yet, and `$` provider lines are never emitted.
+Defaults, previews and shared contexts are not generated. A parameter with
+`choices` or `source` gets a navi `$` line, described next; every other parameter
+stays free input.
 
 Equal complete per-card declarations coalesce; disjoint card IDs combine.
 Different parameter subsets for one card are a conflict, not a partial merge.
 Both marker classes on one card select it once. See the [migration rules](command-cards.md).
+
+## Variable sources {#variable-sources}
+
+A parameter may declare a fixed list (`choices`) or a shell command (`source`),
+never both, plus an optional closed `options` mapping. The sheet stays the single
+source; the `.cheat` file is generated.
+
+````markdown
+---
+title: Git
+license: EUPL-1.2
+tags: [vcs]
+cheatsheet:
+  tool: git
+  cards:
+    fetch-branch:
+      params:
+        remote:
+          type: string
+          source: git remote
+          options: {column: 1}
+        branch:
+          type: string
+          choices: [main, "it's", süd]
+---
+
+## Branches
+
+### Fetch a branch {#fetch-branch .command}
+
+```bash
+git fetch <remote> <branch>
+```
+````
+
+For the profile `bash` the card is followed by one `$` line per variable, directly
+after the command and without a blank line, in the order of the first placeholder
+use (a repeated placeholder yields one line):
+
+```text
+; card: fetch-branch
+% sheetmill:sheets/git.md#fetch-branch!, git, vcs
+# Fetch a branch
+git fetch <remote> <branch>
+$ remote: git remote --- --column 1
+$ branch: printf '%s\n' 'main' 'it'\''s' 'süd'
+```
+
+| Field | Rules |
+| --- | --- |
+| `choices` | 1 to 64 distinct strings of 1 to 128 code points, no controls, format characters, U+2028/U+2029, U+2800 or surrounding whitespace; numbers, booleans and null are errors, never coerced; with `type: int` every choice is a decimal integer string such as `"3"` or `"-1"` |
+| `source` | One nonempty line under the same character rules, exported byte for byte after `$ name: ` |
+| `options` | Closed mapping, written after ` --- ` in this order: `column` (1 to 255, `source` only) as `--column N`, `delimiter` (string, `source` only) as `--delimiter '<s>'`, `header_lines` (0 to 255, `source` only) as `--header-lines N`, `multi` as `--multi`, `prevent_extra` as `--prevent-extra`; false booleans are omitted, `multi` with `prevent_extra` is an error, and options without `source` or `choices` are an error |
+
+`choices` become a command with the quoting of the selected profile, in authored
+order:
+
+| Profile | Command | Literal quoting |
+| --- | --- | --- |
+| `bash`, `zsh` | `printf '%s\n' <lit> ...` | wrap in `'`; each `'` becomes `'\''` |
+| `fish` | `printf '%s\n' <lit> ...` | wrap in `'`; `\` becomes `\\`, `'` becomes `\'` |
+| `nu` | `[ <lit> ... ] \| to text` | wrap in `"`; `\` becomes `\\`, `"` becomes `\"` |
+
+Shape and character errors are `CMD001` (`NAV006` in the legacy
+`cheatsheet.navi.cards` alias, which accepts the same fields). navi's line grammar
+splits a line on every `---` and reads `<name>` tokens inside a suggestion command
+as dependent variables, which SheetMill does not support. A card is therefore
+skipped with a warning, and never rewritten, when:
+
+- a `source` or an option string contains `---`, a `source` contains a navi
+  `<name>` token, ends with a backslash (a line continuation) or has an
+  unterminated quote under the profile check (none for `nu`), or an option string
+  contains `'`: `NAV108`;
+- a choice contains `---` or a navi `<name>` token: `NAV109`.
+
+Entry hashes, contexts, tags, titles, entry order and `NAV008` do not change,
+because `$` lines are not part of the identity. The `.navi.json` companion keeps the
+fields verbatim as metadata, and the Hugo renderer ignores them. Dependent
+variables (`$ b: cmd <a>`), `@` shared contexts and further navi options
+(`--query`, `--filter`, `--header`, `--preview`, `--fzf-overrides`, `--expand`,
+`--map`) are not generated.
+
+Not measured: how fish and zsh treat a leading-dash value after the `printf`
+format, and the exact output of nu's `to text` on a list of strings. The `fish` and
+`nu` profiles stay experimental.
 
 ## Metadata companion
 
@@ -246,7 +332,9 @@ with a comma, a line break or U+2800 is `NAV006`. The generated
 
 ## Free input is trusted shell text
 
-navi substitutes placeholder values as raw text, including values from its
+A `source` is shell text that navi runs through its configured shell when the
+placeholder is filled, like any command in a cheat repository. SheetMill exports it
+unchanged and never runs it. navi substitutes placeholder values as raw text, including values from its
 environment. Double quotes keep ordinary spaces together, but do not make quotes,
 substitutions or shell operators in a value safe. Neither `type: path` nor
 `type: string` enforces anything at runtime. A leading dash may become a program
@@ -258,13 +346,15 @@ an exported template in navi is a separate user action.
 | Code | Severity | Meaning |
 | --- | --- | --- |
 | `NAV001` | error | Unsupported shell profile |
-| `NAV006` | error | Invalid or unknown `cheatsheet.navi` metadata, dangling card ID, wrong `shell`, unusable tag |
+| `NAV006` | error | Invalid or unknown `cheatsheet.navi` metadata (including invalid `choices`, `source` or `options`), dangling card ID, wrong `shell`, unusable tag |
 | `NAV007` | retired | Was a sheet-wide parameter conflict; parameters are now card-local |
 | `NAV008` | error | Two entries share a pinned navi identity hash |
 | `NAV101` | warning | Card skipped: no explicit ID, not exactly one code block, or language outside the profile |
 | `NAV102` | warning | Card skipped: unsafe or unbalanced command text or title |
 | `NAV103` | warning | Card skipped: malformed placeholder |
 | `NAV104` | warning | Card skipped: placeholders and declarations disagree |
+| `NAV108` | warning | Card skipped: a `source` or option string cannot be written as one valid `$` line |
+| `NAV109` | warning | Card skipped: a choice contains `---` or a navi `<name>` token |
 | `NAV105` | warning | License not stated; the header says so |
 | `NAV106` | warning | Sheet exported nothing, so no file is written for it. If no sheet exports, the build fails and writes nothing |
 | `NAV107` | retired | Metadata omission warning; complete frontmatter now survives in the companion |
@@ -279,8 +369,9 @@ not exist.
 
 ## Verification and gaps
 
-Table-driven negative tests, golden bytes, a pure Go model of navi's line grammar
-and entry deduplication, a fuzz target over command text, CLI tests and the
+Table-driven negative tests, golden bytes (including one golden per profile for
+variable sources), a pure Go model of navi's line grammar and entry
+deduplication, fuzz targets over command text and variable lines, CLI tests and the
 no-execution lint. The item hash model is pinned by fixed vectors
 (`itemHash("") = 0x1c9d3adb639f298e`, `itemHash("abc") = 0x64372d1c87d01e7c`) that an
 independent review calculated from the Rust hash input. Not done: running navi

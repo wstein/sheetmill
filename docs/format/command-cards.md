@@ -49,8 +49,9 @@ navi consumption is introduced.
 | `cheatsheet.cards` | Optional mapping keyed by explicit card ID; empty mapping allowed |
 | `.cards.<id>` | Mapping with only optional `params` |
 | `.params` | Mapping, empty or omitted for no declared parameters |
-| `.params.<name>` | Mapping with required `type`, optional `description`, no other fields |
+| `.params.<name>` | Mapping with required `type`, optional `description`, `choices`, `source` and `options`, no other fields |
 | `type` | Exactly `string`, `int` or `path` |
+| `choices`, `source`, `options` | Optional variable sources, mutually exclusive `choices` and `source`; exported by navi as `$` lines, see [variable sources](navi-profile.md#variable-sources) |
 | `description` | Nonempty single-line string under the current parameter-description rules |
 
 Descriptions retain the current restrictions: no leading/trailing whitespace,
@@ -71,7 +72,7 @@ positionless IR. The same rules apply to source checking and direct renderer inp
 Navi still applies its own one-fence shape, supported fence languages, raw payload,
 placeholder-use, quote and output-profile rules. Parameter hints neither enforce
 runtime types nor quote substituted input. Nothing is executed by SheetMill.
-Defaults, choices, providers, previews and shared contexts remain out of scope.
+Defaults, previews, dependent variables and shared contexts remain out of scope.
 
 ## Migration and compatibility
 
