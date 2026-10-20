@@ -105,10 +105,13 @@ func CommandMetadata(m map[string]any, locations map[string]diagnostic.Span) []d
 					if !isString || !commandDescription(v) {
 						add(p+".description", p+".description must be a nonempty single-line string without surrounding whitespace or invisible controls")
 					}
+				case "choices", "source", "options":
+					// Checked together below: the fields depend on one another.
 				default:
 					add(p+"."+key, p+": unknown field "+key)
 				}
 			}
+			variableSources(p, fields, add)
 		}
 	}
 	return ds

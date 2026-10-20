@@ -27,7 +27,8 @@ func TestCommandCards(t *testing.T) {
 		{"missing type", "cards: {run: {params: {file: {}}}}", "Run {#run .command}", "CMD001"},
 		{"bad type", "cards: {run: {params: {file: {type: choice}}}}", "Run {#run .command}", "CMD001"},
 		{"coercion", "cards: {run: {params: {file: {type: 1}}}}", "Run {#run .command}", "CMD001"},
-		{"unknown param", "cards: {run: {params: {file: {type: path, choices: [a]}}}}", "Run {#run .command}", "CMD001"},
+		{"unknown param", "cards: {run: {params: {file: {type: path, default: a}}}}", "Run {#run .command}", "CMD001"},
+		{"variable sources", "cards: {run: {params: {file: {type: string, choices: [a, b]}}}}", "Run {#run .command}", ""},
 		{"trimmed description", "cards: {run: {params: {file: {type: path, description: ' input'}}}}", "Run {#run .command}", "CMD001"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
