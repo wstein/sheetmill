@@ -2,6 +2,7 @@
 package navi
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -90,4 +91,35 @@ func variableLine(name, command string, o options) string {
 		line += " --- " + strings.Join(w, " ")
 	}
 	return line
+}
+
+// variableProblem reports why a parameter's choices, source or options cannot be
+// written as one navi variable line, or "" when they can. NAV109 covers choices,
+// NAV108 source and options. Nothing is rewritten to make a line pass.
+func variableProblem(profile Profile, name string, pr param) (code, msg string) {
+	for _, c := range pr.Choices {
+		if strings.Contains(c, "---") {
+			return "NAV109", fmt.Sprintf("parameter %q: choice %q contains ---, which navi reads as the start of the options", name, c)
+		}
+		if placeholder.MatchString(c) {
+			return "NAV109", fmt.Sprintf("parameter %q: choice %q contains a navi <name> token, which would become a dependent variable", name, c)
+		}
+	}
+	if s := pr.Source; s != "" {
+		switch {
+		case strings.Contains(s, "---"):
+			return "NAV108", fmt.Sprintf("parameter %q: the source contains ---, which navi reads as the start of the options", name)
+		case placeholder.MatchString(s):
+			return "NAV108", fmt.Sprintf("parameter %q: the source contains a navi <name> token, which would become a dependent variable", name)
+		case strings.HasSuffix(s, `\`):
+			return "NAV108", fmt.Sprintf("parameter %q: the source ends with a backslash, which navi reads as a line continuation", name)
+		}
+		if problem := quoteProblem(s, profile); problem != "" {
+			return "NAV108", fmt.Sprintf("parameter %q: the source %s", name, strings.TrimPrefix(problem, "the command "))
+		}
+	}
+	if d := pr.Options.Delimiter; strings.Contains(d, "---") || strings.Contains(d, "'") {
+		return "NAV108", fmt.Sprintf("parameter %q: the delimiter option contains --- or a single quote, which the line cannot carry", name)
+	}
+	return "", ""
 }

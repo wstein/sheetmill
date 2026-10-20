@@ -470,6 +470,11 @@ func renderCard(s Sheet, card model.Card, tagLine string, profile Profile, metas
 	if strings.ContainsRune(title, braille) {
 		return skip("NAV102", "the card title contains U+2800, navi's finder field separator", card.Span)
 	}
+	for _, name := range firstUse {
+		if code, msg := variableProblem(profile, name, declared[name]); code != "" {
+			return skip(code, msg, block.Span)
+		}
+	}
 	text := "; card: " + card.ID + "\n% " + tagLine + "\n# " + title + "\n" + command + "\n"
 	for _, name := range firstUse {
 		pr := declared[name]

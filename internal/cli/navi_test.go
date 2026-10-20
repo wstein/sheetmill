@@ -178,3 +178,36 @@ func TestNaviCommandMigrationCLI(t *testing.T) {
 		}
 	}
 }
+
+func TestStrictFailsOnVariableSourceWarnings(t *testing.T) {
+	// Card c exports; card d carries the parameter that cannot be written.
+	head := "---\ntitle: A\nlicense: x\ncheatsheet:\n  cards:\n    d:\n      params:\n        q: "
+	body := "\n---\n## S\n\n### C {.command #c}\n\n```bash\necho hi\n```\n\n### D {.command #d}\n\n```bash\nrun <q>\n```\n"
+	for name, param := range map[string]string{
+		"source":  "{type: string, source: \"echo a --- b\"}",
+		"choices": "{type: string, choices: [\"a---b\"]}",
+		"option":  "{type: string, source: ls, options: {delimiter: \"it's\"}}",
+	} {
+		t.Run(name, func(t *testing.T) {
+			dir := tempDir(t)
+			input := filepath.Join(dir, "a.md")
+			source := head + param + body
+			if err := os.WriteFile(input, []byte(source), 0600); err != nil {
+				t.Fatal(err)
+			}
+			var out, errout bytes.Buffer
+			destination := filepath.Join(dir, "strict")
+			if code := Run([]string{"build", "navi", input, "--strict", "--out", destination}, &out, &errout); code != 1 || !strings.Contains(errout.String(), "NAV000") || !strings.Contains(errout.String(), "NAV10") {
+				t.Fatalf("code=%d stderr=%s", code, &errout)
+			}
+			if _, err := os.Stat(destination); !os.IsNotExist(err) {
+				t.Fatal("strict failure created output", err)
+			}
+			out.Reset()
+			errout.Reset()
+			if code := Run([]string{"build", "navi", input, "--out", filepath.Join(dir, "lenient")}, &out, &errout); code != 0 || !strings.Contains(errout.String(), "(warning)") {
+				t.Fatalf("lenient: code=%d stderr=%s", code, &errout)
+			}
+		})
+	}
+}
