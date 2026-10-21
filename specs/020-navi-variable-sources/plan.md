@@ -1,7 +1,7 @@
 # Plan - 020 navi variable sources
 
-Status: specification. Implementation starts after the owner has merged this
-specification (AGENTS.md, 2026-10-20). Base: `origin/main` at the time of the branch.
+Status: Implemented on main (specification #60, core #63, export #64, all merged
+2026-10-20); issues #61 and #62 remain open. Base: `origin/main` at the time of the branch.
 
 ## Architecture decisions
 
