@@ -14,8 +14,8 @@
 - 6 Independent product: PASS.
 - 7 Human publication control: PASS conditionally. The owner's 2026-10-17 decision is the
   recorded approval for tag-triggered publication; the spec grants nothing itself. The
-  constitution's own wording names only Pages as an approved named workflow; amending it is
-  the owner's call (spec open decision 1). Merge, tags, workflow runs and environment
+  constitution principle 7 now names the release workflow (PR #66, version 1.2.0), so spec
+  open decision 1 is resolved. Merge, tags, workflow runs and environment
   rules stay human.
 - 8 Review evidence: PASS. Rounds in [analysis.md](analysis.md).
 
