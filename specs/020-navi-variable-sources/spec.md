@@ -2,7 +2,7 @@
 
 **Feature Branch**: `codex/spec020-navi-variable-sources` (specification); implementation on a `codex/` branch
 **Created**: 2026-10-20
-**Status**: Specification draft; implementation starts after the owner has merged this specification (AGENTS.md, 2026-10-20)
+**Status**: Implemented on main (specification #60, core #63, export #64, all merged 2026-10-20); issues #61 and #62 remain open
 **Input**: Owner decisions of 2026-10-20: the Markdown sheet stays the single source;
 `smill build navi` exports per-parameter `choices` and `source` as navi `$` lines.
 
