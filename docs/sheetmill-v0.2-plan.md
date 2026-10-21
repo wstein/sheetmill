@@ -31,7 +31,7 @@ same content; no source command is run at any stage.
 Keep `cheatsheet.cards.<id>.params` and the documented legacy declaration aliases.
 Names remain `[a-z][a-z0-9_]{0,31}`; types remain exactly `string`, `int`, and `path`.
 The shared declaration accepts required `type` and optional `description`, without
-`bool`, defaults, choices or providers. Old/new declarations for the same card
+`bool`, defaults, choices or providers (navi `choices` and `source` came later with [Spec 020](../specs/020-navi-variable-sources/spec.md)). Old/new declarations for the same card
 coalesce only when their complete normalized meanings agree; conflicting values
 are rejected, never partially merged. Preserve current card-ID rules, validation,
 source positions, renderer behavior, complete successful `.cheat` bytes and pinned
@@ -142,7 +142,7 @@ publication each remain subject to the applicable owner authorization.
 | --- | --- |
 | Inline parameter comments | Separate proposal for grammar, duplicate precedence, attachment boundaries, source positions, import archival and compatibility; retain current frontmatter declarations meanwhile |
 | Platform-aware authoring/filtering | Define deterministic explicit user selection and unscoped behavior; separate operating system from shell dialect and output profile; define inheritance/conflicts, unknown platforms and TLDR mapping before new classes are accepted |
-| Static choices | Decide whether values are suggestions or an enforced enum, which validator/consumer enforces them, type/default rules and versioning; do not imply existing runtime enforcement |
+| Static choices | Decide whether values are suggestions or an enforced enum, which validator/consumer enforces them, type/default rules and versioning; do not imply existing runtime enforcement. Navi `choices` export: [Spec 020](../specs/020-navi-variable-sources/spec.md), merged in #64 |
 | Dynamic providers | Require a consumer execution/security contract before enablement: dialect, output profile, context/cwd/environment, quoting/substitution, trust/consent, network/filesystem access, timeout/output limits and refusal when unsafe or unsupported |
 | General adapter interface or IR v2 | Demonstrate a second concrete need and define loss, provenance and migration contracts first |
 | TLDR export | Specify representable subset, platform/language selection, license handling and reported losses; no broad round-trip fidelity promise |
@@ -153,7 +153,7 @@ publication each remain subject to the applicable owner authorization.
 Parser non-execution alone cannot make dynamic providers safe: the consumer runs
 them later. The [navi syntax](https://github.com/denisidoro/navi/blob/master/docs/cheatsheet/syntax/README.md)
 includes executable variable machinery, so inert payload forwarding is not a
-substitute for the deferred execution contract. No provider wiring is scheduled.
+substitute for the deferred execution contract. Spec 020 exports a `source` as inert text for navi and never runs it; no other provider wiring is scheduled.
 
 ## Milestones and acceptance
 
