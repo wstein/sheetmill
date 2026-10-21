@@ -25,9 +25,9 @@ the workflow has no `pull_request` trigger, so the draft PR starts no run),
 creating a release, adding secrets, variables or environment protection rules, or
 publishing to any channel except GitHub Releases of `wstein/sheetmill`. Constitution 7
 text ("a spec or automated check grants none") is respected: the grant is the owner's
-quote, recorded in `AGENTS.md`, not this spec. Amending constitution 7 to name the
-release workflow beside the Pages workflow needs a human-approved change and is left to
-the owner (open decision 1).
+quote, recorded in `AGENTS.md`, not this spec. Constitution 7 names the
+release workflow beside the Pages workflow (open decision 1, done by the amendment PR
+`docs/constitution-7-release-workflow`; the owner's merge is the approval).
 
 ## User scenarios
 
@@ -209,7 +209,8 @@ changelog files, Hugo in the smoke test, running the workflow, tagging and mergi
 
 ## Open decisions (recommendations)
 
-1. Amend constitution 7 to name this workflow beside Pages: recommended, owner's change.
+1. Done: constitution 7 names this workflow beside Pages (amendment PR
+   `docs/constitution-7-release-workflow`; the owner's merge is the human-approved change).
 2. **Default: a new version, `v0.1.1`.** sum.golang.org holds a checksum record for
    `github.com/wstein/sheetmill@v0.1.0` and proxy.golang.org serves it as `05eba4d`. If the owner
    re-creates `v0.1.0`, `go install ...@v0.1.0` will resolve the old tree permanently and a direct
@@ -224,5 +225,7 @@ changelog files, Hugo in the smoke test, running the workflow, tagging and mergi
 5. Make a `v*` tag ruleset (block deletion/update after release): recommended.
 6. Decided (owner): no standing approval. Every tag and release, including later ones, needs
    the owner's explicit approval each time; an approval for `v0.1.1` covers only `v0.1.1`.
+   Clarification (owner, 2026-10-21): the approval of a tag is the owner's own tag push; it
+   is not written per version into `AGENTS.md`.
 7. Pull request dry runs: a `pull_request` trigger would exercise the pipeline on every change
    to it but builds binaries on the PR; add it only if the owner approves that.

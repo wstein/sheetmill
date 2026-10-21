@@ -8,7 +8,8 @@ contributors never create, move or delete tags and never start the workflow.
 
 There is no standing approval. Every tag and release, including later ones, needs Werner
 Stein's explicit approval each time; an approval for one tag (for example `v0.1.1`) covers only
-that tag. Agents and contributors never create or push tags on that basis.
+that tag. The approval is the owner's own push of the tag; it is not written per version
+into `AGENTS.md`. Agents and contributors never create or push tags on that basis.
 
 ## What a tag does
 
