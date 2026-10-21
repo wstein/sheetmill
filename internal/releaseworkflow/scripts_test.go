@@ -229,6 +229,9 @@ build)
 		body = strings.Replace(body, `--help) echo "smill help" ;;`, `--help) exit 1 ;;`, 1)
 	case "checkfail":
 		body = strings.Replace(body, `check) test -d "$2" ;;`, `check) exit 1 ;;`, 1)
+	case "physical":
+		// Like smill, refuse an --out path that passes through a symlink (IO003).
+		body = strings.Replace(body, "  mkdir \"$out\"\n", "  p=$out\n  while [ \"$p\" != / ] && [ \"$p\" != . ]; do\n    if [ -L \"$p\" ]; then echo \"IO003: symlink paths are unsupported: $p\" >&2; exit 1; fi\n    p=$(dirname \"$p\")\n  done\n  mkdir \"$out\"\n", 1)
 	case "random":
 		body += "  echo $$ > \"$out/pid.txt\"\n"
 	case "empty":
@@ -392,6 +395,37 @@ func TestDryRunLabelPackagesAndSmokes(t *testing.T) {
 	}
 	if r := sh(t, repoRoot(t), nil, "release-verify.sh", "version", in["default"].(string)); r.code == 0 {
 		t.Error("the dispatch default must not be a release version")
+	}
+}
+
+// macOS runners put TMPDIR under /var, a symlink to /private/var, and smill refuses
+// output paths through a symlink. The smoke test must use a physical temp directory.
+func TestSmokeUsesAPhysicalTempDir(t *testing.T) {
+	tree := workTree(t)
+	out := filepath.Join(t.TempDir(), "o")
+	if r := pack(t, tree, "v1.2.3", fakeBinary(t, t.TempDir(), "v1.2.3", "physical"), out); r.code != 0 {
+		t.Fatalf("package: %+v", r)
+	}
+	base := t.TempDir()
+	real := filepath.Join(base, "real")
+	link := filepath.Join(base, "link")
+	if err := os.Mkdir(real, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(real, link); err != nil {
+		t.Skipf("SKIPPED, NOT PASSED: symlinks unavailable: %v", err)
+	}
+	archive := filepath.Join(out, "smill_1.2.3_linux_amd64.tar.gz")
+	if r := sh(t, t.TempDir(), []string{"TMPDIR=" + link}, "release-smoke.sh", "v1.2.3", archive, tree); r.code != 0 {
+		t.Fatalf("smoke failed with TMPDIR through a symlink: %+v", r)
+	}
+	// The same through a symlinked repository root.
+	rootLink := filepath.Join(base, "rootlink")
+	if err := os.Symlink(tree, rootLink); err != nil {
+		t.Fatal(err)
+	}
+	if r := sh(t, t.TempDir(), nil, "release-smoke.sh", "v1.2.3", archive, rootLink); r.code != 0 {
+		t.Fatalf("smoke failed with a symlinked repository root: %+v", r)
 	}
 }
 
