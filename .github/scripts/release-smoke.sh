@@ -29,7 +29,7 @@ root=$3
 [ -f "$archive" ] || fail "archive not found: $archive"
 [ -d "$root/examples/sheets" ] || fail "no examples/sheets in $root"
 archive=$(cd "$(dirname "$archive")" && pwd)/$(basename "$archive")
-root=$(cd "$root" && pwd)
+root=$(cd "$root" && pwd -P)
 file=$(basename "$archive")
 name=${file%.tar.gz}
 [ "$name" != "$file" ] || fail "not a .tar.gz: $file"
@@ -42,7 +42,8 @@ else
 	(cd "$(dirname "$archive")" && shasum -a 256 -c "$file.sha256" >/dev/null) || fail "checksum mismatch for $file"
 fi
 
-tmp=$(mktemp -d)
+# Physical path: smill refuses paths through a symlink (macOS TMPDIR is under /var -> /private/var).
+tmp=$(cd "$(mktemp -d)" && pwd -P) || fail "cannot create a temp dir"
 trap 'rm -rf "$tmp"' EXIT
 tar -xzf "$archive" -C "$tmp" || fail "cannot extract $file"
 
