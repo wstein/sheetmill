@@ -3,8 +3,8 @@
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md),
 [data-model.md](data-model.md), [contract](contracts/variable-sources.md),
 [quickstart.md](quickstart.md).
-**State**: specification. Implementation starts after the owner has merged the
-specification (AGENTS.md, 2026-10-20). Merge, tag, release, deployment, PDF and navi/shell
+**State**: implemented on main: specification merged in #60, PR 1 in #63, PR 2 in #64
+(all merged 2026-10-20); issues #61 and #62 stay open for the owner to close. Merge, tag, release, deployment, PDF and navi/shell
 execution are not covered.
 
 Write each failing test first, observe the failure, then implement. No test
@@ -14,8 +14,8 @@ task exceeds about 200 changed lines without a stated reason.
 ## PR 1 - core (T001-T005)
 
 PR 1 validates, schema-documents and preserves the fields. Until PR 2 the navi
-build rejects these fields with NAV006 (its own parameter reader does not know them yet)
-and the format pages stay unchanged (stated gap; the PRs merge in order).
+build rejected these fields with NAV006 and the format pages stayed unchanged (stated gap;
+the PRs merged in order, so PR 2 (#64) closed it).
 
 - [x] T001 Run the existing navi goldens, migration fixtures, sidecar goldens and parser goldens unchanged as the baseline; no new checksum file (the committed byte goldens are the baseline). Record the base SHA on the PR.
 - [x] T002 Failing tests in `internal/validate/commands_test.go`: `TestCommandParamChoicesShape` (empty, duplicate, non-string, empty string, whitespace, controls, newline, U+2800, too long, too many), `TestCommandParamIntChoicesAreIntegerStrings`, `TestCommandParamSourceShape`, `TestCommandParamChoicesAndSourceExclusive`, `TestCommandParamOptionsShape` (types, ranges, unknown key including `map`, dependencies on `source`/`choices`, `multi` with `prevent_extra`), `TestCommandParamNewFieldsPositions` (nested key spans; `1:1` for direct IR).
@@ -37,7 +37,7 @@ and the format pages stay unchanged (stated gap; the PRs merge in order).
 - [x] T013 `FuzzVariableLine` in `internal/render/navi/variables_fuzz_test.go`: accepted input yields text the grammar model parses to one variable with the same options; rejected input warns, never panics. `TestNoExecution` already forbids exec, syscall, plugin and network imports; confirm it covers the new files.
 - [x] T014 Mutation probes, recorded in the PR (each fails at least one named test, then is reverted): drop `'\''` doubling; drop fish `\'` escaping; reorder choices; skip the `---` check in sources; skip the `---` check in option strings; skip the token check; emit a blank line before `$`; sort `$` lines by name; include `$` lines in the prehash; omit `NAV109`; accept source plus choices; accept `multi` with `prevent_extra`; coerce numeric choices.
 - [x] T015 `TestBuildNaviVariableSources` in `internal/cli/navi_test.go` for each `--shell` (golden bytes, companion, exit codes, no output directory on error).
-- [ ] T016 Documentation: `docs/format/navi-profile.md` (metadata table, placeholders, diagnostics, the "Defaults, choice lists ... not generated" and "`$` provider lines are never emitted" sentences, scope note that SheetMill writes text only), `docs/format/command-cards.md` (declarations table; remove "choices ... out of scope"), `docs/diagnostics.md` (`CMD001` row, `NAV108`, `NAV109`), `docs/cli.md`, and the stale statements in `specs/006-navi-renderer`: spec.md S5 ("no `$` lines are emitted", line ~54), plan.md ("choice lists without silent executable providers", line ~17), research.md ("no executable providers", line ~31, and "Escaping literal placeholders, choice lists and provider capabilities", line ~42), tasks.md T011. Then run `gofmt`, `go test ./...`, `go test -race ./...`, `go vet ./...`, the fuzz target and `git diff --check`; record exact revision and results on the PR; independent review of the exact head; open the PR. No navi execution, PDF, merge or deployment.
+- [x] T016 Documentation (documentation text verified on main 99fc998 by grep; commits de721a3 and 004d103; #64 merged; the check/review steps below are recorded on #64, whose independent review was still "pending" in its body: unverified): `docs/format/navi-profile.md` (metadata table, placeholders, diagnostics, the "Defaults, choice lists ... not generated" and "`$` provider lines are never emitted" sentences, scope note that SheetMill writes text only), `docs/format/command-cards.md` (declarations table; remove "choices ... out of scope"), `docs/diagnostics.md` (`CMD001` row, `NAV108`, `NAV109`), `docs/cli.md`, and the stale statements in `specs/006-navi-renderer`: spec.md S5 ("no `$` lines are emitted", line ~54), plan.md ("choice lists without silent executable providers", line ~17), research.md ("no executable providers", line ~31, and "Escaping literal placeholders, choice lists and provider capabilities", line ~42), tasks.md T011. Then run `gofmt`, `go test ./...`, `go test -race ./...`, `go vet ./...`, the fuzz target and `git diff --check`; record exact revision and results on the PR; independent review of the exact head; open the PR. No navi execution, PDF, merge or deployment.
 
 Dependencies: T001 first; T002 before T003; T004-T005 after T003. PR 2 starts after
 PR 1's head is reviewed (stacked). T006 before T007; T007 before T008-T012; T013
