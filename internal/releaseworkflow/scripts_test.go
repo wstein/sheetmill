@@ -230,7 +230,10 @@ build)
 	case "checkfail":
 		body = strings.Replace(body, `check) test -d "$2" ;;`, `check) exit 1 ;;`, 1)
 	case "physical":
-		// Like smill, refuse an --out path that passes through a symlink (IO003).
+		// Like smill's checkedPath, refuse the input and --out paths (made absolute against
+		// the logical $PWD) when any component is a symlink (IO003).
+		pre := "chk() {\n  case \"$1\" in /*) p=$1 ;; *) p=$PWD/$1 ;; esac\n  while [ \"$p\" != / ] && [ \"$p\" != . ]; do\n    if [ -L \"$p\" ]; then echo \"IO003: symlink paths are unsupported: $p\" >&2; exit 1; fi\n    p=$(dirname \"$p\")\n  done\n}\ncase \"$1\" in check) chk \"$2\" ;; build) chk \"$3\" ;; esac\n"
+		body = strings.Replace(body, "case \"$1\" in\nversion)", pre+"case \"$1\" in\nversion)", 1)
 		body = strings.Replace(body, "  mkdir \"$out\"\n", "  p=$out\n  while [ \"$p\" != / ] && [ \"$p\" != . ]; do\n    if [ -L \"$p\" ]; then echo \"IO003: symlink paths are unsupported: $p\" >&2; exit 1; fi\n    p=$(dirname \"$p\")\n  done\n  mkdir \"$out\"\n", 1)
 	case "random":
 		body += "  echo $$ > \"$out/pid.txt\"\n"

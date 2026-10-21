@@ -43,8 +43,9 @@ else
 fi
 
 # Physical path: smill refuses paths through a symlink (macOS TMPDIR is under /var -> /private/var).
-tmp=$(cd "$(mktemp -d)" && pwd -P) || fail "cannot create a temp dir"
-trap 'rm -rf "$tmp"' EXIT
+d=$(mktemp -d) || fail "cannot create a temp dir"
+trap 'rm -rf "$d"' EXIT
+tmp=$(cd "$d" && pwd -P) || fail "cannot resolve the temp dir"
 tar -xzf "$archive" -C "$tmp" || fail "cannot extract $file"
 
 members=$(cd "$tmp" && find . -mindepth 1 | LC_ALL=C sort | tr '\n' ' ')
