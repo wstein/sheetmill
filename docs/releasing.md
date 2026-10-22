@@ -20,6 +20,11 @@ such as `-rc1` start nothing) runs `.github/workflows/release.yml`:
    and was pushed by the repository owner (the same check guards manual dry runs); the `check` workflow succeeded for that commit; no
    release exists for the tag; `.go-version` equals `go.mod`; `make check`, `make mod-verify`
    and `make test-assets` pass.
+   The CI guard retries its `head_sha` query up to five times and then filters the newest 500
+   successful push runs of `check.yml` by commit client side, because the Actions API has answered
+   that query alternately with two results and none; every run is re-checked for the commit, a
+   success conclusion and the push event, and a commit older than those 500 runs must re-run
+   `check` first.
 2. **build**: `linux/amd64`, `linux/arm64` and `darwin/arm64` with `CGO_ENABLED=0`,
    `-trimpath` and the tag stamped into `smill version`. Each target is built twice (the second
    time with an empty build cache) and the two binaries must be byte-identical. Archives

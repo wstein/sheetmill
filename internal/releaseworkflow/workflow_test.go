@@ -340,11 +340,18 @@ func violations(w workflow, raw string) []string {
 			}
 		}
 	}
+	// The retry, the client-side fallback and the head_sha, conclusion and event filters live in
+	// release-verify.sh ci-green (tested against a fake gh in scripts_test.go); the step only calls it.
+	wantCI := map[string]any{"GH_TOKEN": "${{ github.token }}", "REPO": "${{ github.repository }}"}
 	if s, i := stepNamed(verify, "Require a green check run"); i >= 0 {
-		for _, want := range []string{"workflows/check.yml/runs", "head_sha=$GITHUB_SHA", "event=push", `.conclusion == "success"`, `test "$n" -ge 1`} {
-			if !strings.Contains(s.Run, want) {
-				add("verify", "check run step lacks %q", want)
-			}
+		if !strings.Contains("\n"+s.Run+"\n", "\nsh .github/scripts/release-verify.sh ci-green \"$GITHUB_SHA\"\n") {
+			add("verify", "check run step does not call release-verify.sh ci-green for $GITHUB_SHA")
+		}
+		if !reflect.DeepEqual(s.Env, wantCI) || s.Shell != "bash" {
+			add("verify", "check run step env or shell changed: %v %q", s.Env, s.Shell)
+		}
+		if strings.Contains(s.Run, "gh api") || strings.Contains(s.Run, "||") {
+			add("verify", "check run step queries or tolerates failure itself")
 		}
 	}
 	if s, i := stepNamed(verify, "Require that no release exists"); i >= 0 {
@@ -610,7 +617,7 @@ func semantic(w workflow, add func(code, format string, a ...any)) {
 		`test "$(wc -l < SHA256SUMS)" -eq 3`,
 		"cat -- *.tar.gz.sha256 | LC_ALL=C sort -k2 > SHA256SUMS")
 	need("verify", "Resolve the version", `echo "commit=$GITHUB_SHA"`)
-	need("verify", "Require a green check run", `test "$n" -ge 1 || { echo "no successful check run on push for $GITHUB_SHA; re-run check for that commit first" >&2; exit 1; }`)
+	need("verify", "Require a green check run", `sh .github/scripts/release-verify.sh ci-green "$GITHUB_SHA"`)
 	need("build", "Build smill", `GOCACHE="$RUNNER_TEMP/gocache-second" go build -trimpath `+ldflags+` -o "$RUNNER_TEMP/bin/smill-second" ./cmd/smill`)
 }
 
@@ -792,14 +799,13 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"verify owner env always true", "ACTOR: ${{ github.triggering_actor }}\n          PUSHER: ${{ github.actor }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          test", "ACTOR: ${{ github.repository_owner }}\n          PUSHER: ${{ github.actor }}\n          OWNER: ${{ github.repository_owner }}\n        run: |\n          set -euo pipefail\n          test", "verify", false},
 		{"exit 1 became exit 0", `run started by $ACTOR, not by the repository owner $OWNER" >&2; exit 1; }`, `run started by $ACTOR, not by the repository owner $OWNER" >&2; exit 0; }`, "swallow", false},
 		{"set +e", "          # The tag must still name", "          set +e\n          # The tag must still name", "swallow", false},
-		{"echo instead of failing", `test "$n" -ge 1 || { echo`, `test "$n" -ge 1 || echo "x"; { echo`, "swallow", false},
 		{"release-exists accepts any error", `*) echo "cannot tell whether a release exists: $out" >&2; exit 1 ;;`, `*) echo "cannot tell" ;;`, "verify", false},
 		{"head check removed", `          test "$(git rev-parse HEAD)" = "$COMMIT"` + "\n", "", "publish", false},
 		{"publish checks out main", "      - uses: @@checkout@@\n        with:\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "      - uses: @@checkout@@\n        with:\n          ref: main\n          fetch-depth: 0\n          persist-credentials: false\n      - uses: actions/download-artifact", "publish", false},
 		{"owner check reassigned (F1)", "          test \"$ACTOR\" = \"$OWNER\" || { echo \"run started", "          ACTOR=$OWNER\n          test \"$ACTOR\" = \"$OWNER\" || { echo \"run started", "assign", false},
 		{"publish owner check reassigned (F1)", "          test \"$ACTOR\" = \"$OWNER\" || { echo \"run triggered", "          OWNER=$ACTOR\n          test \"$ACTOR\" = \"$OWNER\" || { echo \"run triggered", "assign", false},
 		{"original pusher check removed (F11)", "\n          test \"$PUSHER\" = \"$OWNER\" || { echo \"run originally started by $PUSHER, not by the repository owner $OWNER\" >&2; exit 1; }\n      - name: Require an annotated tag", "\n      - name: Require an annotated tag", "semantic", false},
-		{"check-run count overwritten (F2)", `          test "$n" -ge 1 ||`, "          n=1\n          test \"$n\" -ge 1 ||", "assign", false},
+		{"check-run commit reassigned (F2)", `          sh .github/scripts/release-verify.sh ci-green "$GITHUB_SHA"`, "          GITHUB_SHA=$GITHUB_REF\n          sh .github/scripts/release-verify.sh ci-green \"$GITHUB_SHA\"", "assign", false},
 		{"env on a gate step (F2)", "      - run: make check\n", "      - env:\n          GOFLAGS: -run=^$\n        run: make check\n", "env", false},
 		{"env on the verify job (F2)", "    timeout-minutes: 15\n    permissions:\n      contents: read\n      actions: read\n", "    timeout-minutes: 15\n    env:\n      GOFLAGS: -run=^$\n    permissions:\n      contents: read\n      actions: read\n", "env", false},
 		{"build checkout from main (F3)", "      - uses: @@checkout@@\n        with:\n          persist-credentials: false\n      - uses: @@setup-go@@\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "      - uses: @@checkout@@\n        with:\n          ref: main\n          persist-credentials: false\n      - uses: @@setup-go@@\n        with:\n          go-version-file: .go-version\n          check-latest: false\n          cache: false", "with", false},
@@ -820,7 +826,14 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"owner check made conditional", "      - name: Require the repository owner to have started the run\n", "      - name: Require the repository owner to have started the run\n        if: steps.resolve.outputs.dry_run == 'false'\n", "verify", false},
 		{"smoke step conditional", "      - name: Smoke-test the shipped archive natively\n", "      - name: Smoke-test the shipped archive natively\n        if: github.event_name == 'none'\n", "step-if", false},
 		{"cmp compares a file with itself", `cmp "$RUNNER_TEMP/bin/smill" "$RUNNER_TEMP/bin/smill-second"`, `cmp "$RUNNER_TEMP/bin/smill" "$RUNNER_TEMP/bin/smill"`, "reproducibility", false},
-		{"check-run count weakened", `test "$n" -ge 1`, `test "$n" -ge 0`, "verify", false},
+		{"check-run guard call removed", `sh .github/scripts/release-verify.sh ci-green "$GITHUB_SHA"`, "true", "verify", false},
+		{"check-run guard for another commit", `ci-green "$GITHUB_SHA"`, `ci-green "$GITHUB_REF"`, "verify", false},
+		{"check-run guard failure tolerated", `sh .github/scripts/release-verify.sh ci-green "$GITHUB_SHA"`, `sh .github/scripts/release-verify.sh ci-green "$GITHUB_SHA" || true`, "swallow", false},
+		{"check-run guard failure tolerated by echo", `sh .github/scripts/release-verify.sh ci-green "$GITHUB_SHA"`, `sh .github/scripts/release-verify.sh ci-green "$GITHUB_SHA" || echo ignored`, "swallow", false},
+		{"check-run inline query back", `sh .github/scripts/release-verify.sh ci-green "$GITHUB_SHA"`, `n=$(gh api "repos/$REPO/actions/workflows/check.yml/runs?head_sha=$GITHUB_SHA&event=push&status=success" --jq '.workflow_runs | length'); test "$n" -ge 1`, "verify", false},
+		{"check-run token dropped", "          GH_TOKEN: ${{ github.token }}\n          REPO: ${{ github.repository }}\n        run: |\n          set -euo pipefail\n          # check.yml", "          REPO: ${{ github.repository }}\n        run: |\n          set -euo pipefail\n          # check.yml", "verify", false},
+		{"check-run extra env", "          REPO: ${{ github.repository }}\n        run: |\n          set -euo pipefail\n          # check.yml", "          REPO: ${{ github.repository }}\n          CI_ATTEMPTS: 1\n        run: |\n          set -euo pipefail\n          # check.yml", "verify", false},
+		{"check-run guard also on a dry run", "      - name: Require a green check run for the tagged commit\n        if: steps.resolve.outputs.dry_run == 'false'\n", "      - name: Require a green check run for the tagged commit\n", "verify", false},
 		{"ancestry against HEAD", `release-verify.sh tag "$TAG" refs/remotes/origin/main`, `release-verify.sh tag "$TAG" HEAD`, "verify", false},
 		{"main refspec wrong", `'+refs/heads/main:refs/remotes/origin/main'`, `'+refs/tags/main:refs/remotes/origin/main'`, "verify", false},
 		{"checksum check swallowed", "          sha256sum --check SHA256SUMS\n", "          sha256sum --check SHA256SUMS || true\n", "swallow", false},
@@ -829,7 +842,6 @@ func TestWeakeningTheWorkflowIsCaught(t *testing.T) {
 		{"smoke runs true", `sh .github/scripts/release-smoke.sh `, `true `, "archive", false},
 		{"smoke downloads another target", "          name: release-${{ matrix.os }}-${{ matrix.arch }}\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "          name: release-linux-amd64\n          path: ${{ runner.temp }}/dist\n      - name: Smoke", "artifact", false},
 		{"annotated check removed", "release-verify.sh tag", "release-verify.sh version", "verify", false},
-		{"check run query removed", "head_sha=$GITHUB_SHA", "head_sha=0", "verify", false},
 		{"404 handling removed", "*\"HTTP 404\"*)", "*)", "verify", false},
 		{"tag step unguarded", "      - name: Require an annotated tag on a commit of main\n        if: steps.resolve.outputs.dry_run == 'false'\n", "      - name: Require an annotated tag on a commit of main\n", "verify", false},
 		{"verify shallow", "          fetch-depth: 0\n          persist-credentials: false\n      - uses: @@setup-go@@\n        with:\n          go-version-file: .go-version\n          check-latest: false\n      - name: Resolve", "          persist-credentials: false\n      - uses: @@setup-go@@\n        with:\n          go-version-file: .go-version\n          check-latest: false\n      - name: Resolve", "verify", false},
