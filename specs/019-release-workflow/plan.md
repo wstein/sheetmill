@@ -24,7 +24,7 @@
 | File | Purpose |
 | --- | --- |
 | `.github/workflows/release.yml` | jobs `verify`, `build`, `smoke`, `publish`; triggers tag push and `workflow_dispatch` only |
-| `.github/scripts/release-verify.sh` | subcommands `version`, `tag`, `go` (git checks; no network) |
+| `.github/scripts/release-verify.sh` | subcommands `version`, `tag`, `go` (git checks; no network) and `ci-green` (reads the Actions API: retried `head_sha` query, then a client-side filter over the newest 500 successful push runs) |
 | `.github/scripts/release-package.sh` | deterministic archive + `.sha256` sidecar |
 | `.github/scripts/release-smoke.sh` | extract and exercise a shipped archive |
 | `.github/scripts/release-notes.sh` | release notes text on stdout |

@@ -254,7 +254,7 @@
           },
           "if": "steps.resolve.outputs.dry_run == 'false'",
           "name": "Require a green check run for the tagged commit",
-          "run": "set -euo pipefail\nn=$(gh api \"repos/$REPO/actions/workflows/check.yml/runs?head_sha=$GITHUB_SHA\u0026event=push\u0026status=success\" --jq '.workflow_runs | map(select(.conclusion == \"success\")) | length')\ntest \"$n\" -ge 1 || { echo \"no successful check run on push for $GITHUB_SHA; re-run check for that commit first\" \u003e\u00262; exit 1; }\n",
+          "run": "set -euo pipefail\n# check.yml on a push to main must have succeeded for the commit. The script retries the head_sha\n# query, then filters the push runs by head_sha client side.\nsh .github/scripts/release-verify.sh ci-green \"$GITHUB_SHA\"\n",
           "shell": "bash"
         },
         {
