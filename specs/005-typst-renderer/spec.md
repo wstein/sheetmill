@@ -53,7 +53,7 @@ Acceptance scenarios (Given/When/Then):
   own Markdown/evaluation features on source text.
 - FR-002 (escaping contract): Every IR text node (headings, titles, table cells,
   link text, alt text, metadata strings, attribution) is emitted through a single
-  escape function that neutralises all Typst markup and code characters
+  escape function that neutralizes all Typst markup and code characters
   (to verify: `\ # $ * _ ` ~ < > @ [ ] { } ( ) = - + / " ' :` and line-start markers);
   where escaping is not sufficient, text is emitted as a string literal with `\\`,
   `\"`, `\n`, `\u{..}` escapes. Generated sources contain no `#import`, `#include`,

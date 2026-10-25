@@ -96,7 +96,7 @@ func TestPublisherEnvironmentArgumentsAndCancellation(t *testing.T) {
 	cancel()
 	start := time.Now()
 	if runTool(ctx, testTool(t), []string{"version"}, root, true, maxGenerated) == nil {
-		t.Fatal("cancelled tool started")
+		t.Fatal("canceled tool started")
 	}
 	if time.Since(start) > 2*time.Second {
 		t.Fatal("cancel not bounded")

@@ -41,16 +41,16 @@ asset names, demo dates and versions.
 
 | # | Sev | Finding | Resolution |
 | --- | --- | --- | --- |
-| 1 | high | SC-003 byte identity impossible (fingerprinted CSS names); no HTML baseline | SC-003 restated with normalised hrefs; T002 stores normalised base hashes |
+| 1 | high | SC-003 byte identity impossible (fingerprinted CSS names); no HTML baseline | SC-003 restated with normalized hrefs; T002 stores normalized base hashes |
 | 2 | high | Output list wrong (`sheets/<id>.json`, tag data, IR, hugo.json) | Contract and data model corrected; tag keys accepted, tag HTML shows none |
 | 3 | med | CSS separator announced / runs together in plain text | Real aria-hidden separator span (FR-007) |
 | 4 | med | Specificity loses to `.library-item p`; unscoped sibling rule | Scoped selectors, asserted by T010a |
-| 5 | med | Classic row cannot wrap; cards header centring | `.index-fresh` full width; cards.css centring; 320px browser check stays a gap |
+| 5 | med | Classic row cannot wrap; cards header centering | `.index-fresh` full width; cards.css centering; 320px browser check stays a gap |
 | 6 | med | Markup tests skip without Hugo; clock helper hard-coded | Two-layer T009, skip is not a pass, clock helper in T012 |
 | 7 | med | Authorization not in repo | Assumption says T001 writes it first |
 | 8 | med | Missing coverage table and gaps | This table; T007, T010a, T006, T019 extended |
 | 9 | med | Navi from source does validate | FR-011, contract, T005 CLI test |
-| 10 | low | Markup mismatch research/contract/US1.2 | Harmonised |
+| 10 | low | Markup mismatch research/contract/US1.2 | Harmonized |
 | 11 | low | Task order and dependencies | T010a before T010; T016 needs T005 |
 | 12 | low | Baseline hashes only json | Hash all of `testdata/` plus navi export |
 | 13 | low | agent-guide/llms.txt | Added to FR-012, T018 |
@@ -131,7 +131,7 @@ diagnostic lines (worktree path replaced by `WT`) hash to
 output; the byte guard for `.cheat` text is the T015 pair test.
 
 Rendered-page base: `testdata/hugo/freshness/*.md` rendered in the three themes with
-fixed Options, per-page SHA-256 after normalising `assets/(site|classic|cards).<hash>.css`,
+fixed Options, per-page SHA-256 after normalizing `assets/(site|classic|cards).<hash>.css`,
 in `testdata/hugo/freshness/base-hashes.json` (written once with
 `go test ./internal/render/hugo -run NoFreshnessBase -update-base` before any template
 change). `TestHugoIntegrationNoFreshnessBase` is a one-time 017 guard: retire it or
@@ -167,7 +167,7 @@ Implementation notes and deviations from the written plan:
   `allOf` pattern. Invalid UTF-8 cannot appear in a JSON schema document and is covered
   by the Go tables only.
 - Diagnostics docs (`VAL004`, `IMP112`) were added in the commits that introduced the
-  codes because `TestDiagnosticsCatalogueIsComplete` requires them.
+  codes because `TestDiagnosticsCatalogIsComplete` requires them.
 Deviation 6 (previously unrecorded; known bisect gap): `e85d5c2` (`test(validate): add sheet freshness
   accept/reject tables`) is test-first by design and does not compile on its own
   (`undefined: Freshness`); the next commit, `08ef2fb`, adds the validator. A

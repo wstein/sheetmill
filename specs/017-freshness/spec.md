@@ -139,7 +139,7 @@ exports keep their command bytes.
   `·` in an `aria-hidden` span, with the surrounding spaces as visible text outside
   it, separates them, so plain-text and
   reader views never run the facts together. No extra ARIA name is needed and
-  nothing relies on colour alone. No JavaScript, request or new font. Tag pages,
+  nothing relies on color alone. No JavaScript, request or new font. Tag pages,
   the tag index, the sidebar and the search results do not show freshness.
 - **FR-008**: Freshness MUST appear in print output (no print-hiding rule), use
   existing palette tokens only, and be allowed to wrap on narrow screens (no
@@ -192,9 +192,9 @@ exports keep their command bytes.
 - **SC-003**: Without the fields, the rendered HTML of all three themes equals the
   base revision `05eba4d` HTML (the PR base `189e872` is template-equivalent: `git diff
   05eba4d 189e872 -- internal/render/hugo/theme` is empty; both are named so the
-  hashes can be re-captured on either) after normalising the fingerprinted stylesheet
+  hashes can be re-captured on either) after normalizing the fingerprinted stylesheet
   hrefs, and no freshness class, `<time>` or empty wrapper appears (FR-007, US1.3).
-  Normalised base hashes are captured in T002 before any template change.
+  Normalized base hashes are captured in T002 before any template change.
 - **SC-004**: All existing goldens and navi `.cheat` bytes are unchanged; the navi
   pair test shows identical `.cheat` bytes with/without the fields (FR-011, FR-014).
 - **SC-005**: Hostile values appear only HTML-escaped; `datetime` attributes match

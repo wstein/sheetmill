@@ -124,7 +124,7 @@ otherwise). Build each shell into its own directory.
 | `bash` (default) | `bash`, `sh` | Pinned Bash 5.2 parser, quote diagnostics only |
 | `zsh` | `zsh` | Pinned experimental Zsh parser, quote diagnostics only |
 | `fish` | `fish` | backslash escapes inside single quotes |
-| `nu` | `nu`, `nushell` | none; nushell raw strings are not analysed |
+| `nu` | `nu`, `nushell` | none; nushell raw strings are not analyzed |
 
 Cards in other languages are skipped with `NAV101`, never reinterpreted. Commands
 in the experimental Fish profile skip its heuristic quote check when they

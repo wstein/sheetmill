@@ -22,7 +22,7 @@
   network imports (unchanged from 006).
 - A `source` is exported unchanged. navi exports each chosen variable value as an
   environment variable, so an explicit `$name` reference in a `source` is passed
-  through as shell text and is not analysed (dependent variables are out of scope).
+  through as shell text and is not analyzed (dependent variables are out of scope).
 - Out of scope: dependent variables (`$ b: cmd <a>`, `$a` references), `@`
   shared contexts, `--fzf-overrides`, `--query`, `--filter`, `--header`, `--preview`,
   `--preview-window`, `--expand`, `--map` (it runs navi's own shell helper functions
@@ -123,7 +123,7 @@ unchanged; sheets with sources keep the same entry hashes as without.
   surrounding whitespace. For `type: int` each choice MUST match `^-?[0-9]+$`.
 - **FR-004**: `source` MUST NOT contain controls, format characters, U+2028/U+2029,
   U+2800 or surrounding whitespace. Shared validation checks shape and these
-  characters only; it does not analyse shell syntax.
+  characters only; it does not analyze shell syntax.
 - **FR-005**: `options` allows only `column` (integer 1 to 255), `delimiter` (nonempty
   string), `header_lines` (integer 0 to 255), `multi` and
   `prevent_extra` (booleans). Strings follow the character rules of FR-004.

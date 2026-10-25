@@ -268,7 +268,7 @@ func TestCheckStrict(t *testing.T) {
 
 // Every diagnostic code the sources can emit must be documented, and every
 // documented NAV, CMD or STU code must still be emitted unless it is retired.
-func TestDiagnosticsCatalogueIsComplete(t *testing.T) {
+func TestDiagnosticsCatalogIsComplete(t *testing.T) {
 	code := regexp.MustCompile(`"((?:SRC|FM|VAL|MD|ATTR|ID|IO|REN|IMP|NAV|CMD|STU)[0-9]{3})"`)
 	// NAV000 is printed from a format string rather than a quoted code literal.
 	printed := regexp.MustCompile(`smill:1:1: ((?:NAV)[0-9]{3}):`)
@@ -315,7 +315,7 @@ func TestDiagnosticsCatalogueIsComplete(t *testing.T) {
 	live := regexp.MustCompile("`((?:NAV|CMD|STU)[0-9]{3})`")
 	for _, m := range live.FindAllStringSubmatch(documented, -1) {
 		if !emitted[m[1]] && !retired[m[1]] {
-			t.Errorf("%s is documented but no source emits it; retire it explicitly in this test and the catalogue", m[1])
+			t.Errorf("%s is documented but no source emits it; retire it explicitly in this test and the catalog", m[1])
 		}
 	}
 }

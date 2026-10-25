@@ -63,7 +63,7 @@ func freshnessBaseOptions(theme string) Options {
 }
 
 // pageHashes hashes every generated HTML page with fingerprinted stylesheet names
-// normalised, so a template-neutral change keeps the hashes.
+// normalized, so a template-neutral change keeps the hashes.
 func pageHashes(t *testing.T, out string) map[string]string {
 	t.Helper()
 	hashes := map[string]string{}

@@ -20,7 +20,7 @@ accident than a regex; a test pins both.
 
 | Option | Result |
 | --- | --- |
-| Query `check` push run for the commit via `gh api` | **Chosen**, needs `actions: read`. Reuses Hugo, race and fuzz evidence at no cost. Fails closed with an instruction. `check.yml` has `cancel-in-progress: true` per ref, so a superseded `main` run is cancelled and not green: tagging an old commit needs `check` re-run on it first. Acceptable, and a feature (the owner tags a verified commit) |
+| Query `check` push run for the commit via `gh api` | **Chosen**, needs `actions: read`. Reuses Hugo, race and fuzz evidence at no cost. Fails closed with an instruction. `check.yml` has `cancel-in-progress: true` per ref, so a superseded `main` run is canceled and not green: tagging an old commit needs `check` re-run on it first. Acceptable, and a feature (the owner tags a verified commit) |
 | Re-run everything in release | Duplicates Hugo download and fuzz; slower; rejected |
 | Branch protection only | Not enforced for tag pushes; rejected |
 | **Also** re-run `make check`, `make mod-verify`, `make test-assets` | Chosen: cheap, and the only gates in dry runs where no `check` evidence exists for the merge ref |
@@ -135,7 +135,7 @@ GitHub-hosted runners, unverified); no release action from the marketplace is us
 `smill_<version>_<os>_<arch>.tar.gz` with `<version>` without `v` (common convention, avoids
 `smill_v0.1.0_`); a top directory so extraction never scatters files; `tar.gz` on all
 three targets (no Windows zip). Alternative bare binaries: rejected, no LICENSE (EUPL
-requires the licence to travel with the work) and no checksum-friendly layout.
+requires the license to travel with the work) and no checksum-friendly layout.
 
 ## D12 Release notes
 
