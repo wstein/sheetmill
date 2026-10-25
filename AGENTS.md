@@ -4,6 +4,12 @@ SheetMill is a standalone Go reference compiler. The CLI is `smill`.
 Use exact product spelling in prose: SheetMill, BundleDock, WorkHarbor, CrewBook.
 Sibling repository policies do not govern this repository.
 
+Write all English text in US spelling: documentation, comments, commit messages, pull
+request text and identifiers (color, behavior, license, canceled, catalog, labeled,
+analyzed, organization). This applies to new and changed text. Do not convert existing
+British spellings inside an unrelated change; a separate sweep does that. Keep exact
+quotations, testdata, goldens and external names unchanged.
+
 ## Scope and authorization
 
 - Routine local source/document edits, dependency inspection, formatting, tests,
