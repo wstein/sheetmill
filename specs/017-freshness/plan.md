@@ -72,9 +72,9 @@ testdata/reference-compatible/freshness.md(.json), testdata/import/reference/fre
   `.classic .sheet-fresh`, `.classic .index-fresh` (above `.library-item p`; the
   `index-fresh` span is the last child of the row, after `.index-license`, which
   `home.html` emits as `a, .index-desc, .index-count, .index-license`),
-  colour `var(--muted)`, 13px; `.classic .index-group li:has(.index-fresh){flex-wrap:wrap}` with
+  color `var(--muted)`, 13px; `.classic .index-group li:has(.index-fresh){flex-wrap:wrap}` with
   `.classic .index-fresh{flex-basis:100%}`; `cards.css` resets the basis to auto and
-  centres `.reference-cards .sheet-fresh`. Separator is a text span, not CSS content. No print rule.
+  centers `.reference-cards .sheet-fresh`. Separator is a text span, not CSS content. No print rule.
   `TestPerformanceBudget` (site.css+app.js ~30.9 of 32 KiB) guards size.
 - Data path guard: the page fields reach templates only via `data/*.json`; the
   generated `content/<id>/index.md` front matter (`title`, `url`, `sheetid`) must not

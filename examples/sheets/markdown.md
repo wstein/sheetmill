@@ -147,7 +147,7 @@ Put a language name after the opening fence. To show a fence inside a fence, mak
 | `w` | write | 12 |
 ```
 
-Colons in the delimiter row align columns left, centre or right.
+Colons in the delimiter row align columns left, center or right.
 
 ### Pipes inside cells {.tip #table-pipes}
 ```markdown

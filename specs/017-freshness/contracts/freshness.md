@@ -54,7 +54,7 @@ rows without facts keep their wrapping; the theme already relies on `:has()` in 
 rule is dropped and the facts stay on the row's single line) and
 `.classic .index-fresh{flex-basis:100%}` gives the facts their own last line; `cards.css`
 resets it (`.reference-cards .index-fresh{flex-basis:auto}`, its rows are columns)
-and centres `.reference-cards .sheet-fresh` like the description. The desktop
+and centers `.reference-cards .sheet-fresh` like the description. The desktop
 layout of these rules is unverified until a browser check is run. Tag pages, the
 tag index, the sidebar and search results do not show freshness.
 
@@ -76,7 +76,7 @@ For sheets carrying the fields: `data/library.json`, `data/shelves.json`,
 `<id>/index.html`. For every build: the fingerprinted name of each emitted stylesheet (editorial emits
 `assets/site.css` only; `classic-compact` adds `assets/classic.css`; `reference-cards`
 also `assets/cards.css`; `app.js` is unchanged) (contents gain the `.library-fresh`,
-`.sheet-fresh`, `.index-fresh` rules; `cards.css` the centring rule), hence every
+`.sheet-fresh`, `.index-fresh` rules; `cards.css` the centering rule), hence every
 href in `baseof.html` output and `hugo.json` params. The Studio preview renders through the same templates
 (`internal/studio/compile.go` calls `hugo.Render`), so it shows the facts for sheets
 that carry them and its stylesheet name changes too (`make test-studio`). Parser golden `testdata/reference-compatible/freshness.md.json` is new;

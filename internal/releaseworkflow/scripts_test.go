@@ -256,7 +256,7 @@ esac
 func workTree(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	for name, body := range map[string]string{"LICENSE": "licence\n", "README.md": "readme\n", "examples/sheets/a.md": "x\n"} {
+	for name, body := range map[string]string{"LICENSE": "license\n", "README.md": "readme\n", "examples/sheets/a.md": "x\n"} {
 		p := filepath.Join(dir, name)
 		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
 			t.Fatal(err)

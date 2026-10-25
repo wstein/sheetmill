@@ -114,7 +114,7 @@ workflow, deployment or merge. FR-10 sizes were not re-measured. The verifier ta
 | --- | --- |
 | A draft of the script was written before the tests, then moved aside so the tests ran red first | Process slip, disclosed; the tests failed until the script was restored |
 | T002 and T003 landed together in one commit (99ab063 before the restack) | A tests-only commit would leave `go test ./...` red |
-| The quoting check is labelled "rule 0" | The spec numbers rules 1-8; the check sits before them |
+| The quoting check is labeled "rule 0" | The spec numbers rules 1-8; the check sits before them |
 | No `comm`, `sed` or temp files; tools are `grep -E`, `find`, `sort`, `tr` | Rule 6 and 7 compare lists in shell, so the script writes nothing (FR-8) and runs on BSD sed-less setups |
 | Spec FR-7 rule 8 widened to any foreign absolute subresource, `srcset` and `<base>` | Implementation review finding 2 |
 

@@ -50,7 +50,7 @@ func TestFreshnessStylesheetContract(t *testing.T) {
 			t.Errorf("%s must use the muted palette token: %s", r.selector, body)
 		}
 		if token.MatchString(body) {
-			t.Errorf("%s uses a literal colour instead of palette tokens: %s", r.selector, body)
+			t.Errorf("%s uses a literal color instead of palette tokens: %s", r.selector, body)
 		}
 		for _, bad := range []string{"white-space:nowrap", "display:none", "visibility:hidden", "width:", "content:", "overflow:hidden", "text-overflow"} {
 			if strings.Contains(body, bad) {
@@ -74,7 +74,7 @@ func TestFreshnessStylesheetContract(t *testing.T) {
 		t.Error("cards.css must reset the basis: its rows are columns")
 	}
 	if body := ruleBody(t, cards, ".reference-cards .sheet-fresh"); !strings.Contains(body, "text-align:center") || !strings.Contains(body, "margin-inline:auto") {
-		t.Errorf("cards.css must centre the sheet facts like the description: %s", body)
+		t.Errorf("cards.css must center the sheet facts like the description: %s", body)
 	}
 	// Facts print: no print rule may hide or restyle them.
 	for name, css := range map[string]string{"site.css": site, "classic.css": classic, "cards.css": cards} {

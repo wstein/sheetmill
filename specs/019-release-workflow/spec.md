@@ -86,7 +86,7 @@ that commit only, and publishes them with checksums. Nothing is signed or notari
   (d) (the actor check above, kept as a separate earlier step);
   (e) a run of the workflow file `check.yml` (queried by file, not by display name) for that
   commit with `event=push` has conclusion `success` (`gh api`, read-only); a run in
-  progress, cancelled or failed fails the job with an instruction to wait for or re-run `check`;
+  progress, canceled or failed fails the job with an instruction to wait for or re-run `check`;
   (f) no published release exists for the tag (`gh api repos/.../releases/tags/<tag>` returns
   404; any other error fails closed). Drafts are invisible to this read-only token and are
   caught by the publish job's own check (FR-6).

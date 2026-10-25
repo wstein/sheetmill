@@ -57,7 +57,7 @@ The default path is a **new** version, `v0.1.1` in the first release (any unused
 1. Review and merge the workflow pull request. The workflow file must be on `main`, because a
    tag push runs the workflow from the tagged commit.
 2. Choose the `main` commit `<sha>`: it contains features 017 and 018 and `release.yml`, and
-   its `check` run is green (re-run `check` on it if it was cancelled).
+   its `check` run is green (re-run `check` on it if it was canceled).
 3. Optional, recommended once: run a dry run (see the end of this page) on `main`.
 4. Create and push the annotated tag:
 
@@ -145,5 +145,5 @@ them fail with "HARNESS ERROR, NOT A KILL" until the rows are updated.
 - **Dry run**: Actions, release, Run workflow, on a branch (owner only). It builds and
   smoke-tests with the label `v0.0.0-dryrun` (any `vX.Y.Z-label` is accepted) and never
   publishes; artifacts are deleted after one day. Run one before the first real tag. A dry run never
-  publishes, but in a public repository its workflow artifacts (unsigned binaries labelled
+  publishes, but in a public repository its workflow artifacts (unsigned binaries labeled
   `-dryrun`) can be downloaded by any signed-in GitHub user until they expire.

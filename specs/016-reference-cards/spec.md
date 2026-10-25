@@ -29,7 +29,7 @@ branding, wording, logo, colors, fonts, scripts or external requests are copied.
 - **FR-4** Inside a card, a paragraph immediately followed by a fenced block is a tinted
   description row and the fence is the white command row; other paragraphs stay plain. Styling is CSS only; the
   source Markdown and generated HTML are unchanged.
-- **FR-5** Fences labelled `bash`, `sh`, `zsh`, `shell` or `fish` show a `$` prompt
+- **FR-5** Fences labeled `bash`, `sh`, `zsh`, `shell` or `fish` show a `$` prompt
   drawn by CSS `::before`, so it is never selectable text and never copied.
 - **FR-6** The home page title and description are centered; section headings are
   accent-colored with a `#` marker.
