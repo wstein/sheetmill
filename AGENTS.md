@@ -103,7 +103,7 @@ quotations, testdata, goldens and external names unchanged.
 
 Never push the default branch or tags and never rewrite commits you did not author.
 The feature grants above are dated records of what was authorized then (including
-"draft PR").
+"draft PR"); Ready follows the global rules.
 
 ## Implementation and verification
 
@@ -121,7 +121,7 @@ Golden changes require semantic inspection; regenerate explicitly with
 - Light (every PR and every push to `main` or `codex/**`, workflow `check`): job `core`
   (timeout 10 min: `make fmt-check mod-verify race vet test-assets`, pinned Hugo
   `make test-hugo test-studio`, `make fuzz verify-clean`) and job `build` (timeout 5 min,
-  compile-only for linux/amd64, linux/arm64, darwin/arm64). Locally: `make check`.
+  compile-only for linux/amd64, linux/arm64, darwin/arm64). Locally (subset): `make check` runs fmt-check, test, vet and diff-check only.
 - Heavy: workflow `web-e2e` (job `web-e2e`, timeout 15 min: Playwright with Chromium and
   pinned Hugo, `make test-harness test-browser test-browser-corpus test-browser-studio`).
   There is no `ci-full` label: it also runs on every PR and push, so there is no separate
