@@ -1,5 +1,7 @@
 # SheetMill agent policy
 
+Agent collaboration: see the global rules (`~/.claude/CLAUDE.md`, skill `agent-workflow`); this file contains only repository-specific rules.
+
 SheetMill is a standalone Go reference compiler. The CLI is `smill`.
 Use exact product spelling in prose: SheetMill, BundleDock, WorkHarbor, CrewBook.
 Sibling repository policies do not govern this repository.
@@ -87,9 +89,8 @@ quotations, testdata, goldens and external names unchanged.
   The grant covers the specification. Implementation (tests, code, schema, docs, a topic
   push and a draft PR) starts after the owner has merged the specification. Never run
   navi, a shell or an exported command. PDF, merge and deployment are excluded.
-- Use `codex/` feature branches and Conventional Commits. Topic pushes and PRs for
-  reviewed work within an authorized request or feature scope follow "Pull requests
-  and history" below; a local-only assignment authorizes neither.
+- Use `codex/` feature branches (CI runs on `codex/**` pushes). A local-only
+  assignment authorizes neither a topic push nor a PR.
 - Merge, tag, release, deploy, distribution builds, PDF generation, artifact
   publication and sibling-repository edits require separate human approval.
   Local Hugo site generation and the approved brand exports are authorized.
@@ -100,31 +101,33 @@ quotations, testdata, goldens and external names unchanged.
 
 ## Pull requests and history
 
-Agents push only their own topic branches, rewrite their own branches with an
-explicit lease (a rewritten head of a branch that changes code, tests, scripts or generated
-files is independently reviewed at its exact new SHA before the lease push; a branch
-that changes only specs or documentation needs before it only checks and, for a pure
-rebase, `git range-diff` equality), and open pull requests for reviewed work within the requested task. They never push the default branch or tags, never
-merge, and never rewrite commits they did not author. The owner merges. A containing
-workspace may add owner-workflow rules in its own `AGENTS.md`; follow them when
-present. The feature grants above are dated records of what was authorized then
-(including "draft PR"); pull requests follow the rule above: Ready when the
-exact head has a CLEAR independent review, the required checks are green and no other
-named blocker remains.
+Never push the default branch or tags and never rewrite commits you did not author.
+The feature grants above are dated records of what was authorized then (including
+"draft PR").
 
 ## Implementation and verification
 
 Use Go's standard library first; justify and pin dependencies. Keep diagnostic
 codes and JSON schema changes deliberate and documented. Use source-positioned
 errors, table-driven negative tests, independently authored fixtures, fuzz targets
-and byte-for-byte golden JSON. Write failing behavior tests before implementation.
+and byte-for-byte golden JSON.
 
 Run `gofmt`, `go test ./...`, `go vet ./...` and `git diff --check` before review.
 Golden changes require semantic inspection; regenerate explicitly with
 `go test ./internal/markdown -run TestGolden -update`.
-Report commands actually run and remaining gaps. Independent human or separately
-assigned reviewer approval is expected before merge. An author's own checks do
-not constitute independent review. Delegation is not required by this policy.
+
+## Light and heavy checks
+
+- Light (every PR and every push to `main` or `codex/**`, workflow `check`): job `core`
+  (timeout 10 min: `make fmt-check mod-verify race vet test-assets`, pinned Hugo
+  `make test-hugo test-studio`, `make fuzz verify-clean`) and job `build` (timeout 5 min,
+  compile-only for linux/amd64, linux/arm64, darwin/arm64). Locally: `make check`.
+- Heavy: workflow `web-e2e` (job `web-e2e`, timeout 15 min: Playwright with Chromium and
+  pinned Hugo, `make test-harness test-browser test-browser-corpus test-browser-studio`).
+  There is no `ci-full` label: it also runs on every PR and push, so there is no separate
+  heavy lane at the stack tip. Durations are the workflow timeouts; measured times are UNKNOWN.
+- `pages.yml` runs on `main` pushes and manual runs; `release.yml` runs on owner tags and
+  manual dry runs (see the grants above).
 
 ## Licensing
 
