@@ -46,9 +46,9 @@ SheetMill does not infer legal permission from that identifier.
   and [asset reproduction](../assets/README.md).
 
 - Browser E2E development package: `@playwright/test`, `playwright` and
-  `playwright-core` 1.64.1, Apache-2.0, pinned with npm integrity hashes in
+  `playwright-core` 1.65.0, Apache-2.0, pinned with npm integrity hashes in
   `tests/e2e/package-lock.json`. No production Go/frontend dependency is added.
-  Matching Chromium revision 1248 (156.0.8078.4) is provisioned explicitly from
+  Matching Chromium revision 1254 (158.0.8127.18) is provisioned explicitly from
   Microsoft's versioned Playwright tooling; browser binaries are not committed.
 - Node 24.21.0 LTS is pinned for this private test package only. The official
   macOS arm64 archive was verified against the vendor's SHASUMS256.txt:
