@@ -3,6 +3,10 @@ import { spawn } from 'node:child_process';
 import { mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+
+// The Playwright pin lives only in package.json (exact version, kept by Dependabot).
+const playwrightPin = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).devDependencies['@playwright/test'];
 
 export function toolEnvironment(cache, base=process.env) {
   return {...base,GOPROXY:'off',GOSUMDB:'off',GOTOOLCHAIN:'local',GOENV:'off',GOFLAGS:'',GOWORK:'off',GOCACHE:base.GOCACHE||cache};
@@ -10,8 +14,8 @@ export function toolEnvironment(cache, base=process.env) {
 
 export function validateVersions(v) {
   const checks = {
-    node: v.node === '24.21.0', playwright: v.playwright === '1.64.1',
-    chromium: v.chromium === '156.0.8078.4',
+    node: v.node === '24.21.0', playwright: v.playwright === playwrightPin,
+    chromium: v.chromium === '158.0.8127.18',
     go: /^go version go1\.27\.2\s/.test(v.go || ''),
     hugo: /^hugo v0\.167\.0(?:[+\s-]|$)/.test(v.hugo || ''),
   };
