@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { root } from './helpers/fixtures.mjs';
+import { playwrightPin } from './helpers/process.mjs';
 
 test.use({studioWorkload:true});
 const visibleCurrent=async(page,text)=>{
@@ -25,7 +26,7 @@ const visibleCurrent=async(page,text)=>{
 test('T049 reference-machine automated acceptance',async({page,context,studio,tools,browser},testInfo)=>{
   const updates=[],startups=[],sequences=[],sequenceEvidence=[];
   const report={schema:1,startedUTC:new Date().toISOString(),machine:{os:platform(),release:release(),arch:arch(),cpu:cpus()[0]?.model,logicalCPUs:availableParallelism(),memoryBytes:totalmem()},
-    tools:{node:process.versions.node,chromium:browser.version(),playwright:JSON.parse(await readFile(new URL('./package.json',import.meta.url),'utf8')).devDependencies['@playwright/test'],go:tools.records.find(r=>r.args[0]==='version'&&r.executable==='go')?.stdout.trim(),hugo:tools.records.find(r=>r.executable===tools.hugo&&r.args[0]==='version')?.stdout.trim()},
+    tools:{node:process.versions.node,chromium:browser.version(),playwright:playwrightPin,go:tools.records.find(r=>r.args[0]==='version'&&r.executable==='go')?.stdout.trim(),hugo:tools.records.find(r=>r.executable===tools.hugo&&r.args[0]==='version')?.stdout.trim()},
     method:{viewport:'1280x800',startup:'process spawn to rendered current card and enabled search, including bootstrap, navigation and initial build',edit:'external writeFile completion to rendered current card and enabled search',clock:'Node performance.now, viewport-intersecting browser RAF predicate plus two frames (paint opportunity, not a pixel timestamp)',warmup:'none discarded; fresh process and ephemeral port each start; browser and development CLI built before timing; OS caches not flushed',retries:0},
     workload:{sheets:100,bytesPerSheet:8192,maximumAllowedBytesPerSheet:102400},sequenceEvidence};
   const evidence=testInfo.outputPath('performance.json');

@@ -5,7 +5,7 @@ import { appendFileSync } from 'node:fs';
 import { join, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { OwnedWorkspace, registerInterruptCleanup, validateVersions, toolEnvironment } from './process.mjs';
+import { OwnedWorkspace, registerInterruptCleanup, validateVersions, bundledChromium, toolEnvironment } from './process.mjs';
 import { loadCorpus } from './corpus.mjs';
 import { readSite, compareSites, serveSite } from './site.mjs';
 import { guardNetwork } from './network.mjs';
@@ -42,7 +42,8 @@ export const test=base.extend({
       const go=(await exec('go',['version'])).stdout;
       const hv=(await exec(hugo,['version'])).stdout;
       const pkg=JSON.parse(await readFile(new URL('../node_modules/@playwright/test/package.json',import.meta.url),'utf8'));
-      validateVersions({node:process.versions.node,playwright:pkg.version,chromium:browser.version(),go,hugo:hv});
+      const browsers=await readFile(new URL('../node_modules/playwright-core/browsers.json',import.meta.url),'utf8');
+      validateVersions({node:process.versions.node,playwright:pkg.version,chromium:browser.version(),go,hugo:hv},bundledChromium(browsers));
       const smill=join(owner.root,'smill');
       await exec('go',['build','-trimpath','-o',smill,'./cmd/smill'],{cwd:root,env,timeoutMs:120_000});
       const version=await exec(smill,['version'],{env});expect(version.stdout).toBe('smill dev\n');

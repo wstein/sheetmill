@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, realpath, writeFile, symlink, access, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { run, OwnedWorkspace, validateVersions } from './helpers/process.mjs';
+import { run, OwnedWorkspace, validateVersions, bundledChromium, playwrightPin } from './helpers/process.mjs';
 import { readSite, compareSites, serveSite } from './helpers/site.mjs';
 
 const scratch = async () => mkdtemp(join(await realpath(tmpdir()), 'sheetmill-helper-'));
@@ -35,14 +35,27 @@ test('aborted operation does not start work', async () => {
   const controller = new AbortController(); controller.abort();
   await assert.rejects(run(process.execPath, ['-e', 'process.exit(0)'], { signal: controller.signal }), /aborted/);
 });
-test('exact tool versions, standard and extended Hugo forms', async () => {
-  const pinned = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8')).devDependencies['@playwright/test'];
-  const versions = { node: '24.21.0', playwright: pinned, chromium: '158.0.8127.18', go: 'go version go1.27.2 darwin/arm64', hugo: 'hugo v0.167.0-abcdef linux/amd64' };
-  validateVersions(versions);
-  validateVersions({ ...versions, hugo: 'hugo v0.167.0+extended darwin/arm64' });
+test('Playwright pin comes from the @playwright/test entry of package.json', async () => {
+  const manifest = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8'));
+  assert.match(playwrightPin, /^\d+\.\d+\.\d+$/);
+  assert.equal(playwrightPin, manifest.devDependencies['@playwright/test']);
+});
+test('bundled Chromium is read from the chromium entry of browsers.json', () => {
+  const json = JSON.stringify({ browsers: [{ name: 'chromium-headless-shell', browserVersion: '1.0.0.0' }, { name: 'chromium', browserVersion: '158.0.8127.18' }] });
+  assert.equal(bundledChromium(json), '158.0.8127.18');
+  assert.throws(() => bundledChromium(JSON.stringify({ browsers: [{ name: 'firefox', browserVersion: '1.0' }] })), /no chromium/);
+  assert.throws(() => bundledChromium('{}'), /no chromium/);
+});
+test('exact tool versions, standard and extended Hugo forms', () => {
+  const chromium = '158.0.8127.18';
+  const versions = { node: '24.21.0', playwright: playwrightPin, chromium, go: 'go version go1.27.2 darwin/arm64', hugo: 'hugo v0.167.0-abcdef linux/amd64' };
+  validateVersions(versions, chromium);
+  validateVersions({ ...versions, hugo: 'hugo v0.167.0+extended darwin/arm64' }, chromium);
   for (const [key,value] of Object.entries({ node:'26.11.1', playwright:'1.63.0', chromium:'156.0.8078.4', go:'go version go1.27.20 linux/amd64', hugo:'hugo v0.167.01 linux/amd64' })) {
-    assert.throws(() => validateVersions({ ...versions, [key]:value }), /requires/);
+    assert.throws(() => validateVersions({ ...versions, [key]:value }, chromium), /requires/);
   }
+  assert.throws(() => validateVersions(versions, '159.0.0.0'), /requires pinned chromium/);
+  assert.throws(() => validateVersions(versions), /requires/);
 });
 test('all site names and bytes matter; symlinks are refused', async () => {
   const root = await scratch();
