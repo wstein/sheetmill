@@ -56,6 +56,7 @@ test('exact tool versions, standard and extended Hugo forms', () => {
   }
   assert.throws(() => validateVersions(versions, '159.0.0.0'), /requires pinned chromium/);
   assert.throws(() => validateVersions(versions), /requires/);
+  assert.throws(() => validateVersions({ ...versions, chromium: undefined }), /bundled chromium/);
 });
 test('all site names and bytes matter; symlinks are refused', async () => {
   const root = await scratch();
