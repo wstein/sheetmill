@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, realpath, writeFile, symlink, access, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, realpath, writeFile, symlink, access, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { run, OwnedWorkspace, validateVersions } from './helpers/process.mjs';
@@ -35,11 +35,12 @@ test('aborted operation does not start work', async () => {
   const controller = new AbortController(); controller.abort();
   await assert.rejects(run(process.execPath, ['-e', 'process.exit(0)'], { signal: controller.signal }), /aborted/);
 });
-test('exact tool versions, standard and extended Hugo forms', () => {
-  const versions = { node: '24.21.0', playwright: '1.64.1', chromium: '156.0.8078.4', go: 'go version go1.27.2 darwin/arm64', hugo: 'hugo v0.167.0-abcdef linux/amd64' };
+test('exact tool versions, standard and extended Hugo forms', async () => {
+  const pinned = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8')).devDependencies['@playwright/test'];
+  const versions = { node: '24.21.0', playwright: pinned, chromium: '158.0.8127.18', go: 'go version go1.27.2 darwin/arm64', hugo: 'hugo v0.167.0-abcdef linux/amd64' };
   validateVersions(versions);
   validateVersions({ ...versions, hugo: 'hugo v0.167.0+extended darwin/arm64' });
-  for (const [key,value] of Object.entries({ node:'26.11.1', playwright:'1.63.0', chromium:'155.0.0.0', go:'go version go1.27.20 linux/amd64', hugo:'hugo v0.167.01 linux/amd64' })) {
+  for (const [key,value] of Object.entries({ node:'26.11.1', playwright:'1.63.0', chromium:'156.0.8078.4', go:'go version go1.27.20 linux/amd64', hugo:'hugo v0.167.01 linux/amd64' })) {
     assert.throws(() => validateVersions({ ...versions, [key]:value }), /requires/);
   }
 });
