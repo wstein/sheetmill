@@ -6,16 +6,24 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 // The Playwright pin lives only in package.json (exact version, kept by Dependabot).
-const playwrightPin = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).devDependencies['@playwright/test'];
+export const playwrightPin = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).devDependencies['@playwright/test'];
 
 export function toolEnvironment(cache, base=process.env) {
   return {...base,GOPROXY:'off',GOSUMDB:'off',GOTOOLCHAIN:'local',GOENV:'off',GOFLAGS:'',GOWORK:'off',GOCACHE:base.GOCACHE||cache};
 }
 
-export function validateVersions(v) {
+// Chromium is the browser the pinned playwright-core bundles (its browsers.json).
+export function bundledChromium(browsersJson) {
+  const entry = JSON.parse(browsersJson).browsers?.find(b => b.name === 'chromium');
+  if (!entry?.browserVersion) throw Error('browsers.json has no chromium browserVersion');
+  return entry.browserVersion;
+}
+
+export function validateVersions(v, expectedChromium) {
+  if (!expectedChromium) throw Error('E2E requires the bundled chromium version from browsers.json');
   const checks = {
     node: v.node === '24.21.0', playwright: v.playwright === playwrightPin,
-    chromium: v.chromium === '158.0.8127.18',
+    chromium: v.chromium === expectedChromium,
     go: /^go version go1\.27\.2\s/.test(v.go || ''),
     hugo: /^hugo v0\.167\.0(?:[+\s-]|$)/.test(v.hugo || ''),
   };
